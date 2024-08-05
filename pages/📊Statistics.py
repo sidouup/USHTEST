@@ -80,7 +80,7 @@ def statistics_page():
     st.title("📊 Student Recruitment Statistics")
 
     # Load data from Google Sheets
-    spreadsheet_id = "1os1G3ri4xMmJdQSNsVSNx6VJttyM8JsPNbmH0DCFUiI"
+    spreadsheet_id = "1NkW2a4_eOlDGeVxY9PZk-lEI36PvAv9XoO4ZIwl-Sew"
     sheet_name = "ALL"
     data = load_data(spreadsheet_id, sheet_name)
 

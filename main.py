@@ -1,4 +1,4 @@
-# File: Home.py (main page)
+# File: main.py
 import streamlit as st
 import base64
 from datetime import datetime, timedelta
@@ -60,7 +60,7 @@ def main():
                 st.session_state.username = username
                 st.session_state.role = role
                 st.session_state.expiry = (datetime.now() + timedelta(minutes=30)).isoformat()
-                st.rerun()
+                st.experimental_rerun()
             else:
                 st.error("Invalid username or password")
     else:
@@ -72,7 +72,7 @@ def main():
             st.session_state.username = ""
             st.session_state.role = ""
             st.session_state.expiry = None
-            st.rerun()
+            st.experimental_rerun()
 
     # Store session data in local storage
     if st.session_state.logged_in:
@@ -129,4 +129,3 @@ if __name__ == "__main__":
             unsafe_allow_html=True
         )
     main()
-

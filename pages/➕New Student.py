@@ -6,7 +6,7 @@ import gspread
 import time
 from main import get_session
 
-from Home import init_session_state, check_session
+from main import init_session_state, check_session
 
 def check_admin_access():
     init_session_state()

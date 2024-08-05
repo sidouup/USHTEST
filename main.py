@@ -1,4 +1,3 @@
-# File: main.py
 import streamlit as st
 import base64
 from datetime import datetime, timedelta
@@ -60,7 +59,7 @@ def main():
                 st.session_state.username = username
                 st.session_state.role = role
                 st.session_state.expiry = (datetime.now() + timedelta(minutes=30)).isoformat()
-                st.rerun()
+                st.experimental_rerun()
             else:
                 st.error("Invalid username or password")
     else:
@@ -72,8 +71,7 @@ def main():
             st.session_state.username = ""
             st.session_state.role = ""
             st.session_state.expiry = None
-            st.query_params.clear()
-            st.rerun()
+            st.experimental_rerun()
 
     # Store session data in query params
     if st.session_state.logged_in:
@@ -82,20 +80,21 @@ def main():
             "role": st.session_state.role,
             "expiry": st.session_state.expiry
         })
-        st.query_params["session"] = session_data
+        st.experimental_set_query_params(session=session_data)
 
 if __name__ == "__main__":
     # Check for session data in query parameters
-    if "session" in st.query_params:
+    query_params = st.experimental_get_query_params()
+    if "session" in query_params:
         try:
-            session_data = decrypt(st.query_params["session"])
+            session_data = decrypt(query_params["session"][0])
             st.session_state.logged_in = True
             st.session_state.username = session_data["username"]
             st.session_state.role = session_data["role"]
             st.session_state.expiry = session_data["expiry"]
-        except:
+        except Exception:
             st.session_state.logged_in = False
-            st.query_params.clear()
+            st.experimental_set_query_params()
     main()
 
 # Explicitly export the functions

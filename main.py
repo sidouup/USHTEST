@@ -97,3 +97,6 @@ if __name__ == "__main__":
             st.session_state.logged_in = False
             st.query_params.clear()
     main()
+
+# Explicitly export the functions
+__all__ = ['init_session_state', 'check_session']

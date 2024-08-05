@@ -44,7 +44,7 @@ def main():
     st.title("Student List")
 
     # Load data from Google Sheets
-    spreadsheet_id = "1os1G3ri4xMmJdQSNsVSNx6VJttyM8JsPNbmH0DCFUiI"
+    spreadsheet_id = "1NkW2a4_eOlDGeVxY9PZk-lEI36PvAv9XoO4ZIwl-Sew"
     sheet_name = "ALL"
     df_all = load_data(spreadsheet_id, sheet_name)
     original_df_all = df_all.copy()  # Keep a copy of the original data

@@ -11,7 +11,7 @@ if 'logged_in' not in st.session_state:
 
 # Redirect to login page if not logged in
 if not st.session_state.logged_in:
-    st.switch_page("login.py")
+    st.switch_page("pages/login.py")
 else:
     st.title("Welcome to Student Visa CRM")
     st.write("Use the sidebar to navigate.")

@@ -1,5 +1,5 @@
 
-# login.py
+
 import streamlit as st
 from time import sleep
 from navigation import make_sidebar

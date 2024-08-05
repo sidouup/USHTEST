@@ -37,11 +37,20 @@ def delete_session(session_id):
     c.execute("DELETE FROM sessions WHERE session_id = ?", (session_id,))
     conn.commit()
 
-def main():
-    st.title("Multi-page Streamlit App with Server-side Sessions")
-
+def init_session_state():
     if 'session_id' not in st.session_state:
         st.session_state.session_id = ''
+    if 'logged_in' not in st.session_state:
+        st.session_state.logged_in = False
+    if 'username' not in st.session_state:
+        st.session_state.username = ''
+    if 'role' not in st.session_state:
+        st.session_state.role = ''
+
+def main():
+    st.title("Multi-page Streamlit App with Persistent Sessions")
+
+    init_session_state()
 
     # Check for existing session
     if st.session_state.session_id:
@@ -56,7 +65,7 @@ def main():
             st.session_state.role = ""
             st.session_state.session_id = ""
 
-    if not st.session_state.get('logged_in', False):
+    if not st.session_state.logged_in:
         username = st.text_input("Username")
         password = st.text_input("Password", type="password")
 

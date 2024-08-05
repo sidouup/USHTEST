@@ -88,9 +88,18 @@ def load_css():
     }
     </style>
     """, unsafe_allow_html=True)
+    
+def check_admin_access():
+    if not st.session_state.get('logged_in', False) or st.session_state.get('role', '') != 'admin':
+        st.error("You don't have access to this page. Please log in as an admin.")
+        st.stop()
 
 # Streamlit app
 def main():
+    check_admin_access()
+    st.title("Admin Page")
+    st.write("This page is only accessible to admins.")
+
     st.set_page_config(page_title="Add New Student", layout="wide")
     load_css()
 

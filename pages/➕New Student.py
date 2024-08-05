@@ -6,6 +6,14 @@ import gspread
 import time
 from main import get_session
 
+from Home import init_session_state, check_session
+
+def check_admin_access():
+    init_session_state()
+    check_session()
+    if not st.session_state.logged_in or st.session_state.role != 'admin':
+        st.error("You don't have access to this page. Please log in as an admin.")
+        st.stop()
 
 # Use Streamlit secrets for service account info
 SERVICE_ACCOUNT_INFO = st.secrets["gcp_service_account"]
@@ -91,15 +99,7 @@ def load_css():
     </style>
     """, unsafe_allow_html=True)
     
-def check_admin_access():
-    if 'session_id' not in st.session_state or not st.session_state.session_id:
-        st.error("You need to log in to access this page.")
-        st.stop()
-    
-    session = get_session(st.session_state.session_id)
-    if not session or session[2] != 'admin':
-        st.error("You don't have access to this page. Please log in as an admin.")
-        st.stop()
+
 
 # Streamlit app
 def main():

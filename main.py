@@ -72,60 +72,28 @@ def main():
             st.session_state.username = ""
             st.session_state.role = ""
             st.session_state.expiry = None
+            st.query_params.clear()
             st.rerun()
 
-    # Store session data in local storage
+    # Store session data in query params
     if st.session_state.logged_in:
         session_data = encrypt({
             "username": st.session_state.username,
             "role": st.session_state.role,
             "expiry": st.session_state.expiry
         })
-        st.markdown(
-            f"""
-            <script>
-                localStorage.setItem('session_data', '{session_data}');
-                window.onload = function() {{
-                    if (window.location.href.indexOf('session=') === -1) {{
-                        window.location.href = window.location.href + '?session={session_data}';
-                    }}
-                }}
-            </script>
-            """,
-            unsafe_allow_html=True
-        )
-    else:
-        st.markdown(
-            """
-            <script>
-                localStorage.removeItem('session_data');
-            </script>
-            """,
-            unsafe_allow_html=True
-        )
+        st.query_params["session"] = session_data
 
 if __name__ == "__main__":
-    # Check for session data in URL parameters or local storage
-    query_params = st.query_params()
-    if "session" in query_params:
+    # Check for session data in query parameters
+    if "session" in st.query_params:
         try:
-            session_data = decrypt(query_params["session"][0])
+            session_data = decrypt(st.query_params["session"])
             st.session_state.logged_in = True
             st.session_state.username = session_data["username"]
             st.session_state.role = session_data["role"]
             st.session_state.expiry = session_data["expiry"]
         except:
             st.session_state.logged_in = False
-    else:
-        st.markdown(
-            """
-            <script>
-                var session_data = localStorage.getItem('session_data');
-                if (session_data) {
-                    window.location.href = window.location.href + '?session=' + session_data;
-                }
-            </script>
-            """,
-            unsafe_allow_html=True
-        )
+            st.query_params.clear()
     main()

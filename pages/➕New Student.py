@@ -4,7 +4,7 @@ from datetime import datetime
 from google.oauth2.service_account import Credentials
 import gspread
 import time
-from Home import get_session
+from main import get_session
 
 
 # Use Streamlit secrets for service account info

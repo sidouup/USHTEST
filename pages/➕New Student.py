@@ -3,17 +3,17 @@ import pandas as pd
 from datetime import datetime
 from google.oauth2.service_account import Credentials
 import gspread
-import time
-from main import get_session
 
+import time
 from main import init_session_state, check_session
 
 def check_admin_access():
     init_session_state()
     check_session()
-    if not st.session_state.logged_in or st.session_state.role != 'admin':
+    if not st.session_state.get('logged_in', False) or st.session_state.get('role', '') != 'admin':
         st.error("You don't have access to this page. Please log in as an admin.")
         st.stop()
+
 
 # Use Streamlit secrets for service account info
 SERVICE_ACCOUNT_INFO = st.secrets["gcp_service_account"]

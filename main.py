@@ -106,7 +106,7 @@ def main():
 
 if __name__ == "__main__":
     # Check for session data in URL parameters or local storage
-    query_params = st.experimental_get_query_params()
+    query_params = st.query_params()
     if "session" in query_params:
         try:
             session_data = decrypt(query_params["session"][0])

@@ -90,7 +90,12 @@ def load_css():
     """, unsafe_allow_html=True)
     
 def check_admin_access():
-    if not st.session_state.get('logged_in', False) or st.session_state.get('role', '') != 'admin':
+    if 'session_id' not in st.session_state or not st.session_state.session_id:
+        st.error("You need to log in to access this page.")
+        st.stop()
+    
+    session = get_session(st.session_state.session_id)
+    if not session or session[2] != 'admin':
         st.error("You don't have access to this page. Please log in as an admin.")
         st.stop()
 

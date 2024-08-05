@@ -5,6 +5,14 @@ from google.oauth2.service_account import Credentials
 import gspread
 
 import time
+from pathlib import Path
+import sys
+
+# Add the parent directory to the system path to allow for absolute imports
+current_dir = Path(__file__).parent
+parent_dir = current_dir.parent
+sys.path.append(str(parent_dir))
+
 from main import init_session_state, check_session
 
 def check_admin_access():

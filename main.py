@@ -60,7 +60,7 @@ def main():
                 st.session_state.username = username
                 st.session_state.role = role
                 st.session_state.expiry = (datetime.now() + timedelta(minutes=30)).isoformat()
-                st.experimental_rerun()
+                st.rerun()
             else:
                 st.error("Invalid username or password")
     else:
@@ -72,7 +72,7 @@ def main():
             st.session_state.username = ""
             st.session_state.role = ""
             st.session_state.expiry = None
-            st.experimental_rerun()
+            st.rerun()
 
     # Store session data in local storage
     if st.session_state.logged_in:

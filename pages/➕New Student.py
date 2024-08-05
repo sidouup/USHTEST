@@ -14,7 +14,6 @@ def check_admin_access():
         st.error("You don't have access to this page. Please log in as an admin.")
         st.stop()
 
-
 # Use Streamlit secrets for service account info
 SERVICE_ACCOUNT_INFO = st.secrets["gcp_service_account"]
 

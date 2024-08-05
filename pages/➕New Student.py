@@ -96,11 +96,11 @@ def check_admin_access():
 
 # Streamlit app
 def main():
+    st.set_page_config(page_title="Add New Student", layout="wide")
     check_admin_access()
     st.title("Admin Page")
     st.write("This page is only accessible to admins.")
 
-    st.set_page_config(page_title="Add New Student", layout="wide")
     load_css()
 
     st.title("🎓 Add New Student")

@@ -20,7 +20,7 @@ def get_google_sheet_client():
 # Function to add a new student to the Google Sheet
 def add_student_to_sheet(student_data):
     client = get_google_sheet_client()
-    sheet = client.open_by_key("1os1G3ri4xMmJdQSNsVSNx6VJttyM8JsPNbmH0DCFUiI").worksheet('ALL')
+    sheet = client.open_by_key("1NkW2a4_eOlDGeVxY9PZk-lEI36PvAv9XoO4ZIwl-Sew").worksheet('ALL')
     sheet.append_row(list(student_data.values()))
 
 # Function to load data from Google Sheets
@@ -28,7 +28,7 @@ def add_student_to_sheet(student_data):
 def load_data():
     try:
         client = get_google_sheet_client()
-        sheet = client.open_by_key("1os1G3ri4xMmJdQSNsVSNx6VJttyM8JsPNbmH0DCFUiI").worksheet('ALL')
+        sheet = client.open_by_key("1NkW2a4_eOlDGeVxY9PZk-lEI36PvAv9XoO4ZIwl-Sew").worksheet('ALL')
         expected_headers = ["DATE", "First Name", "Last Name", "Age", "Gender", "Phone N°", "Address", "E-mail", 
                             "Emergency contact N°", "Chosen School", "Specialite", "Duration", "Payment Amount", 
                             "Payment Type", "Compte", "Sevis payment ?", "Application payment ?", "DS-160 maker", 

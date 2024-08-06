@@ -34,29 +34,19 @@ def load_data():
     sheet = spreadsheet.sheet1  # Adjust if you need to access a different sheet
     data = sheet.get_all_records()
     df = pd.DataFrame(data).astype(str)
-    df['DATE'] = pd.to_datetime(df['DATE'], dayfirst=True, errors='coerce') 
-    df['Months'] = df['DATE'].dt.strftime('%B %Y')  # Add Months column here
+    df['DATE'] = pd.to_datetime(df['DATE'], dayfirst=True, errors='coerce')  # Convert DATE to datetime with dayfirst=True
     return df
 
 # Function to get changed rows
 def get_changed_rows(original_df, edited_df):
-    # First, make a copy to avoid modifying original data
-    edited_df_copy = edited_df.copy() 
-
-    # Temporarily drop 'Months' from both if it exists
-    if 'Months' in original_df.columns and 'Months' in edited_df_copy.columns:
-        original_df_sorted = original_df.drop(columns=['Months']).sort_values(by='DATE').reset_index(drop=True)
-        edited_df_sorted = edited_df_copy.drop(columns=['Months']).sort_values(by='DATE').reset_index(drop=True)
-    else:
-        original_df_sorted = original_df.sort_values(by='DATE').reset_index(drop=True)
-        edited_df_sorted = edited_df_copy.sort_values(by='DATE').reset_index(drop=True)
+    original_df_sorted = original_df.sort_values(by='DATE').reset_index(drop=True)
+    edited_df_sorted = edited_df.sort_values(by='DATE').reset_index(drop=True)
 
     # Ensure both DataFrames have the same columns in the same order
     original_df_sorted = original_df_sorted[edited_df_sorted.columns]
 
     changed_mask = (original_df_sorted != edited_df_sorted).any(axis=1)
     return edited_df_sorted.loc[changed_mask]
-
 
 # Load data and initialize session state
 if 'data' not in st.session_state or st.session_state.get('reload_data', False):
@@ -66,7 +56,6 @@ if 'data' not in st.session_state or st.session_state.get('reload_data', False):
 # Always ensure original_data is initialized
 if 'original_data' not in st.session_state:
     st.session_state.original_data = st.session_state.data.copy()
-
 
 # Display the editable dataframe
 st.title("Student List")
@@ -78,10 +67,9 @@ with col1:
     agents = st.multiselect('Filter by Agent', options=st.session_state.data['Agent'].unique())
 
 with col2:
-    # Move Months column creation inside the filter column for better code organization
-    filtered_data = st.session_state.data.copy() # Copy data before filtering
-    filtered_data['Months'] = filtered_data['DATE'].dt.strftime('%B %Y')
-    months_years = st.multiselect('Filter by Month', options=filtered_data['Months'].unique())
+    # Create a new column 'Months' for filtering
+    st.session_state.data['Months'] = st.session_state.data['DATE'].dt.strftime('%B %Y')
+    months_years = st.multiselect('Filter by Month', options=st.session_state.data['Months'].unique())
 
 with col3:
     stages = st.multiselect('Filter by Stage', options=st.session_state.data['Stage'].unique())
@@ -92,8 +80,8 @@ with col4:
 with col5:
     attempts = st.multiselect('Filter by Attempts', options=st.session_state.data['Attempts'].unique())
 
+filtered_data = st.session_state.data.copy()
 
-# Apply filters only on 'filtered_data' which already contains the 'Months' column
 if agents:
     filtered_data = filtered_data[filtered_data['Agent'].isin(agents)]
 if months_years:
@@ -105,15 +93,13 @@ if schools:
 if attempts:
     filtered_data = filtered_data[filtered_data['Attempts'].isin(attempts)]
 
-
-
 # Sort filtered data for display
 filtered_data.sort_values(by='DATE', inplace=True)
 
 # Use a key for the data_editor to ensure proper updates
 edited_df = st.data_editor(filtered_data, num_rows="dynamic", key="student_data")
 
-# Function to save data to Google Sheets (unchanged)
+# Function to save data to Google Sheets
 def save_data(changed_data, spreadsheet_url):
     logger.info("Attempting to save changes")
     try:
@@ -142,12 +128,10 @@ def save_data(changed_data, spreadsheet_url):
         logger.error(f"Error saving changes: {str(e)}")
         return False
 
-
 # Update Google Sheet with edited data
 if st.button("Save Changes"):
     try:
-        # Ensure the 'Months' column is dropped before comparing and saving
-        st.session_state.changed_data = get_changed_rows(st.session_state.original_data, edited_df.drop(columns=['Months'])) 
+        st.session_state.changed_data = get_changed_rows(st.session_state.original_data, edited_df)  # Store changed data
         
         # Only save data if there are actual changes
         if not st.session_state.changed_data.empty:

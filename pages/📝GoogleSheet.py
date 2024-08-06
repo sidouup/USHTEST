@@ -122,7 +122,7 @@ if attempts:
 filtered_data.sort_values(by='DATE', inplace=True)
 
 # Use a key for the data_editor to ensure proper updates
-edited_df = st.experimental_data_editor(filtered_data, num_rows="dynamic", key="student_data")
+edited_df = st.data_editor(filtered_data, num_rows="dynamic", key="student_data")
 
 # Update Google Sheet with edited data
 if st.button("Save Changes"):

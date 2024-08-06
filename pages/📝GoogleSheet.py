@@ -39,35 +39,24 @@ def load_data():
     df['Months'] = df['DATE'].dt.strftime('%B %Y')  # Create a new column 'Months' for filtering
     return df
 
-# Function to get changed rows
-def get_changed_rows(original_df, edited_df):
-    original_df_sorted = original_df.sort_values(by='DATE').reset_index(drop=True)
-    edited_df_sorted = edited_df.sort_values(by='DATE').reset_index(drop=True)
-    changed_mask = (original_df_sorted != edited_df_sorted).any(axis=1)
-    return edited_df_sorted.loc[changed_mask]
-
 # Function to save data to Google Sheets
-def save_data(changed_data, spreadsheet_url):
+def save_data(df, spreadsheet_url):
     logger.info("Attempting to save changes")
     try:
         spreadsheet = client.open_by_url(spreadsheet_url)
         sheet = spreadsheet.sheet1
 
         # Convert datetime objects back to strings
-        changed_data['DATE'] = changed_data['DATE'].dt.strftime('%d/%m/%Y %H:%M:%S')
+        df['DATE'] = df['DATE'].dt.strftime('%d/%m/%Y %H:%M:%S')
 
         # Replace problematic values with a placeholder
-        changed_data.replace([np.inf, -np.inf, np.nan], 'NaN', inplace=True)
+        df.replace([np.inf, -np.inf, np.nan], 'NaN', inplace=True)
 
-        # Batch update the changed rows
-        updated_rows = []
-        for index, row in changed_data.iterrows():
-            updated_rows.append({
-                'range': f'A{index + 2}',
-                'values': [row.values.tolist()]
-            })
+        # Clear the existing sheet
+        sheet.clear()
 
-        sheet.batch_update(updated_rows)
+        # Update the sheet with new data
+        sheet.update([df.columns.values.tolist()] + df.values.tolist())
 
         logger.info("Changes saved successfully")
         return True
@@ -79,10 +68,6 @@ def save_data(changed_data, spreadsheet_url):
 if 'data' not in st.session_state or st.session_state.get('reload_data', False):
     st.session_state.data = load_data()
     st.session_state.reload_data = False
-
-# Always ensure original_data is initialized
-if 'original_data' not in st.session_state:
-    st.session_state.original_data = st.session_state.data.copy()
 
 # Display the editable dataframe
 st.title("Student List")
@@ -122,29 +107,22 @@ if attempts:
 filtered_data.sort_values(by='DATE', inplace=True)
 
 # Use a key for the data_editor to ensure proper updates
-edited_df = st.data_editor(filtered_data, num_rows="dynamic", key="student_data")
+edited_df = st.experimental_data_editor(filtered_data, num_rows="dynamic", key="student_data")
 
 # Update Google Sheet with edited data
 if st.button("Save Changes"):
     try:
-        changed_data = get_changed_rows(st.session_state.original_data, edited_df)  # Store changed data
-        
-        # Only save data if there are actual changes
-        if not changed_data.empty:
-            if save_data(changed_data, spreadsheet_url):
-                st.session_state.data = edited_df  # Update the session state
-                st.session_state.original_data = edited_df.copy()  # Update the original data
-                st.success("Changes saved successfully!")
-                
-                # Use a spinner while waiting for changes to propagate
-                with st.spinner("Refreshing data..."):
-                    time.sleep(2)  # Wait for 2 seconds to allow changes to propagate
-                
-                st.session_state.reload_data = True
-                st.experimental_rerun()
-            else:
-                st.error("Failed to save changes. Please try again.")
+        if save_data(edited_df, spreadsheet_url):
+            st.session_state.data = edited_df  # Update the session state
+            st.success("Changes saved successfully!")
+            
+            # Use a spinner while waiting for changes to propagate
+            with st.spinner("Refreshing data..."):
+                time.sleep(2)  # Wait for 2 seconds to allow changes to propagate
+            
+            st.session_state.reload_data = True
+            st.experimental_rerun()
         else:
-            st.info("No changes detected.")
+            st.error("Failed to save changes. Please try again.")
     except Exception as e:
         st.error(f"An error occurred while saving: {str(e)}")

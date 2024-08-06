@@ -13,26 +13,38 @@ SERVICE_ACCOUNT_INFO = st.secrets["gcp_service_account"]
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
 # Authenticate with Google Sheets
-creds = Credentials.from_service_account_info(SERVICE_ACCOUNT_INFO, scopes=SCOPES)
-client = gspread.authorize(creds)
+@st.cache_resource
+def get_gsheet_client():
+    creds = Credentials.from_service_account_info(SERVICE_ACCOUNT_INFO, scopes=SCOPES)
+    return gspread.authorize(creds)
+
+client = get_gsheet_client()
 
 # Open the Google Sheet using the provided link
 spreadsheet_url = "https://docs.google.com/spreadsheets/d/1NkW2a4_eOlDGeVxY9PZk-lEI36PvAv9XoO4ZIwl-Sew/edit#gid=1019724402"
-spreadsheet = client.open_by_url(spreadsheet_url)
-sheet = spreadsheet.sheet1  # Adjust if you need to access a different sheet
+
+@st.cache_data
+def load_data():
+    spreadsheet = client.open_by_url(spreadsheet_url)
+    sheet = spreadsheet.sheet1  # Adjust if you need to access a different sheet
+    data = sheet.get_all_records()
+    return pd.DataFrame(data).astype(str)
 
 # Load data into a pandas DataFrame and ensure all data is treated as strings
-data = sheet.get_all_records()
-df = pd.DataFrame(data).astype(str)
+if 'data' not in st.session_state:
+    st.session_state.data = load_data()
 
 # Display the editable dataframe
 st.title("Student List")
-edited_df = st.data_editor(df, num_rows="dynamic")
+edited_df = st.data_editor(st.session_state.data, num_rows="dynamic")
 
 # Update Google Sheet with edited data
 if st.button("Save Changes"):
+    spreadsheet = client.open_by_url(spreadsheet_url)
+    sheet = spreadsheet.sheet1
     sheet.clear()
     sheet.update([edited_df.columns.values.tolist()] + edited_df.values.tolist())
+    st.session_state.data = edited_df  # Update the session state
     st.success("Changes saved successfully!")
 
 # Display the data

@@ -30,6 +30,11 @@ def load_data(spreadsheet_id, sheet_name):
 def save_data(df, original_df, spreadsheet_id, sheet_name):
     client = get_google_sheet_client()
     sheet = client.open_by_key(spreadsheet_id).worksheet(sheet_name)
+    
+    # Convert datetime columns to string
+    for col in df.select_dtypes(include=['datetime64']).columns:
+        df[col] = df[col].dt.strftime('%d/%m/%Y %H:%M:%S')
+    
     df = df.where(pd.notnull(df), None)  # Replace NaNs with None for gspread
     
     # Update only the modified rows in the original dataframe
@@ -37,6 +42,7 @@ def save_data(df, original_df, spreadsheet_id, sheet_name):
         for col in df.columns:
             if row[col] != original_df.at[idx, col]:
                 sheet.update_cell(idx + 2, df.columns.get_loc(col) + 1, row[col])
+
 
 # Main function for the new page
 def main():

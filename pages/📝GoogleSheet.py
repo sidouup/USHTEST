@@ -37,38 +37,17 @@ def load_data():
     df['DATE'] = pd.to_datetime(df['DATE'], dayfirst=True, errors='coerce')  # Convert DATE to datetime with dayfirst=True
     return df
 
-def align_dataframes(df1, df2):
-    """
-    Aligns two DataFrames by ensuring they have the same columns and index.
-    """
-    # Ensure both DataFrames have the same columns
-    all_columns = sorted(list(set(df1.columns) | set(df2.columns)))
-    df1 = df1.reindex(columns=all_columns, fill_value='')
-    df2 = df2.reindex(columns=all_columns, fill_value='')
-
-    # Reset and align index
-    df1 = df1.reset_index(drop=True)
-    df2 = df2.reset_index(drop=True)
-
-    # Ensure dtypes are the same
-    for col in all_columns:
-        # Use numpy.result_type instead of find_common_type
-        dtype = np.result_type(df1[col].dtype, df2[col].dtype)
-        df1[col] = df1[col].astype(dtype)
-        df2[col] = df2[col].astype(dtype)
-
-    return df1, df2
-
+# Function to get changed rows
 def get_changed_rows(original_df, edited_df):
-    """
-    Compares two DataFrames and returns rows that have changed.
-    """
-    original_df, edited_df = align_dataframes(original_df, edited_df)
-    
-    # Compare DataFrames
-    changed_mask = ~(original_df == edited_df).all(axis=1)
-    return edited_df.loc[changed_mask]
-    
+    original_df_sorted = original_df.reset_index(drop=True)
+    edited_df_sorted = edited_df.reset_index(drop=True)
+
+    # Ensure both DataFrames have the same columns in the same order
+    original_df_sorted = original_df_sorted[edited_df_sorted.columns]
+
+    changed_mask = (original_df_sorted != edited_df_sorted).any(axis=1)
+    return edited_df_sorted.loc[changed_mask]
+
 # Load data and initialize session state
 if 'data' not in st.session_state or st.session_state.get('reload_data', False):
     st.session_state.data = load_data()
@@ -114,9 +93,6 @@ if schools:
 if attempts:
     filtered_data = filtered_data[filtered_data['Attempts'].isin(attempts)]
 
-# Sort filtered data for display
-filtered_data.sort_values(by='DATE', inplace=True)
-
 # Use a key for the data_editor to ensure proper updates
 edited_df = st.data_editor(filtered_data, num_rows="dynamic", key="student_data")
 
@@ -152,21 +128,13 @@ def save_data(changed_data, spreadsheet_url):
 # Update Google Sheet with edited data
 if st.button("Save Changes"):
     try:
-        # Ensure both DataFrames have the same structure before comparison
-        original_data = st.session_state.original_data.copy()
-        edited_df_copy = edited_df.copy()
-
-        # Align DataFrames
-        original_data, edited_df_copy = align_dataframes(original_data, edited_df_copy)
-
-        # Get changed rows
-        st.session_state.changed_data = get_changed_rows(original_data, edited_df_copy)
+        st.session_state.changed_data = get_changed_rows(st.session_state.original_data, edited_df)  # Store changed data
         
         # Only save data if there are actual changes
         if not st.session_state.changed_data.empty:
             if save_data(st.session_state.changed_data, spreadsheet_url):
-                st.session_state.data = edited_df_copy  # Update the session state
-                st.session_state.original_data = edited_df_copy.copy()  # Update the original data
+                st.session_state.data = edited_df  # Update the session state
+                st.session_state.original_data = edited_df.copy()  # Update the original data
                 st.success("Changes saved successfully!")
                 
                 # Use a spinner while waiting for changes to propagate
@@ -181,13 +149,3 @@ if st.button("Save Changes"):
             st.info("No changes detected.")
     except Exception as e:
         st.error(f"An error occurred while saving: {str(e)}")
-        logging.error(f"Error details: {e}", exc_info=True)
-
-# Add a debug button to print DataFrame information
-if st.button("Debug DataFrame Info"):
-    st.write("Original DataFrame Info:")
-    st.write(st.session_state.original_data.info())
-    st.write("\nEdited DataFrame Info:")
-    st.write(edited_df.info())
-    st.write("\nOriginal DataFrame Columns:", st.session_state.original_data.columns.tolist())
-    st.write("Edited DataFrame Columns:", edited_df.columns.tolist())

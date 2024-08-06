@@ -130,8 +130,8 @@ with col5:
     if attempts:
         filtered_data = filtered_data[filtered_data['Attempts'].isin(attempts)]
 
-# Sort filtered data for display
-filtered_data.sort_values(by='DATE', inplace=True)
+# No sorting by DATE to ensure index alignment
+# filtered_data.sort_values(by='DATE', inplace=True)
 
 # Use a key for the data_editor to ensure proper updates
 edited_df = st.data_editor(filtered_data, num_rows="dynamic", key="student_data")

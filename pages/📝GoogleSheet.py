@@ -28,14 +28,14 @@ def get_gsheet_client():
 client = get_gsheet_client()
 
 # Open the Google Sheet using the provided link
-spreadsheet_url = "https://docs.google.com/spreadsheets/d/1NkW2a4_eOlDGeVxY9PZk-lEI36PvAv9XoO4ZIwl-Sew/edit#gid=1019724402"
+spreadsheet_url = "https://docs.google.com/spreadsheets/d/1os1G3ri4xMmJdQSNsVSNx6VJttyM8JsPNbmH0DCFUiI/edit#gid=1019724402"
 
 def load_data():
     spreadsheet = client.open_by_url(spreadsheet_url)
     sheet = spreadsheet.sheet1  # Adjust if you need to access a different sheet
     data = sheet.get_all_records()
     df = pd.DataFrame(data).astype(str)
-    df['DATE'] = pd.to_datetime(df['DATE'], dayfirst=True, errors='coerce')  # Convert DATE to datetime with dayfirst=True
+    df['DATE'] = pd.to_datetime(df['DATE'], format='%d/%m/%Y %H:%M:%S', errors='coerce')  # Convert DATE to datetime with dayfirst=True
     return df
 
 # Function to get changed rows
@@ -49,6 +49,16 @@ def get_changed_rows(original_df, edited_df):
 
     changed_mask = (original_df_sorted != edited_df_sorted).any(axis=1)
     return edited_df_sorted.loc[changed_mask]
+
+# Function to save data to Google Sheets
+def save_data(changed_data, spreadsheet_id, sheet_name):
+    client = get_gsheet_client()
+    sheet = client.open_by_key(spreadsheet_id).worksheet(sheet_name)
+    changed_data = changed_data.where(pd.notnull(changed_data), None)  # Replace NaNs with None for gspread
+
+    for idx, row in changed_data.iterrows():
+        for col in changed_data.columns:
+            sheet.update_cell(idx + 2, changed_data.columns.get_loc(col) + 1, row[col])
 
 # Load data and initialize session state
 if 'data' not in st.session_state or st.session_state.get('reload_data', False):
@@ -102,35 +112,6 @@ filtered_data.sort_values(by='DATE', inplace=True)
 # Use a key for the data_editor to ensure proper updates
 edited_df = st.data_editor(filtered_data, num_rows="dynamic", key="student_data")
 
-# Function to save data to Google Sheets
-def save_data(changed_data, spreadsheet_url):
-    logger.info("Attempting to save changes")
-    try:
-        spreadsheet = client.open_by_url(spreadsheet_url)
-        sheet = spreadsheet.sheet1
-
-        # Convert datetime objects back to strings
-        changed_data['DATE'] = changed_data['DATE'].dt.strftime('%d/%m/%Y %H:%M:%S')
-
-        # Replace problematic values with a placeholder
-        changed_data.replace([np.inf, -np.inf, np.nan], 'NaN', inplace=True)
-
-        # Batch update the changed rows
-        updated_rows = []
-        for index, row in changed_data.iterrows():
-            updated_rows.append({
-                'range': f'A{index + 2}',
-                'values': [row.values.tolist()]
-            })
-
-        sheet.batch_update(updated_rows)
-
-        logger.info("Changes saved successfully")
-        return True
-    except Exception as e:
-        logger.error(f"Error saving changes: {str(e)}")
-        return False
-
 # Update Google Sheet with edited data
 if st.button("Save Changes"):
     try:
@@ -138,7 +119,7 @@ if st.button("Save Changes"):
         
         # Only save data if there are actual changes
         if not st.session_state.changed_data.empty:
-            if save_data(st.session_state.changed_data, spreadsheet_url):
+            if save_data(st.session_state.changed_data, "1os1G3ri4xMmJdQSNsVSNx6VJttyM8JsPNbmH0DCFUiI", "ALL"):
                 st.session_state.data = edited_df  # Update the session state
                 st.session_state.original_data = edited_df.copy()  # Update the original data
                 st.success("Changes saved successfully!")
@@ -155,3 +136,86 @@ if st.button("Save Changes"):
             st.info("No changes detected.")
     except Exception as e:
         st.error(f"An error occurred while saving: {str(e)}")
+
+# Custom CSS to zoom out
+st.markdown("""
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;500;700;900&display=swap');
+
+    html, body, [class*="css"] {
+        font-family: 'Roboto', sans-serif;
+        font-size: 10px;  /* Reduce base font size to zoom out */
+    }
+    
+    .stApp {
+        background-color: #f0f2f6;
+    }
+    
+    .main {
+        background-color: #ffffff;
+        border-radius: 10px;
+        padding: 15px;  /* Adjust padding */
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    h1 {
+        color: #1E88E5;
+        font-weight: 700;
+        font-size: 1.5rem;  /* Adjust font size */
+        margin-bottom: 15px;
+    }
+    
+    .section-header {
+        font-size: 1.2rem;  /* Adjust font size */
+        font-weight: 600;
+        color: #1E88E5;
+        margin: 15px 0;
+    }
+    
+    .metric-card {
+        background-color: #ffffff;
+        border: 1px solid #e0e0e0;
+        border-radius: 10px;
+        padding: 10px;  /* Adjust padding */
+        text-align: center;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin: 10px 0;
+    }
+    
+    .metric-card h2 {
+        font-size: 1rem;  /* Adjust font size */
+        font-weight: 700;
+        margin-bottom: 5px;
+        color: #1E88E5;
+    }
+    
+    .metric-card p {
+        font-size: 1.2rem;  /* Adjust font size */
+        font-weight: 700;
+        color: #333;
+    }
+    
+    .dataframe {
+        font-size: 0.7rem;  /* Adjust font size */
+    }
+    
+    .dataframe th {
+        background-color: #1E88E5;
+        color: white;
+        font-weight: 500;
+        text-align: left;
+    }
+    
+    .dataframe td {
+        background-color: #ffffff;
+    }
+    
+    .icon {
+        font-size: 1rem;  /* Adjust font size */
+        margin-right: 5px;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+if __name__ == "__main__":
+    main()

@@ -32,7 +32,10 @@ def load_data():
     spreadsheet = client.open_by_url(spreadsheet_url)
     sheet = spreadsheet.sheet1  # Adjust if you need to access a different sheet
     data = sheet.get_all_records()
-    return pd.DataFrame(data).astype(str)
+    df = pd.DataFrame(data).astype(str)
+    df['DATE'] = pd.to_datetime(df['DATE'], errors='coerce')  # Convert DATE to datetime
+    df.sort_values(by='DATE', inplace=True)  # Sort by DATE
+    return df
 
 # Function to get changed rows
 def get_changed_rows(original_df, edited_df):
@@ -96,6 +99,3 @@ if st.button("Save Changes"):
 st.subheader("All Students:")
 if 'changed_data' in st.session_state and not st.session_state.changed_data.empty:
     st.dataframe(st.session_state.changed_data)
-
-
-

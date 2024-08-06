@@ -67,6 +67,7 @@ def save_data(df, spreadsheet_url):
 # Load data and initialize session state
 if 'data' not in st.session_state or st.session_state.get('reload_data', False):
     st.session_state.data = load_data()
+    st.session_state.original_data = st.session_state.data.copy()  # Keep a copy of the original data
     st.session_state.reload_data = False
 
 # Display the editable dataframe
@@ -107,13 +108,15 @@ if attempts:
 filtered_data.sort_values(by='DATE', inplace=True)
 
 # Use a key for the data_editor to ensure proper updates
-edited_df = st.data_editor(filtered_data, num_rows="dynamic", key="student_data")
+edited_df = st.experimental_data_editor(filtered_data, num_rows="dynamic", key="student_data")
 
 # Update Google Sheet with edited data
 if st.button("Save Changes"):
     try:
-        if save_data(edited_df, spreadsheet_url):
-            st.session_state.data = edited_df  # Update the session state
+        st.session_state.original_data.update(edited_df)  # Update the original dataset with edited data
+        
+        if save_data(st.session_state.original_data, spreadsheet_url):
+            st.session_state.data = load_data()  # Reload the data to ensure consistency
             st.success("Changes saved successfully!")
             
             # Use a spinner while waiting for changes to propagate
@@ -121,7 +124,7 @@ if st.button("Save Changes"):
                 time.sleep(2)  # Wait for 2 seconds to allow changes to propagate
             
             st.session_state.reload_data = True
-            st.rerun()
+            st.experimental_rerun()
         else:
             st.error("Failed to save changes. Please try again.")
     except Exception as e:

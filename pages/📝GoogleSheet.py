@@ -85,3 +85,64 @@ filtered_data.sort_values(by='DATE', inplace=True)
 
 # Use a key for the data_editor to ensure proper updates
 edited_df = st.data_editor(filtered_data, num_rows="dynamic", key="student_data")
+
+# Function to get changed rows
+def get_changed_rows(original_df, edited_df):
+    original_df_sorted = original_df.sort_values(by='DATE').reset_index(drop=True)
+    edited_df_sorted = edited_df.sort_values(by='DATE').reset_index(drop=True)
+    # Ensure both DataFrames have the same columns in the same order
+    original_df_sorted = original_df_sorted[edited_df_sorted.columns]
+    changed_mask = (original_df_sorted != edited_df_sorted).any(axis=1)
+    return edited_df_sorted.loc[changed_mask]
+
+# Function to save data to Google Sheets
+def save_data(changed_data, spreadsheet_url):
+    logger.info("Attempting to save changes")
+    try:
+        spreadsheet = client.open_by_url(spreadsheet_url)
+        sheet = spreadsheet.sheet1
+        # Convert datetime objects back to strings
+        changed_data['DATE'] = changed_data['DATE'].dt.strftime('%d/%m/%Y %H:%M:%S')
+        # Replace problematic values with a placeholder
+        changed_data.replace([np.nan, np.inf, -np.inf], 'NaN', inplace=True)
+        # Batch update the changed rows
+        updated_rows = []
+        for index, row in changed_data.iterrows():
+            updated_rows.append({
+                'range': f'A{index + 2}',
+                'values': [row.values.tolist()]
+            })
+        sheet.batch_update(updated_rows)
+        logger.info("Changes saved successfully")
+        return True
+    except Exception as e:
+        logger.error(f"Error saving changes: {str(e)}")
+        return False
+
+# Update Google Sheet with edited data
+if st.button("Save Changes"):
+    try:
+        st.session_state.changed_data = get_changed_rows(st.session_state.original_data, edited_df)  # Store changed data
+        # Only save data if there are actual changes
+        if not st.session_state.changed_data.empty:
+            if save_data(st.session_state.changed_data, spreadsheet_url):
+                st.session_state.data = edited_df  # Update the session state
+                st.session_state.original_data = edited_df.copy()  # Update the original data
+                st.success("Changes saved successfully!")
+                # Use a spinner while waiting for changes to propagate
+                with st.spinner("Refreshing data..."):
+                    time.sleep(2)  # Wait for 2 seconds to allow changes to propagate
+                st.session_state.reload_data = True
+                st.rerun()
+            else:
+                st.error("Failed to save changes. Please try again.")
+        else:
+            st.info("No changes detected.")
+    except Exception as e:
+        st.error(f"An error occurred while saving: {str(e)}")
+
+# Optionally display original and edited DataFrames for debugging
+# st.write("Original DataFrame:")
+# st.write(st.session_state.original_data)
+# st.write("Edited DataFrame:")
+# st.write(edited_df)

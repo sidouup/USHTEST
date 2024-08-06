@@ -40,12 +40,12 @@ def load_data():
 # Function to get changed rows
 # Function to get changed rows
 def get_changed_rows(original_df, edited_df):
-    # Ensure both DataFrames have the same columns and order
-    combined_columns = sorted(set(original_df.columns).union(edited_df.columns))
-    original_df = original_df.reindex(columns=combined_columns).fillna('NaN')
-    edited_df = edited_df.reindex(columns=combined_columns).fillna('NaN')
+    # Ensure both DataFrames have the same columns
+    all_columns = sorted(set(original_df.columns).union(set(edited_df.columns)))
+    original_df = original_df.reindex(columns=all_columns, fill_value='NaN')  # Fill missing columns with NaN
+    edited_df = edited_df.reindex(columns=all_columns, fill_value='NaN')
 
-    # Reset indices to ensure row order doesn't affect comparison
+    # Reset index to ensure rows are compared in sequence
     original_df.reset_index(drop=True, inplace=True)
     edited_df.reset_index(drop=True, inplace=True)
 

@@ -34,6 +34,14 @@ def load_data():
     data = sheet.get_all_records()
     return pd.DataFrame(data).astype(str)
 
+# Function to get changed rows
+def get_changed_rows(original_df, edited_df):
+    if original_df.shape != edited_df.shape:
+        return edited_df  # If shapes are different, consider all rows as changed
+    
+    changed_mask = (original_df != edited_df).any(axis=1)
+    return edited_df[changed_mask]
+
 # Load data and initialize session state
 if 'data' not in st.session_state or st.session_state.get('reload_data', False):
     st.session_state.data = load_data()
@@ -66,10 +74,11 @@ def save_data(df, spreadsheet_url):
 # Update Google Sheet with edited data
 if st.button("Save Changes"):
     try:
+        st.session_state.changed_data = get_changed_rows(st.session_state.original_data, edited_df)  # Store changed data
+        
         if save_data(edited_df, spreadsheet_url):
             st.session_state.data = edited_df  # Update the session state
             st.session_state.original_data = edited_df.copy()  # Update the original data
-            st.session_state.changed_data = get_changed_rows(st.session_state.original_data, edited_df)  # Store changed data
             st.success("Changes saved successfully!")
             
             # Use a spinner while waiting for changes to propagate
@@ -82,14 +91,6 @@ if st.button("Save Changes"):
             st.error("Failed to save changes. Please try again.")
     except Exception as e:
         st.error(f"An error occurred while saving: {str(e)}")
-
-# Function to get changed rows
-def get_changed_rows(original_df, edited_df):
-    if original_df.shape != edited_df.shape:
-        return edited_df  # If shapes are different, consider all rows as changed
-    
-    changed_mask = (original_df != edited_df).any(axis=1)
-    return edited_df[changed_mask]
 
 # Display the current state of the data
 st.subheader("All Students:")

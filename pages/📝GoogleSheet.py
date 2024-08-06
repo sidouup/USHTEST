@@ -153,7 +153,3 @@ if st.button("Save Changes"):
     except Exception as e:
         st.error(f"An error occurred while saving: {str(e)}")
 
-# Display the current state of the data
-st.subheader("Changed Students:")
-if 'changed_data' in st.session_state and not st.session_state.changed_data.empty:
-    st.dataframe(st.session_state.changed_data)

@@ -4,6 +4,8 @@ from google.oauth2.service_account import Credentials
 import pandas as pd
 import time
 import logging
+import numpy as np  # Ensure NumPy is imported
+
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)

@@ -127,8 +127,9 @@ def save_data(changed_data, spreadsheet_url):
 # Update Google Sheet with edited data
 if st.button("Save Changes"):
     try:
-        st.session_state.changed_data = get_changed_rows(st.session_state.original_data, edited_df)  # Store changed data
-        
+        # Detect changed rows by comparing with the original data
+        st.session_state.changed_data = get_changed_rows(st.session_state.original_data, edited_df)
+
         # Only save data if there are actual changes
         if not st.session_state.changed_data.empty:
             if save_data(st.session_state.changed_data, spreadsheet_url):

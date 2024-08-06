@@ -34,8 +34,9 @@ def load_data():
     spreadsheet = client.open_by_url(spreadsheet_url)
     sheet = spreadsheet.sheet1  # Adjust if you need to access a different sheet
     data = sheet.get_all_records()
-    df = pd.DataFrame(data).astype(str)
-    df['Months'] = pd.to_datetime(df['DATE'], dayfirst=True, errors='coerce').dt.strftime('%B %Y')  # Create a new column 'Months' for filtering
+    df = pd.DataFrame(data)
+    df['DATE'] = pd.to_datetime(df['DATE'], dayfirst=True, errors='coerce')  # Convert DATE to datetime with dayfirst=True
+    df['Months'] = df['DATE'].dt.strftime('%B %Y')  # Create a new column 'Months' for filtering
     return df
 
 # Function to save data to Google Sheets
@@ -44,6 +45,9 @@ def save_data(df, spreadsheet_url):
     try:
         spreadsheet = client.open_by_url(spreadsheet_url)
         sheet = spreadsheet.sheet1
+
+        # Convert DATE column back to string
+        df['DATE'] = df['DATE'].dt.strftime('%d/%m/%Y %H:%M:%S')
 
         # Replace problematic values with a placeholder
         df.replace([np.inf, -np.inf, np.nan], 'NaN', inplace=True)
@@ -104,11 +108,12 @@ if attempts:
 filtered_data.sort_values(by='DATE', inplace=True)
 
 # Use a key for the data_editor to ensure proper updates
-edited_df = st.data_editor(filtered_data, num_rows="dynamic", key="student_data")
+edited_df = st.experimental_data_editor(filtered_data, num_rows="dynamic", key="student_data")
 
 # Update Google Sheet with edited data
 if st.button("Save Changes"):
     try:
+        edited_df['DATE'] = pd.to_datetime(edited_df['DATE'], dayfirst=True, errors='coerce')  # Ensure DATE is datetime
         st.session_state.original_data.update(edited_df)  # Update the original dataset with edited data
         
         if save_data(st.session_state.original_data, spreadsheet_url):
@@ -120,7 +125,7 @@ if st.button("Save Changes"):
                 time.sleep(2)  # Wait for 2 seconds to allow changes to propagate
             
             st.session_state.reload_data = True
-            st.rerun()
+            st.experimental_rerun()
         else:
             st.error("Failed to save changes. Please try again.")
     except Exception as e:

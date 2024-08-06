@@ -76,7 +76,9 @@ st.button("Toggle Edit Mode", on_click=toggle_edit_mode)
 if st.session_state['edit_mode']:
     edited_data = st.data_editor(data, num_rows="fixed", use_container_width=True)
     if st.button("Save Changes"):
+        st.write("Edited data:", edited_data)
         edited_rows = [i for i, row in edited_data.iterrows() if not row.equals(data.iloc[i])]
+        st.write("Edited rows:", edited_rows)
         if edited_rows:
             try:
                 with st.spinner('Saving changes...'):

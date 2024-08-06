@@ -39,8 +39,8 @@ def load_data():
 
 # Function to get changed rows
 def get_changed_rows(original_df, edited_df):
-    original_df_sorted = original_df.reset_index(drop=True)
-    edited_df_sorted = edited_df.reset_index(drop=True)
+    original_df_sorted = original_df.sort_values(by='DATE').reset_index(drop=True)
+    edited_df_sorted = edited_df.sort_values(by='DATE').reset_index(drop=True)
 
     # Ensure both DataFrames have the same columns in the same order
     original_df_sorted = original_df_sorted[edited_df_sorted.columns]
@@ -92,6 +92,9 @@ if schools:
     filtered_data = filtered_data[filtered_data['Chosen School'].isin(schools)]
 if attempts:
     filtered_data = filtered_data[filtered_data['Attempts'].isin(attempts)]
+
+# Sort filtered data for display
+filtered_data.sort_values(by='DATE', inplace=True)
 
 # Use a key for the data_editor to ensure proper updates
 edited_df = st.data_editor(filtered_data, num_rows="dynamic", key="student_data")

@@ -39,6 +39,9 @@ def load_data():
 
 # Function to get changed rows
 def get_changed_rows(original_df, edited_df):
+    original_df = original_df.reset_index(drop=True)
+    edited_df = edited_df.reset_index(drop=True)
+    
     if original_df.shape != edited_df.shape:
         return edited_df  # If shapes are different, consider all rows as changed
     

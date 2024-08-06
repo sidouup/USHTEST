@@ -40,8 +40,15 @@ def load_data():
 
 # Function to get changed rows
 def get_changed_rows(original_df, edited_df):
-    changed_mask = (original_df != edited_df).any(axis=1)
-    return edited_df.loc[changed_mask]
+    # Sort both DataFrames by 'Original_Index' to ensure identical indexing
+    original_df_sorted = original_df.sort_values(by='Original_Index').reset_index(drop=True)
+    edited_df_sorted = edited_df.sort_values(by='Original_Index').reset_index(drop=True)
+
+    # Ensure both DataFrames have the same columns in the same order
+    original_df_sorted = original_df_sorted[edited_df_sorted.columns]
+
+    changed_mask = (original_df_sorted != edited_df_sorted).any(axis=1)
+    return edited_df_sorted.loc[changed_mask]
 
 # Load data and initialize session state
 if 'data' not in st.session_state or st.session_state.get('reload_data', False):

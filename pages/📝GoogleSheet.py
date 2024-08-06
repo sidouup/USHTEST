@@ -40,7 +40,6 @@ def save_data(df, original_df, spreadsheet_id, sheet_name):
 
 # Main function for the new page
 def main():
-
     st.title("Student List")
 
     # Load data from Google Sheets
@@ -55,7 +54,7 @@ def main():
 
     # Define filter options
     current_steps = ["All"] + list(df_all['Stage'].unique())
-    agents = ["All", "Nesrine", "Hamza", "Djazila","Nada"]
+    agents = ["All", "Nesrine", "Hamza", "Djazila", "Nada"]
     school_options = ["All", "University", "Community College", "CCLS Miami", "CCLS NY NJ", "Connect English", "CONVERSE SCHOOL", "ELI San Francisco", "F2 Visa", "GT Chicago", "BEA Huston", "BIA Huston", "OHLA Miami", "UCDEA", "HAWAII", "Not Partner", "Not yet"]
     attempts_options = ["All", "1 st Try", "2 nd Try", "3 rd Try"]
 
@@ -110,7 +109,38 @@ def main():
     # Editable table
     edit_mode = st.checkbox("Edit Mode")
     if edit_mode:
-        edited_data = st.data_editor(filtered_data, num_rows="dynamic")
+        edited_data = st.data_editor(
+            filtered_data,
+            num_rows="dynamic",
+            column_config={
+                "DATE": st.column_config.DatetimeColumn(
+                    "DATE",
+                    format="DD/MM/YYYY HH:mm:ss",
+                    step=60,
+                ),
+                "Agent": st.column_config.SelectboxColumn(
+                    "Agent",
+                    options=agents[1:],  # Exclude "All" from options
+                    required=True
+                ),
+                "Stage": st.column_config.SelectboxColumn(
+                    "Stage",
+                    options=current_steps[1:],  # Exclude "All" from options
+                    required=True
+                ),
+                "Chosen School": st.column_config.SelectboxColumn(
+                    "Chosen School",
+                    options=school_options[1:],  # Exclude "All" from options
+                    required=True
+                ),
+                "Attempts": st.column_config.SelectboxColumn(
+                    "Attempts",
+                    options=attempts_options[1:],  # Exclude "All" from options
+                    required=True
+                ),
+            },
+            hide_index=True,
+        )
         if st.button("Save Changes"):
             save_data(edited_data, original_df_all, spreadsheet_id, sheet_name)
             st.success("Changes saved successfully!")

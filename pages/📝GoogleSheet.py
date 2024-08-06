@@ -109,14 +109,17 @@ def save_data(changed_data, spreadsheet_url):
         sheet = spreadsheet.sheet1
 
         # Convert datetime objects back to strings
-        changed_data.loc[:, 'DATE'] = changed_data['DATE'].dt.strftime('%d/%m/%Y %H:%M:%S')
-        
+        changed_data['DATE'] = changed_data['DATE'].dt.strftime('%d/%m/%Y %H:%M:%S')
+
         # Batch update the changed rows
         updated_rows = []
         for index, row in changed_data.iterrows():
-            updated_rows.append((f'A{index+2}', row.values.tolist()))
+            updated_rows.append({
+                'range': f'A{index + 2}',
+                'values': [row.values.tolist()]
+            })
 
-        sheet.batch_update([{'range': range_name, 'values': [values]} for range_name, values in updated_rows])
+        sheet.batch_update(updated_rows)
 
         logger.info("Changes saved successfully")
         return True

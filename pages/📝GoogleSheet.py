@@ -43,7 +43,7 @@ def get_changed_rows(original_df, edited_df):
         return edited_df  # If shapes are different, consider all rows as changed
     
     changed_mask = (original_df != edited_df).any(axis=1)
-    return edited_df[changed_mask]
+    return edited_df.loc[changed_mask]
 
 # Load data and initialize session state
 if 'data' not in st.session_state or st.session_state.get('reload_data', False):
@@ -101,12 +101,15 @@ def save_data(changed_data, spreadsheet_url):
         sheet = spreadsheet.sheet1
 
         # Convert datetime objects back to strings
-        changed_data['DATE'] = changed_data['DATE'].dt.strftime('%d/%m/%Y %H:%M:%S')
+        changed_data.loc[:, 'DATE'] = changed_data['DATE'].dt.strftime('%d/%m/%Y %H:%M:%S')
         
-        # Update only changed rows
+        # Batch update the changed rows
+        updated_rows = []
         for index, row in changed_data.iterrows():
-            sheet.update(f'A{index+2}', [row.values.tolist()])
-        
+            updated_rows.append((f'A{index+2}', row.values.tolist()))
+
+        sheet.batch_update([{'range': range_name, 'values': [values]} for range_name, values in updated_rows])
+
         logger.info("Changes saved successfully")
         return True
     except Exception as e:

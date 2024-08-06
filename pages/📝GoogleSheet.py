@@ -35,6 +35,13 @@ def load_data():
     df['DATE'] = pd.to_datetime(df['DATE'], dayfirst=True, errors='coerce')
     return df
 
+# Function to save data to Google Sheets
+def save_data(data):
+    spreadsheet = client.open_by_url(spreadsheet_url)
+    sheet = spreadsheet.sheet1
+    sheet.clear()
+    sheet.update([data.columns.values.tolist()] + data.values.tolist())
+
 # Load data
 data = load_data()
 
@@ -78,3 +85,11 @@ filtered_data.sort_values(by='DATE', inplace=True)
 
 # Use a key for the data_editor to ensure proper updates
 edited_df = st.data_editor(filtered_data, num_rows="dynamic", key="student_data")
+
+# Button to save the edited data
+if st.button("Save Changes"):
+    try:
+        save_data(edited_df)
+        st.success("Data saved successfully!")
+    except Exception as e:
+        st.error(f"An error occurred while saving: {e}")

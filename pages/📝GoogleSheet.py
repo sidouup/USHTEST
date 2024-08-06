@@ -78,6 +78,7 @@ st.button("Toggle Edit Mode", on_click=toggle_edit_mode)
 def editable_data_section():
     edited_data = st.data_editor(data, num_rows="fixed", use_container_width=True)
     if st.button("Save Changes"):
+        st.session_state['save_clicked'] = st.session_state.get('save_clicked', 0) + 1
         st.write("Edited data:", edited_data)
         edited_rows = [i for i, row in edited_data.iterrows() if not row.equals(data.iloc[i])]
         st.write("Edited rows:", edited_rows)
@@ -102,6 +103,8 @@ def editable_data_section():
                                 st.error(f"An error occurred: {e}")
             except Exception as e:
                 st.error(f"An error occurred: {e}")
+        if st.session_state['save_clicked'] == 1:
+            st.experimental_rerun()
 
 if st.session_state['edit_mode']:
     editable_data_section()

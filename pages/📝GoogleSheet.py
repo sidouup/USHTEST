@@ -52,7 +52,8 @@ def align_dataframes(df1, df2):
 
     # Ensure dtypes are the same
     for col in all_columns:
-        dtype = np.find_common_type([df1[col].dtype, df2[col].dtype], [])
+        # Use numpy.result_type instead of find_common_type
+        dtype = np.result_type(df1[col].dtype, df2[col].dtype)
         df1[col] = df1[col].astype(dtype)
         df2[col] = df2[col].astype(dtype)
 

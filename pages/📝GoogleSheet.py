@@ -61,17 +61,19 @@ st.title("Student List")
 edited_df = st.data_editor(st.session_state.data, num_rows="dynamic", key="student_data")
 
 # Function to save data to Google Sheets
-def save_data(df, spreadsheet_url):
+def save_data(changed_data, spreadsheet_url):
     logger.info("Attempting to save changes")
     try:
         spreadsheet = client.open_by_url(spreadsheet_url)
         sheet = spreadsheet.sheet1
-        
+
         # Convert datetime objects back to strings
-        df['DATE'] = df['DATE'].dt.strftime('%d/%m/%Y %H:%M:%S')
+        changed_data['DATE'] = changed_data['DATE'].dt.strftime('%d/%m/%Y %H:%M:%S')
         
-        sheet.clear()
-        sheet.update([df.columns.values.tolist()] + df.values.tolist())
+        # Update only changed rows
+        for index, row in changed_data.iterrows():
+            sheet.update(f'A{index+2}', [row.values.tolist()])
+        
         logger.info("Changes saved successfully")
         return True
     except Exception as e:
@@ -83,7 +85,7 @@ if st.button("Save Changes"):
     try:
         st.session_state.changed_data = get_changed_rows(st.session_state.original_data, edited_df)  # Store changed data
         
-        if save_data(edited_df, spreadsheet_url):
+        if save_data(st.session_state.changed_data, spreadsheet_url):
             st.session_state.data = edited_df  # Update the session state
             st.session_state.original_data = edited_df.copy()  # Update the original data
             st.success("Changes saved successfully!")

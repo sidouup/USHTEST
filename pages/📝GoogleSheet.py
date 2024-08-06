@@ -35,14 +35,8 @@ def load_data():
     df['DATE'] = pd.to_datetime(df['DATE'], dayfirst=True, errors='coerce')
     return df
 
-# Load data and initialize session state
-if 'data' not in st.session_state or st.session_state.get('reload_data', False):
-    st.session_state.data = load_data()
-    st.session_state.reload_data = False
-
-# Always ensure original_data is initialized
-if 'original_data' not in st.session_state:
-    st.session_state.original_data = st.session_state.data.copy()
+# Load data
+data = load_data()
 
 # Display the editable dataframe
 st.title("Student List")
@@ -50,7 +44,7 @@ st.title("Student List")
 # Filters
 col1, col2, col3, col4, col5 = st.columns(5)
 
-filtered_data = st.session_state.data.copy()
+filtered_data = data.copy()
 
 with col1:
     agents = st.multiselect('Filter by Agent', options=filtered_data['Agent'].unique())

@@ -51,56 +51,66 @@ if 'data' not in st.session_state or st.session_state.get('reload_data', False):
 if 'original_data' not in st.session_state:
     st.session_state.original_data = st.session_state.data.copy()
 
-# Display the editable dataframe
+# Extract month and year for filtering
+st.session_state.data['DATE'] = pd.to_datetime(st.session_state.data['DATE'], errors='coerce')
+st.session_state.data['Month'] = st.session_state.data['DATE'].dt.strftime('%Y-%m').fillna('Invalid Date')
+months = ["All"] + sorted(st.session_state.data['Month'].unique())
+
+# Define filter options
+current_steps = ["All"] + list(st.session_state.data['Stage'].unique())
+agents = ["All", "Nesrine", "Hamza", "Djazila", "Nada"]
+school_options = ["All", "University", "Community College", "CCLS Miami", "CCLS NY NJ", "Connect English", "CONVERSE SCHOOL", "ELI San Francisco", "F2 Visa", "GT Chicago", "BEA Huston", "BIA Huston", "OHLA Miami", "UCDEA", "HAWAII", "Not Partner", "Not yet"]
+attempts_options = ["All", "1 st Try", "2 nd Try", "3 rd Try"]
+
+# Standardize colors for agents
+agent_colors = {
+    "Nesrine": "background-color: #FF00FF",  # Light lavender
+    "Hamza": "background-color: yellow",
+    "Djazila": "background-color: red"
+}
+
+# Sidebar for agent color reference
+st.sidebar.header("Agent Color Reference")
+for agent, color in agent_colors.items():
+    st.sidebar.markdown(f"<div style='{color};padding: 5px;'>{agent}</div>", unsafe_allow_html=True)
+
+# Filter buttons for stages
+stage_filter = st.sidebar.selectbox("Filter by Stage", current_steps, key="stage_filter")
+
+# Filter widgets
+agent_filter = st.sidebar.selectbox("Filter by Agent", agents, key="agent_filter")
+school_filter = st.sidebar.selectbox("Filter by School", school_options, key="school_filter")
+attempts_filter = st.sidebar.selectbox("Filter by Attempts", attempts_options, key="attempts_filter")
+month_filter = st.sidebar.selectbox("Filter by Month", months, key="month_filter")
+
+# Apply filters
+filtered_data = st.session_state.data
+if stage_filter != "All":
+    filtered_data = filtered_data[filtered_data['Stage'] == stage_filter]
+if agent_filter != "All":
+    filtered_data = filtered_data[filtered_data['Agent'] == agent_filter]
+if school_filter != "All":
+    filtered_data = filtered_data[filtered_data['Chosen School'] == school_filter]
+if attempts_filter != "All":
+    filtered_data = filtered_data[filtered_data['Attempts'] == attempts_filter]
+if month_filter != "All":
+    filtered_data = filtered_data[filtered_data['Month'] == month_filter]
+
+# Sort by DATE and reset index
+filtered_data = filtered_data.sort_values(by='DATE').reset_index(drop=True)
+
+# Function to apply colors
+def highlight_agent(row):
+    agent = row['Agent']
+    return [agent_colors.get(agent, '')] * len(row)
+
+# Display the filtered and styled dataframe
 st.title("Student List")
-
-# Use a key for the data_editor to ensure proper updates
-edited_df = st.data_editor(st.session_state.data, num_rows="dynamic", key="student_data")
-
-# Function to save data to Google Sheets
-def save_data(df, spreadsheet_url):
-    logger.info("Attempting to save changes")
-    try:
-        spreadsheet = client.open_by_url(spreadsheet_url)
-        sheet = spreadsheet.sheet1
-        sheet.clear()
-        sheet.update([df.columns.values.tolist()] + df.values.tolist())
-        logger.info("Changes saved successfully")
-        return True
-    except Exception as e:
-        logger.error(f"Error saving changes: {str(e)}")
-        return False
-
-# Update Google Sheet with edited data
-if st.button("Save Changes"):
-    try:
-        st.session_state.changed_data = get_changed_rows(st.session_state.original_data, edited_df)  # Store changed data
-        
-        if save_data(edited_df, spreadsheet_url):
-            st.session_state.data = edited_df  # Update the session state
-            st.session_state.original_data = edited_df.copy()  # Update the original data
-            st.success("Changes saved successfully!")
-            
-            # Use a spinner while waiting for changes to propagate
-            with st.spinner("Refreshing data..."):
-                time.sleep(2)  # Wait for 2 seconds to allow changes to propagate
-            
-            st.session_state.reload_data = True
-            st.rerun()
-        else:
-            st.error("Failed to save changes. Please try again.")
-    except Exception as e:
-        st.error(f"An error occurred while saving: {str(e)}")
-
-# Display the current state of the data
-st.subheader("All Students:")
-if 'changed_data' in st.session_state and not st.session_state.changed_data.empty:
-    st.dataframe(st.session_state.changed_data)
-else:
-    st.dataframe(st.session_state.data)
+styled_df = filtered_data.style.apply(highlight_agent, axis=1)
+st.dataframe(styled_df)
 
 # Display only the changed students
-changed_df = get_changed_rows(st.session_state.original_data, edited_df)
+changed_df = get_changed_rows(st.session_state.original_data, filtered_data)
 st.subheader("Changed Students:")
 if not changed_df.empty:
     st.dataframe(changed_df)

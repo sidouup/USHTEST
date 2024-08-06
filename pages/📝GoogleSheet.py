@@ -38,15 +38,12 @@ def load_data():
 
 # Function to get changed rows
 def get_changed_rows(original_df, edited_df):
-    original_df_sorted = original_df.copy()
-    original_df_sorted['DATE'] = pd.to_datetime(original_df_sorted['DATE'], dayfirst=True, errors='coerce')
-    original_df_sorted.sort_values(by='DATE', inplace=True)
-    edited_df_sorted = edited_df.copy()
-    edited_df_sorted.sort_values(by='DATE', inplace=True)
+    original_df_sorted = original_df.sort_values(by='DATE').reset_index(drop=True)
+    edited_df_sorted = edited_df.sort_values(by='DATE').reset_index(drop=True)
 
-    if original_df_sorted.shape != edited_df_sorted.shape:
-        return edited_df_sorted  # If shapes are different, consider all rows as changed
-    
+    # Ensure both DataFrames have the same columns in the same order
+    original_df_sorted = original_df_sorted[edited_df_sorted.columns]
+
     changed_mask = (original_df_sorted != edited_df_sorted).any(axis=1)
     return edited_df_sorted.loc[changed_mask]
 
@@ -69,9 +66,9 @@ with col1:
     agents = st.multiselect('Filter by Agent', options=st.session_state.data['Agent'].unique())
 
 with col2:
-    # Create a new column 'Month_Year' for filtering
-    st.session_state.data['Month_Year'] = st.session_state.data['DATE'].dt.strftime('%B %Y')
-    months_years = st.multiselect('Filter by Month', options=st.session_state.data['Month_Year'].unique())
+    # Create a new column 'Months' for filtering
+    st.session_state.data['Months'] = st.session_state.data['DATE'].dt.strftime('%B %Y')
+    months_years = st.multiselect('Filter by Month', options=st.session_state.data['Months'].unique())
 
 with col3:
     stages = st.multiselect('Filter by Stage', options=st.session_state.data['Stage'].unique())
@@ -87,7 +84,7 @@ filtered_data = st.session_state.data.copy()
 if agents:
     filtered_data = filtered_data[filtered_data['Agent'].isin(agents)]
 if months_years:
-    filtered_data = filtered_data[filtered_data['Month_Year'].isin(months_years)]
+    filtered_data = filtered_data[filtered_data['Months'].isin(months_years)]
 if stages:
     filtered_data = filtered_data[filtered_data['Stage'].isin(stages)]
 if schools:
@@ -153,6 +150,6 @@ if st.button("Save Changes"):
         st.error(f"An error occurred while saving: {str(e)}")
 
 # Display the current state of the data
-st.subheader("All Students:")
+st.subheader("Changed Students:")
 if 'changed_data' in st.session_state and not st.session_state.changed_data.empty:
     st.dataframe(st.session_state.changed_data)

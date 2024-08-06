@@ -57,8 +57,13 @@ def update_data(sheet_url, df, edited_rows):
     return changes
 
 # Load the data
-sheet_url = "https://docs.google.com/spreadsheets/d/1NkW2a4_eOlDGeVxY9PZk-lEI36PvAv9XoO4ZIwl-Sew/edit?gid=1019724402#gid=1019724402"  # Replace with your Google Sheet URL
-data = load_data(sheet_url)
+sheet_url = "YOUR_GOOGLE_SHEET_URL"  # Replace with your Google Sheet URL
+
+# Initialize or load data
+if 'data' not in st.session_state:
+    st.session_state.data = load_data(sheet_url)
+
+data = st.session_state.data
 
 # Display the data
 st.title("Student List")
@@ -86,6 +91,7 @@ if st.session_state['edit_mode']:
                     for attempt in range(max_retries):
                         try:
                             changes = update_data(sheet_url, edited_data, edited_rows)
+                            st.session_state.data = load_data(sheet_url)  # Refresh data
                             st.success("Changes saved successfully!")
                             st.write("Modified cells:")
                             for change in changes:

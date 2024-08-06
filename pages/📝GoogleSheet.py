@@ -29,11 +29,24 @@ df = pd.DataFrame(data).astype(str)
 st.title("Student List")
 edited_df = st.data_editor(df, num_rows="dynamic")
 
-# Update Google Sheet with edited data
+# Function to find changed rows
+def find_changed_rows(original_df, edited_df):
+    changed_rows = original_df != edited_df
+    return edited_df[changed_rows.any(axis=1)]
+
+# Update Google Sheet with edited data and show changed rows
 if st.button("Save Changes"):
     sheet.clear()
     sheet.update([edited_df.columns.values.tolist()] + edited_df.values.tolist())
     st.success("Changes saved successfully!")
+    
+    # Find and display the changed rows
+    changed_rows_df = find_changed_rows(df, edited_df)
+    if not changed_rows_df.empty:
+        st.subheader("Changed Rows")
+        st.dataframe(changed_rows_df)
+    else:
+        st.write("No changes detected.")
 
-# Display the data
+# Display the editable data frame again
 st.dataframe(edited_df)

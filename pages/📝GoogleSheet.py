@@ -69,6 +69,7 @@ if st.button("Save Changes"):
         if save_data(edited_df, spreadsheet_url):
             st.session_state.data = edited_df  # Update the session state
             st.session_state.original_data = edited_df.copy()  # Update the original data
+            st.session_state.changed_data = get_changed_rows(st.session_state.original_data, edited_df)  # Store changed data
             st.success("Changes saved successfully!")
             
             # Use a spinner while waiting for changes to propagate
@@ -92,7 +93,10 @@ def get_changed_rows(original_df, edited_df):
 
 # Display the current state of the data
 st.subheader("All Students:")
-st.dataframe(st.session_state.data)
+if 'changed_data' in st.session_state and not st.session_state.changed_data.empty:
+    st.dataframe(st.session_state.changed_data)
+else:
+    st.dataframe(st.session_state.data)
 
 # Display only the changed students
 changed_df = get_changed_rows(st.session_state.original_data, edited_df)

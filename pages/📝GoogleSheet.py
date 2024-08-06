@@ -38,12 +38,15 @@ def load_data():
 
 # Function to get changed rows
 def get_changed_rows(original_df, edited_df):
-    original_df_sorted = original_df.sort_values(by='DATE').reset_index(drop=True)
-    edited_df_sorted = edited_df.sort_values(by='DATE').reset_index(drop=True)
+    original_df_sorted = original_df.copy()
+    original_df_sorted['DATE'] = pd.to_datetime(original_df_sorted['DATE'], dayfirst=True, errors='coerce')
+    original_df_sorted.sort_values(by='DATE', inplace=True)
+    edited_df_sorted = edited_df.copy()
+    edited_df_sorted.sort_values(by='DATE', inplace=True)
 
-    # Ensure both DataFrames have the same columns in the same order
-    original_df_sorted = original_df_sorted[edited_df_sorted.columns]
-
+    if original_df_sorted.shape != edited_df_sorted.shape:
+        return edited_df_sorted  # If shapes are different, consider all rows as changed
+    
     changed_mask = (original_df_sorted != edited_df_sorted).any(axis=1)
     return edited_df_sorted.loc[changed_mask]
 
@@ -127,9 +130,8 @@ def save_data(changed_data, spreadsheet_url):
 # Update Google Sheet with edited data
 if st.button("Save Changes"):
     try:
-        # Detect changed rows by comparing with the original data
-        st.session_state.changed_data = get_changed_rows(st.session_state.original_data, edited_df)
-
+        st.session_state.changed_data = get_changed_rows(st.session_state.original_data, edited_df)  # Store changed data
+        
         # Only save data if there are actual changes
         if not st.session_state.changed_data.empty:
             if save_data(st.session_state.changed_data, spreadsheet_url):
@@ -150,7 +152,3 @@ if st.button("Save Changes"):
     except Exception as e:
         st.error(f"An error occurred while saving: {str(e)}")
 
-# Display the current state of the data
-st.subheader("Changed Students:")
-if 'changed_data' in st.session_state and not st.session_state.changed_data.empty:
-    st.dataframe(st.session_state.changed_data)

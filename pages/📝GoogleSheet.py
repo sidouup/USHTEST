@@ -58,12 +58,7 @@ def update_data(sheet_url, df, edited_rows):
 
 # Load the data
 sheet_url = "https://docs.google.com/spreadsheets/d/1NkW2a4_eOlDGeVxY9PZk-lEI36PvAv9XoO4ZIwl-Sew/edit?gid=1019724402#gid=1019724402"  # Replace with your Google Sheet URL
-
-# Initialize or load data
-if 'data' not in st.session_state:
-    st.session_state.data = load_data(sheet_url)
-
-data = st.session_state.data
+data = load_data(sheet_url)
 
 # Display the data
 st.title("Student List")
@@ -75,10 +70,12 @@ if 'edit_mode' not in st.session_state:
 
 def toggle_edit_mode():
     st.session_state['edit_mode'] = not st.session_state['edit_mode']
+    st.rerun()
 
 st.button("Toggle Edit Mode", on_click=toggle_edit_mode)
 
-if st.session_state['edit_mode']:
+@st.fragment
+def editable_data_section():
     edited_data = st.data_editor(data, num_rows="fixed", use_container_width=True)
     if st.button("Save Changes"):
         st.write("Edited data:", edited_data)
@@ -105,5 +102,8 @@ if st.session_state['edit_mode']:
                                 st.error(f"An error occurred: {e}")
             except Exception as e:
                 st.error(f"An error occurred: {e}")
+
+if st.session_state['edit_mode']:
+    editable_data_section()
 else:
     st.dataframe(data)

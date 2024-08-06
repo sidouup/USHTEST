@@ -51,12 +51,6 @@ if 'data' not in st.session_state or st.session_state.get('reload_data', False):
 if 'original_data' not in st.session_state:
     st.session_state.original_data = st.session_state.data.copy()
 
-# Display the editable dataframe
-st.title("Student List")
-
-# Use a key for the data_editor to ensure proper updates
-edited_df = st.data_editor(st.session_state.data, num_rows="dynamic", key="student_data")
-
 # Extract month and year for filtering
 st.session_state.data['DATE'] = pd.to_datetime(st.session_state.data['DATE'], errors='coerce')
 st.session_state.data['Month'] = st.session_state.data['DATE'].dt.strftime('%Y-%m').fillna('Invalid Date')
@@ -75,8 +69,14 @@ selected_agent = st.selectbox("Select Agent", agents)
 selected_school = st.selectbox("Select School Option", school_options)
 selected_attempt = st.selectbox("Select Attempt", attempts_options)
 
-# Apply filters to the dataframe
-filtered_data = st.session_state.data.copy()
+# Display the editable dataframe
+st.title("Student List")
+
+# Use a key for the data_editor to ensure proper updates
+edited_df = st.data_editor(st.session_state.data, num_rows="dynamic", key="student_data")
+
+# Apply filters to the edited dataframe
+filtered_data = edited_df.copy()
 
 if selected_month != "All":
     filtered_data = filtered_data[filtered_data['Month'] == selected_month]

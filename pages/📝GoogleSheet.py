@@ -58,18 +58,31 @@ if 'original_data' not in st.session_state:
 st.title("Student List")
 
 # Filters
-agents = st.multiselect('Filter by Agent', options=st.session_state.data['Agent'].unique())
-months = st.multiselect('Filter by Month', options=st.session_state.data['DATE'].dt.month.unique())
-stages = st.multiselect('Filter by Stage', options=st.session_state.data['Stage'].unique())
-schools = st.multiselect('Filter by Chosen School', options=st.session_state.data['Chosen School'].unique())
-attempts = st.multiselect('Filter by Attempts', options=st.session_state.data['Attempts'].unique())
+col1, col2, col3, col4, col5 = st.columns(5)
+
+with col1:
+    agents = st.multiselect('Filter by Agent', options=st.session_state.data['Agent'].unique())
+
+with col2:
+    # Create a new column 'Month_Year' for filtering
+    st.session_state.data['Month_Year'] = st.session_state.data['DATE'].dt.strftime('%B %Y')
+    months_years = st.multiselect('Filter by Month', options=st.session_state.data['Month_Year'].unique())
+
+with col3:
+    stages = st.multiselect('Filter by Stage', options=st.session_state.data['Stage'].unique())
+
+with col4:
+    schools = st.multiselect('Filter by Chosen School', options=st.session_state.data['Chosen School'].unique())
+
+with col5:
+    attempts = st.multiselect('Filter by Attempts', options=st.session_state.data['Attempts'].unique())
 
 filtered_data = st.session_state.data.copy()
 
 if agents:
     filtered_data = filtered_data[filtered_data['Agent'].isin(agents)]
-if months:
-    filtered_data = filtered_data[filtered_data['DATE'].dt.month.isin(months)]
+if months_years:
+    filtered_data = filtered_data[filtered_data['Month_Year'].isin(months_years)]
 if stages:
     filtered_data = filtered_data[filtered_data['Stage'].isin(stages)]
 if schools:

@@ -41,25 +41,25 @@ else:  # --- APP CONTENT ---
             selected = option_menu("Main Menu", ["Home", "Analytics", "Settings"], 
                 icons=['house', 'graph-up-arrow', 'gear'], menu_icon="cast", default_index=0)
             
-else:  # --- APP CONTENT ---
-    with st.sidebar:
-        role = st.session_state["role"]
-        if role == "admin":
-            selected = option_menu("Main Menu", ["Home", "Analytics", "Settings"],
-                icons=['house', 'graph-up-arrow', 'gear'], menu_icon="cast", default_index=0)
-        elif role == "user":
-            selected = option_menu("Main Menu", ["Home", "Profile"], 
-                icons=['house', 'person'], menu_icon="cast", default_index=0)
-
-    # Display the selected page
-    if selected == "Home":
-        pages.main.app()  # Call the app() function of the selected page
-    elif selected == "Analytics" and role == "admin":
-        pages.Statistics.py.app()
-    elif selected == "Settings" and role == "admin":
-        pages.GoogleSheet.app()
-    elif selected == "Profile":
-        pages.Emergency.app()
+    else:  # --- APP CONTENT ---
+        with st.sidebar:
+            role = st.session_state["role"]
+            if role == "admin":
+                selected = option_menu("Main Menu", ["Home", "Analytics", "Settings"],
+                    icons=['house', 'graph-up-arrow', 'gear'], menu_icon="cast", default_index=0)
+            elif role == "user":
+                selected = option_menu("Main Menu", ["Home", "Profile"], 
+                    icons=['house', 'person'], menu_icon="cast", default_index=0)
+    
+        # Display the selected page
+        if selected == "Home":
+            pages.main.app()  # Call the app() function of the selected page
+        elif selected == "Analytics" and role == "admin":
+            pages.Statistics.py.app()
+        elif selected == "Settings" and role == "admin":
+            pages.GoogleSheet.app()
+        elif selected == "Profile":
+            pages.Emergency.app()
 
     # Logout button
     st.sidebar.button("Logout", on_click=lambda: st.session_state.clear()) 

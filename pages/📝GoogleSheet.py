@@ -115,7 +115,32 @@ edited_df = st.data_editor(filtered_data, num_rows="dynamic", key="student_data"
 
 # Function to save data to Google Sheets (unchanged)
 def save_data(changed_data, spreadsheet_url):
-    # ... (Your existing save_data function)
+    logger.info("Attempting to save changes")
+    try:
+        spreadsheet = client.open_by_url(spreadsheet_url)
+        sheet = spreadsheet.sheet1
+
+        # Convert datetime objects back to strings
+        changed_data['DATE'] = changed_data['DATE'].dt.strftime('%d/%m/%Y %H:%M:%S')
+
+        # Replace problematic values with a placeholder
+        changed_data.replace([np.inf, -np.inf, np.nan], 'NaN', inplace=True)
+
+        # Batch update the changed rows
+        updated_rows = []
+        for index, row in changed_data.iterrows():
+            updated_rows.append({
+                'range': f'A{index + 2}',
+                'values': [row.values.tolist()]
+            })
+
+        sheet.batch_update(updated_rows)
+
+        logger.info("Changes saved successfully")
+        return True
+    except Exception as e:
+        logger.error(f"Error saving changes: {str(e)}")
+        return False
 
 
 # Update Google Sheet with edited data

@@ -32,16 +32,10 @@ def load_data():
     spreadsheet = client.open_by_url(spreadsheet_url)
     sheet = spreadsheet.sheet1  # Adjust if you need to access a different sheet
     data = sheet.get_all_records()
-    df = pd.DataFrame(data).astype(str)
-    df['DATE'] = pd.to_datetime(df['DATE'], format="%d/%m/%Y %H:%M:%S")
-    df.sort_values(by='DATE', inplace=True)
-    return df
+    return pd.DataFrame(data).astype(str)
 
 # Function to get changed rows
 def get_changed_rows(original_df, edited_df):
-    original_df = original_df.reset_index(drop=True)
-    edited_df = edited_df.reset_index(drop=True)
-    
     if original_df.shape != edited_df.shape:
         return edited_df  # If shapes are different, consider all rows as changed
     
@@ -62,10 +56,6 @@ st.title("Student List")
 
 # Use a key for the data_editor to ensure proper updates
 edited_df = st.data_editor(st.session_state.data, num_rows="dynamic", key="student_data")
-
-# Sort the edited dataframe by DATE
-edited_df['DATE'] = pd.to_datetime(edited_df['DATE'], format="%d/%m/%Y %H:%M:%S")
-edited_df.sort_values(by='DATE', inplace=True)
 
 # Function to save data to Google Sheets
 def save_data(df, spreadsheet_url):

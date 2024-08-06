@@ -45,6 +45,12 @@ def get_changed_rows(original_df, edited_df):
     # Ensure both DataFrames have the same columns in the same order
     edited_df_sorted = edited_df_sorted[original_df_sorted.columns]
 
+    # Debugging statements to print columns and indices
+    print("Original DataFrame Columns:", original_df_sorted.columns)
+    print("Edited DataFrame Columns:", edited_df_sorted.columns)
+    print("Original DataFrame Index:", original_df_sorted.index)
+    print("Edited DataFrame Index:", edited_df_sorted.index)
+
     changed_mask = (original_df_sorted != edited_df_sorted).any(axis=1)
     return edited_df_sorted.loc[changed_mask]
 

@@ -35,18 +35,13 @@ def load_data():
     data = sheet.get_all_records()
     df = pd.DataFrame(data).astype(str)
     df['DATE'] = pd.to_datetime(df['DATE'], dayfirst=True, errors='coerce')  # Convert DATE to datetime with dayfirst=True
+    df['Original_Index'] = df.index  # Track the original index
     return df
 
 # Function to get changed rows
 def get_changed_rows(original_df, edited_df):
-    original_df_sorted = original_df.sort_values(by='DATE').reset_index(drop=True)
-    edited_df_sorted = edited_df.sort_values(by='DATE').reset_index(drop=True)
-
-    # Ensure both DataFrames have the same columns in the same order
-    original_df_sorted = original_df_sorted[edited_df_sorted.columns]
-
-    changed_mask = (original_df_sorted != edited_df_sorted).any(axis=1)
-    return edited_df_sorted.loc[changed_mask]
+    changed_mask = (original_df != edited_df).any(axis=1)
+    return edited_df.loc[changed_mask]
 
 # Load data and initialize session state
 if 'data' not in st.session_state or st.session_state.get('reload_data', False):
@@ -113,14 +108,10 @@ def save_data(changed_data, spreadsheet_url):
         changed_data.replace([np.inf, -np.inf, np.nan], 'NaN', inplace=True)
 
         # Batch update the changed rows
-        updated_rows = []
         for index, row in changed_data.iterrows():
-            updated_rows.append({
-                'range': f'A{index + 2}',
-                'values': [row.values.tolist()]
-            })
-
-        sheet.batch_update(updated_rows)
+            original_index = row['Original_Index']
+            row_data = row.drop('Original_Index').tolist()
+            sheet.update(f'A{original_index + 2}', [row_data])  # Adjust index for Google Sheets 1-based indexing
 
         logger.info("Changes saved successfully")
         return True
@@ -132,18 +123,18 @@ def save_data(changed_data, spreadsheet_url):
 if st.button("Save Changes"):
     try:
         st.session_state.changed_data = get_changed_rows(st.session_state.original_data, edited_df)  # Store changed data
-        
+
         # Only save data if there are actual changes
         if not st.session_state.changed_data.empty:
             if save_data(st.session_state.changed_data, spreadsheet_url):
                 st.session_state.data = edited_df  # Update the session state
                 st.session_state.original_data = edited_df.copy()  # Update the original data
                 st.success("Changes saved successfully!")
-                
+
                 # Use a spinner while waiting for changes to propagate
                 with st.spinner("Refreshing data..."):
                     time.sleep(2)  # Wait for 2 seconds to allow changes to propagate
-                
+
                 st.session_state.reload_data = True
                 st.rerun()
             else:

@@ -1,8 +1,8 @@
 import streamlit as st
+import gspread
+from google.oauth2.service_account import Credentials
 import pandas as pd
 import numpy as np
-from google.oauth2.service_account import Credentials
-import gspread
 import time
 import logging
 
@@ -16,106 +16,141 @@ st.set_page_config(page_title="Student List", layout="wide")
 # Use Streamlit secrets for service account info
 SERVICE_ACCOUNT_INFO = st.secrets["gcp_service_account"]
 
-# Define the required scopes
-SCOPES = ["https://www.googleapis.com/auth/drive", "https://www.googleapis.com/auth/spreadsheets"]
+# Define the required scope
+SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
 # Authenticate with Google Sheets
 @st.cache_resource
-def get_google_sheet_client():
+def get_gsheet_client():
     creds = Credentials.from_service_account_info(SERVICE_ACCOUNT_INFO, scopes=SCOPES)
     return gspread.authorize(creds)
 
-# Function to load data from Google Sheets
-def load_data(spreadsheet_id, sheet_name):
-    client = get_google_sheet_client()
-    sheet = client.open_by_key(spreadsheet_id).worksheet(sheet_name)
+client = get_gsheet_client()
+
+# Open the Google Sheet using the provided link
+spreadsheet_url = "https://docs.google.com/spreadsheets/d/1NkW2a4_eOlDGeVxY9PZk-lEI36PvAv9XoO4ZIwl-Sew/edit#gid=1019724402"
+
+def load_data():
+    spreadsheet = client.open_by_url(spreadsheet_url)
+    sheet = spreadsheet.sheet1  # Adjust if you need to access a different sheet
     data = sheet.get_all_records()
     df = pd.DataFrame(data).astype(str)
-    df['DATE'] = pd.to_datetime(df['DATE'], format='%d/%m/%Y %H:%M:%S', errors='coerce')  # Convert 'DATE' column to datetime
-    df['Original_Index'] = df.index  # Track the original index
+    df['DATE'] = pd.to_datetime(df['DATE'], dayfirst=True, errors='coerce')  # Convert DATE to datetime with dayfirst=True
     return df
 
+# Function to get changed rows
+def get_changed_rows(original_df, edited_df):
+    original_df_sorted = original_df.sort_values(by='DATE').reset_index(drop=True)
+    edited_df_sorted = edited_df.sort_values(by='DATE').reset_index(drop=True)
+
+    # Ensure both DataFrames have the same columns in the same order
+    original_df_sorted = original_df_sorted[edited_df_sorted.columns]
+
+    changed_mask = (original_df_sorted != edited_df_sorted).any(axis=1)
+    return edited_df_sorted.loc[changed_mask]
+
+# Load data and initialize session state
+if 'data' not in st.session_state or st.session_state.get('reload_data', False):
+    with st.spinner("Loading data..."):
+        st.session_state.data = load_data()
+        st.session_state.reload_data = False
+
+# Always ensure original_data is initialized
+if 'original_data' not in st.session_state:
+    st.session_state.original_data = st.session_state.data.copy()
+
+# Display the editable dataframe
+st.title("Student List")
+
+# Filters
+col1, col2, col3, col4, col5 = st.columns(5)
+
+with col1:
+    agents = st.multiselect('Filter by Agent', options=st.session_state.data['Agent'].unique())
+
+with col2:
+    # Create a new column 'Months' for filtering
+    st.session_state.data['Months'] = st.session_state.data['DATE'].dt.strftime('%B %Y')
+    months_years = st.multiselect('Filter by Month', options=st.session_state.data['Months'].unique())
+
+with col3:
+    stages = st.multiselect('Filter by Stage', options=st.session_state.data['Stage'].unique())
+
+with col4:
+    schools = st.multiselect('Filter by Chosen School', options=st.session_state.data['Chosen School'].unique())
+
+with col5:
+    attempts = st.multiselect('Filter by Attempts', options=st.session_state.data['Attempts'].unique())
+
+filtered_data = st.session_state.data.copy()
+
+if agents:
+    filtered_data = filtered_data[filtered_data['Agent'].isin(agents)]
+if months_years:
+    filtered_data = filtered_data[filtered_data['Months'].isin(months_years)]
+if stages:
+    filtered_data = filtered_data[filtered_data['Stage'].isin(stages)]
+if schools:
+    filtered_data = filtered_data[filtered_data['Chosen School'].isin(schools)]
+if attempts:
+    filtered_data = filtered_data[filtered_data['Attempts'].isin(attempts)]
+
+# Sort filtered data for display
+filtered_data.sort_values(by='DATE', inplace=True)
+
+# Use a key for the data_editor to ensure proper updates
+edited_df = st.data_editor(filtered_data, num_rows="dynamic", key="student_data")
+
 # Function to save data to Google Sheets
-def save_data(df, original_df, spreadsheet_id, sheet_name):
-    client = get_google_sheet_client()
-    sheet = client.open_by_key(spreadsheet_id).worksheet(sheet_name)
-    df = df.where(pd.notnull(df), None)  # Replace NaNs with None for gspread
+def save_data(changed_data, spreadsheet_url):
+    logger.info("Attempting to save changes")
+    try:
+        spreadsheet = client.open_by_url(spreadsheet_url)
+        sheet = spreadsheet.sheet1
 
-    # Update only the modified rows in the original dataframe
-    for idx, row in df.iterrows():
-        for col in df.columns:
-            if row[col] != original_df.at[idx, col]:
-                sheet.update_cell(idx + 2, df.columns.get_loc(col) + 1, row[col])
+        # Convert datetime objects back to strings
+        changed_data['DATE'] = changed_data['DATE'].dt.strftime('%d/%m/%Y %H:%M:%S')
 
-# Main function
-def main():
-    st.title("Student List")
+        # Replace problematic values with a placeholder
+        changed_data.replace([np.inf, -np.inf, np.nan], 'NaN', inplace=True)
 
-    # Load data from Google Sheets
-    spreadsheet_id = "1NkW2a4_eOlDGeVxY9PZk-lEI36PvAv9XoO4ZIwl-Sew"
-    sheet_name = "ALL"
-    df_all = load_data(spreadsheet_id, sheet_name)
-    original_df_all = df_all.copy()  # Keep a copy of the original data
+        # Batch update the changed rows
+        updated_rows = []
+        for index, row in changed_data.iterrows():
+            updated_rows.append({
+                'range': f'A{index + 2}',
+                'values': [row.values.tolist()]
+            })
 
-    # Extract month and year for filtering
-    df_all['Month'] = df_all['DATE'].dt.strftime('%Y-%m').fillna('Invalid Date')
-    months = ["All"] + sorted(df_all['Month'].unique())
+        sheet.batch_update(updated_rows)
 
-    # Define filter options
-    current_steps = ["All"] + list(df_all['Stage'].unique())
-    agents = ["All"] + list(df_all['Agent'].unique())
-    school_options = ["All"] + list(df_all['Chosen School'].unique())
-    attempts_options = ["All"] + list(df_all['Attempts'].unique())
+        logger.info("Changes saved successfully")
+        return True
+    except Exception as e:
+        logger.error(f"Error saving changes: {str(e)}")
+        return False
 
-    # Filter buttons for stages
-    stage_filter = st.selectbox("Filter by Stage", current_steps, key="stage_filter")
-
-    # Filter widgets
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        agent_filter = st.selectbox("Filter by Agent", agents, key="agent_filter")
-    with col2:
-        school_filter = st.selectbox("Filter by School", school_options, key="school_filter")
-    with col3:
-        attempts_filter = st.selectbox("Filter by Attempts", attempts_options, key="attempts_filter")
-    with col4:
-        month_filter = st.selectbox("Filter by Month", months, key="month_filter")
-
-    # Apply filters
-    filtered_data = df_all
-    if stage_filter != "All":
-        filtered_data = filtered_data[filtered_data['Stage'] == stage_filter]
-    if agent_filter != "All":
-        filtered_data = filtered_data[filtered_data['Agent'] == agent_filter]
-    if school_filter != "All":
-        filtered_data = filtered_data[filtered_data['Chosen School'] == school_filter]
-    if attempts_filter != "All":
-        filtered_data = filtered_data[filtered_data['Attempts'] == attempts_filter]
-    if month_filter != "All":
-        filtered_data = filtered_data[filtered_data['Month'] == month_filter]
-
-    # Sort by DATE and reset index
-    filtered_data = filtered_data.sort_values(by='DATE').reset_index(drop=True)
-
-    # Keep track of the original indices of the filtered data
-    filtered_data = filtered_data.reset_index(drop=False).rename(columns={'index': 'Filtered_Index'})
-
-    # Editable table
-    edit_mode = st.checkbox("Edit Mode")
-    if edit_mode:
-        edited_data = st.data_editor(filtered_data, num_rows="dynamic")
-        if st.button("Save Changes"):
-            # Ensure the edited DataFrame aligns with the original DataFrame
-            edited_df_aligned = original_df_all.copy()
-            edited_df_aligned.update(edited_data.drop(['Filtered_Index'], axis=1), overwrite=True)
-
-            # Save the changes
-            save_data(edited_df_aligned, original_df_all, spreadsheet_id, sheet_name)
-            st.success("Changes saved successfully!")
-            st.experimental_rerun()  # Rerun the script to show the updated data
-    else:
-        st.dataframe(filtered_data)
-
-# Run the main function
-if __name__ == "__main__":
-    main()
+# Update Google Sheet with edited data
+if st.button("Save Changes"):
+    try:
+        st.session_state.changed_data = get_changed_rows(st.session_state.original_data, edited_df)  # Store changed data
+        
+        # Only save data if there are actual changes
+        if not st.session_state.changed_data.empty:
+            if save_data(st.session_state.changed_data, spreadsheet_url):
+                st.session_state.data = edited_df  # Update the session state
+                st.session_state.original_data = edited_df.copy()  # Update the original data
+                st.success("Changes saved successfully!")
+                
+                # Use a spinner while waiting for changes to propagate
+                with st.spinner("Refreshing data..."):
+                    time.sleep(2)  # Wait for 2 seconds to allow changes to propagate
+                
+                st.session_state.reload_data = True
+                st.rerun()
+            else:
+                st.error("Failed to save changes. Please try again.")
+        else:
+            st.info("No changes detected.")
+    except Exception as e:
+        st.error(f"An error occurred while saving: {str(e)}")

@@ -34,7 +34,7 @@ def load_data():
     data = sheet.get_all_records()
     return pd.DataFrame(data).astype(str)
 
-# Load data each time the app runs
+# Load data and initialize session state
 if 'data' not in st.session_state or st.session_state.get('reload_data', False):
     st.session_state.data = load_data()
     st.session_state.original_data = st.session_state.data.copy()

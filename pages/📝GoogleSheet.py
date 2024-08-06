@@ -2,6 +2,7 @@ import streamlit as st
 import gspread
 from google.oauth2.service_account import Credentials
 import pandas as pd
+import time
 
 # Page configuration
 st.set_page_config(page_title="Student List", layout="wide")
@@ -78,11 +79,22 @@ if st.session_state['edit_mode']:
         edited_rows = [i for i, row in edited_data.iterrows() if not row.equals(data.iloc[i])]
         if edited_rows:
             try:
-                changes = update_data(sheet_url, edited_data, edited_rows)
-                st.success("Changes saved successfully!")
-                st.write("Modified cells:")
-                for change in changes:
-                    st.write(change)
+                with st.spinner('Saving changes...'):
+                    max_retries = 3
+                    for attempt in range(max_retries):
+                        try:
+                            changes = update_data(sheet_url, edited_data, edited_rows)
+                            st.success("Changes saved successfully!")
+                            st.write("Modified cells:")
+                            for change in changes:
+                                st.write(change)
+                            break
+                        except Exception as e:
+                            if attempt < max_retries - 1:
+                                time.sleep(1)  # Wait before retrying
+                                continue
+                            else:
+                                st.error(f"An error occurred: {e}")
             except Exception as e:
                 st.error(f"An error occurred: {e}")
 else:

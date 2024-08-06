@@ -19,7 +19,6 @@ SERVICE_ACCOUNT_INFO = st.secrets["gcp_service_account"]
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
 # Authenticate with Google Sheets
-@st.cache_resource
 def get_gsheet_client():
     creds = Credentials.from_service_account_info(SERVICE_ACCOUNT_INFO, scopes=SCOPES)
     return gspread.authorize(creds)
@@ -29,16 +28,17 @@ client = get_gsheet_client()
 # Open the Google Sheet using the provided link
 spreadsheet_url = "https://docs.google.com/spreadsheets/d/1NkW2a4_eOlDGeVxY9PZk-lEI36PvAv9XoO4ZIwl-Sew/edit#gid=1019724402"
 
-@st.cache_data(ttl=600)  # Cache for 10 minutes
 def load_data():
     spreadsheet = client.open_by_url(spreadsheet_url)
     sheet = spreadsheet.sheet1  # Adjust if you need to access a different sheet
     data = sheet.get_all_records()
     return pd.DataFrame(data).astype(str)
 
-# Initialize session state
-if 'data' not in st.session_state:
+# Load data each time the app runs
+if 'data' not in st.session_state or st.session_state.get('reload_data', False):
     st.session_state.data = load_data()
+    st.session_state.original_data = st.session_state.data.copy()
+    st.session_state.reload_data = False
 
 # Display the editable dataframe
 st.title("Student List")
@@ -65,21 +65,36 @@ if st.button("Save Changes"):
     try:
         if save_data(edited_df, spreadsheet_url):
             st.session_state.data = edited_df  # Update the session state
+            st.session_state.original_data = edited_df.copy()  # Update the original data
             st.success("Changes saved successfully!")
-            
-            # Clear the cache to ensure fresh data on next load
-            load_data.clear()
             
             # Use a spinner while waiting for changes to propagate
             with st.spinner("Refreshing data..."):
                 time.sleep(2)  # Wait for 2 seconds to allow changes to propagate
             
+            st.session_state.reload_data = True
             st.rerun()
         else:
             st.error("Failed to save changes. Please try again.")
     except Exception as e:
         st.error(f"An error occurred while saving: {str(e)}")
 
+# Function to get changed rows
+def get_changed_rows(original_df, edited_df):
+    if original_df.shape != edited_df.shape:
+        return edited_df  # If shapes are different, consider all rows as changed
+    
+    changed_mask = (original_df != edited_df).any(axis=1)
+    return edited_df[changed_mask]
+
 # Display the current state of the data
-st.subheader("Current Data:")
+st.subheader("All Students:")
 st.dataframe(st.session_state.data)
+
+# Display only the changed students
+changed_df = get_changed_rows(st.session_state.original_data, edited_df)
+st.subheader("Changed Students:")
+if not changed_df.empty:
+    st.dataframe(changed_df)
+else:
+    st.info("No changes detected.")

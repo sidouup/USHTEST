@@ -85,16 +85,20 @@ def save_data(df, spreadsheet_url):
 if st.button("Save Changes"):
     try:
         st.session_state.changed_data = get_changed_rows(st.session_state.original_data, edited_df)  # Store changed data
-        
+
+        # Sort the changed data frame by DATE
+        st.session_state.changed_data['DATE'] = pd.to_datetime(st.session_state.changed_data['DATE'], format="%d/%m/%Y %H:%M:%S")
+        st.session_state.changed_data.sort_values(by='DATE', inplace=True)
+
         if save_data(edited_df, spreadsheet_url):
             st.session_state.data = edited_df  # Update the session state
             st.session_state.original_data = edited_df.copy()  # Update the original data
             st.success("Changes saved successfully!")
-            
+
             # Use a spinner while waiting for changes to propagate
             with st.spinner("Refreshing data..."):
                 time.sleep(2)  # Wait for 2 seconds to allow changes to propagate
-            
+
             st.session_state.reload_data = True
             st.rerun()
         else:
@@ -104,9 +108,7 @@ if st.button("Save Changes"):
 
 # Display the current state of the data
 st.subheader("All Students:")
-if 'changed_data' in st.session_state and not st.session_state.changed_data.empty:
-    st.dataframe(st.session_state.changed_data)
-
+st.dataframe(st.session_state.data)
 
 # Display only the changed students
 changed_df = get_changed_rows(st.session_state.original_data, edited_df)

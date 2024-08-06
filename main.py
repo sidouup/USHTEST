@@ -55,11 +55,11 @@ else:  # --- APP CONTENT ---
     if selected == "Home":
         pages.main.app()  # Call the app() function of the selected page
     elif selected == "Analytics" and role == "admin":
-        pages.📊Statistics.py.app()
+        pages.Statistics.py.app()
     elif selected == "Settings" and role == "admin":
-        pages.📝GoogleSheet.app()
+        pages.GoogleSheet.app()
     elif selected == "Profile":
-        pages.🚨Emergency.app()
+        pages.Emergency.app()
 
     # Logout button
     st.sidebar.button("Logout", on_click=lambda: st.session_state.clear()) 

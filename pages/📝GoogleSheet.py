@@ -21,13 +21,13 @@ spreadsheet_url = "https://docs.google.com/spreadsheets/d/1NkW2a4_eOlDGeVxY9PZk-
 spreadsheet = client.open_by_url(spreadsheet_url)
 sheet = spreadsheet.sheet1  # Adjust if you need to access a different sheet
 
-# Load data into a pandas DataFrame
+# Load data into a pandas DataFrame and ensure all data is treated as strings
 data = sheet.get_all_records()
-df = pd.DataFrame(data)
+df = pd.DataFrame(data).astype(str)
 
 # Display the editable dataframe
 st.title("Student List")
-edited_df = st.data_editor(df, num_rows="dynamic")
+edited_df = st.experimental_data_editor(df, num_rows="dynamic")
 
 # Update Google Sheet with edited data
 if st.button("Save Changes"):

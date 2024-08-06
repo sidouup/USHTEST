@@ -36,11 +36,11 @@ def load_data():
 
 # Function to get changed rows
 def get_changed_rows(original_df, edited_df):
-    if original_df.shape != edited_df.shape:
-        return edited_df  # If shapes are different, consider all rows as changed
-    
-    changed_mask = (original_df != edited_df).any(axis=1)
-    return edited_df[changed_mask]
+    original_df = original_df.reset_index(drop=True)
+    edited_df = edited_df.reset_index(drop=True)
+    comparison_df = original_df != edited_df
+    changed_rows = comparison_df.any(axis=1)
+    return edited_df[changed_rows]
 
 # Load data and initialize session state
 if 'data' not in st.session_state or st.session_state.get('reload_data', False):

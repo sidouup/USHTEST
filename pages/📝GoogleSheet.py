@@ -41,6 +41,9 @@ def get_changed_rows(original_df, edited_df):
     original_df_sorted = original_df.sort_values(by='DATE').reset_index(drop=True)
     edited_df_sorted = edited_df.sort_values(by='DATE').reset_index(drop=True)
 
+    # Ensure both DataFrames have the same columns in the same order
+    original_df_sorted = original_df_sorted[edited_df_sorted.columns]
+
     changed_mask = (original_df_sorted != edited_df_sorted).any(axis=1)
     return edited_df_sorted.loc[changed_mask]
 

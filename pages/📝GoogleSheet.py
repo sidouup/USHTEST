@@ -37,7 +37,7 @@ def update_data(sheet_url, df, edited_rows):
         worksheet.update(f"A{row+2}:Z{row+2}", [df.iloc[row].tolist()])
 
 # Load the data
-sheet_url = "YOUR_GOOGLE_SHEET_URL"  # Replace with your Google Sheet URL
+sheet_url = "https://docs.google.com/spreadsheets/d/1NkW2a4_eOlDGeVxY9PZk-lEI36PvAv9XoO4ZIwl-Sew/edit?gid=1019724402#gid=1019724402"  # Replace with your Google Sheet URL
 data = load_data(sheet_url)
 
 # Display the data

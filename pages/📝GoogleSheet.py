@@ -2,8 +2,6 @@ import streamlit as st
 import gspread
 from google.oauth2.service_account import Credentials
 import pandas as pd
-import numpy as np  # Ensure NumPy is imported
-import time
 import logging
 
 # Set up logging
@@ -33,58 +31,9 @@ def load_data():
     spreadsheet = client.open_by_url(spreadsheet_url)
     sheet = spreadsheet.sheet1
     data = sheet.get_all_records()
-    df = pd.DataFrame(data)
-    df['indexs'] = df.index + 2  # Start from 2 because Google Sheets starts from 1 and row 1 is likely headers
-    df = df.astype(str)  # Convert all to string to prevent type issues later
-    df['DATE'] = pd.to_datetime(df['DATE'], dayfirst=True, errors='coerce')  # Handle DATE conversion
+    df = pd.DataFrame(data).astype(str)
+    df['DATE'] = pd.to_datetime(df['DATE'], dayfirst=True, errors='coerce')
     return df
-
-# Function to get changed rows
-def get_changed_rows(original_df, edited_df):
-    # Ensure both DataFrames have the same columns in the same order
-    edited_df = edited_df.reindex(columns=original_df.columns)
-    
-    # Debugging output
-    print("Original DataFrame Columns:", original_df.columns)
-    print("Edited DataFrame Columns:", edited_df.columns)
-    
-    # Reset the index to ensure alignment for comparison
-    original_df = original_df.reset_index(drop=True)
-    edited_df = edited_df.reset_index(drop=True)
-    
-    # Compare the DataFrames to find changes
-    changed_mask = (original_df != edited_df).any(axis=1)
-    changed_rows = edited_df[changed_mask]
-    return changed_rows
-
-# Function to save data to Google Sheets
-def save_data(changed_data, spreadsheet_url):
-    logger.info("Attempting to save changes")
-    try:
-        spreadsheet = client.open_by_url(spreadsheet_url)
-        sheet = spreadsheet.sheet1
-
-        # Convert datetime objects back to strings if needed
-        if 'DATE' in changed_data.columns:
-            changed_data['DATE'] = changed_data['DATE'].dt.strftime('%d/%m/%Y %H:%M:%S')
-
-        changed_data.replace([np.nan, np.inf, -np.inf], 'NaN', inplace=True)  # Handle NaN and infinite values
-
-        # Batch update the changed rows using 'indexs' for the correct Google Sheets row
-        updated_rows = []
-        for index, row in changed_data.iterrows():
-            cell_range = f'A{row["indexs"]}'  # Use the indexs for the range
-            updated_rows.append({
-                'range': cell_range,
-                'values': [row.drop('indexs').values.tolist()]  # Drop the indexs from data being sent to Sheets
-            })
-        
-        sheet.batch_update(updated_rows)
-        logger.info("Changes saved successfully")
-        return True
-    except Exception as e:
-        logger.error(f"Error saving changes: {str(e)}")
-        return False
 
 # Load data and initialize session state
 if 'data' not in st.session_state or st.session_state.get('reload_data', False):
@@ -130,30 +79,8 @@ with col5:
     if attempts:
         filtered_data = filtered_data[filtered_data['Attempts'].isin(attempts)]
 
-# No sorting by DATE to ensure index alignment
-# filtered_data.sort_values(by='DATE', inplace=True)
+# Sort filtered data for display
+filtered_data.sort_values(by='DATE', inplace=True)
 
 # Use a key for the data_editor to ensure proper updates
 edited_df = st.data_editor(filtered_data, num_rows="dynamic", key="student_data")
-
-# Update Google Sheet with edited data
-if st.button("Save Changes"):
-    try:
-        st.session_state.changed_data = get_changed_rows(st.session_state.original_data, edited_df)  # Store changed data
-        # Only save data if there are actual changes
-        if not st.session_state.changed_data.empty:
-            if save_data(st.session_state.changed_data, spreadsheet_url):
-                st.session_state.data = edited_df  # Update the session state
-                st.session_state.original_data = edited_df.copy()  # Update the original data
-                st.success("Changes saved successfully!")
-                # Use a spinner while waiting for changes to propagate
-                with st.spinner("Refreshing data..."):
-                    time.sleep(2)  # Wait for 2 seconds to allow changes to propagate
-                st.session_state.reload_data = True
-                st.rerun()
-            else:
-                st.error("Failed to save changes. Please try again.")
-        else:
-            st.info("No changes detected.")
-    except Exception as e:
-        st.error(f"An error occurred while saving: {str(e)}")

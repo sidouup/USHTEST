@@ -40,28 +40,20 @@ def load_data():
 # Function to get changed rows
 # Function to get changed rows
 def get_changed_rows(original_df, edited_df):
-    # Ensure both DataFrames have the same columns in the same order
-    needed_columns = set(original_df.columns).union(set(edited_df.columns))
-    for col in needed_columns:
-        if col not in original_df:
-            original_df[col] = np.nan  # or another placeholder that makes sense
-        if col not in edited_df:
-            edited_df[col] = np.nan  # or another placeholder that makes sense
-    
-    # Reorder columns to match
-    original_df = original_df[list(needed_columns)].sort_index(axis=1)
-    edited_df = edited_df[list(needed_columns)].sort_index(axis=1)
+    # Ensure both DataFrames have the same columns and order
+    combined_columns = sorted(set(original_df.columns).union(edited_df.columns))
+    original_df = original_df.reindex(columns=combined_columns).fillna('NaN')
+    edited_df = edited_df.reindex(columns=combined_columns).fillna('NaN')
 
-    # Reset index to ensure row-wise comparison works correctly
-    original_df_sorted = original_df.reset_index(drop=True)
-    edited_df_sorted = edited_df.reset_index(drop=True)
+    # Reset indices to ensure row order doesn't affect comparison
+    original_df.reset_index(drop=True, inplace=True)
+    edited_df.reset_index(drop=True, inplace=True)
 
     # Find rows that have changed
-    changed_mask = (original_df_sorted != edited_df_sorted).any(axis=1)
-    changed_rows = edited_df_sorted.loc[changed_mask]
-    
-    # Return only changed rows with their original index for updating sheets
-    return changed_rows.reset_index()
+    changed_mask = original_df != edited_df
+    changed_rows = edited_df[changed_mask.any(axis=1)]
+
+    return changed_rows
 
 # Load data and initialize session state
 if 'data' not in st.session_state or st.session_state.get('reload_data', False):

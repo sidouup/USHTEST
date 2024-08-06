@@ -40,15 +40,15 @@ def load_data():
 
 # Function to get changed rows
 def get_changed_rows(original_df, edited_df):
-    # Sort both DataFrames by 'Original_Index' to ensure identical indexing
-    original_df_sorted = original_df.sort_values(by='Original_Index').reset_index(drop=True)
-    edited_df_sorted = edited_df.sort_values(by='Original_Index').reset_index(drop=True)
-
     # Ensure both DataFrames have the same columns in the same order
-    original_df_sorted = original_df_sorted[edited_df_sorted.columns]
+    edited_df = edited_df[original_df.columns]
 
-    changed_mask = (original_df_sorted != edited_df_sorted).any(axis=1)
-    return edited_df_sorted.loc[changed_mask]
+    # Debugging: Check column alignment
+    logger.info(f"Original columns: {original_df.columns}")
+    logger.info(f"Edited columns: {edited_df.columns}")
+
+    changed_mask = (original_df != edited_df).any(axis=1)
+    return edited_df.loc[changed_mask]
 
 # Load data and initialize session state
 if 'data' not in st.session_state or st.session_state.get('reload_data', False):
@@ -95,6 +95,9 @@ if schools:
 if attempts:
     filtered_data = filtered_data[filtered_data['Attempts'].isin(attempts)]
 
+# Keep track of the original indices of the filtered data
+filtered_data = filtered_data.reset_index(drop=False).rename(columns={'index': 'Filtered_Index'})
+
 # Sort filtered data for display
 filtered_data.sort_values(by='DATE', inplace=True)
 
@@ -115,9 +118,9 @@ def save_data(changed_data, spreadsheet_url):
         changed_data.replace([np.inf, -np.inf, np.nan], 'NaN', inplace=True)
 
         # Batch update the changed rows
-        for index, row in changed_data.iterrows():
+        for _, row in changed_data.iterrows():
             original_index = row['Original_Index']
-            row_data = row.drop('Original_Index').tolist()
+            row_data = row.drop(['Original_Index', 'Filtered_Index']).tolist()
             sheet.update(f'A{original_index + 2}', [row_data])  # Adjust index for Google Sheets 1-based indexing
 
         logger.info("Changes saved successfully")
@@ -129,13 +132,17 @@ def save_data(changed_data, spreadsheet_url):
 # Update Google Sheet with edited data
 if st.button("Save Changes"):
     try:
-        st.session_state.changed_data = get_changed_rows(st.session_state.original_data, edited_df)  # Store changed data
+        # Ensure the edited DataFrame aligns with the original DataFrame
+        edited_df_aligned = st.session_state.original_data.copy().loc[edited_df['Original_Index']].reset_index(drop=True)
+        edited_df_aligned.update(edited_df.drop(['Filtered_Index'], axis=1))
+
+        st.session_state.changed_data = get_changed_rows(st.session_state.original_data, edited_df_aligned)  # Store changed data
 
         # Only save data if there are actual changes
         if not st.session_state.changed_data.empty:
             if save_data(st.session_state.changed_data, spreadsheet_url):
                 st.session_state.data = edited_df  # Update the session state
-                st.session_state.original_data = edited_df.copy()  # Update the original data
+                st.session_state.original_data = edited_df_aligned.copy()  # Update the original data
                 st.success("Changes saved successfully!")
 
                 # Use a spinner while waiting for changes to propagate

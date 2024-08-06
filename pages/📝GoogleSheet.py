@@ -42,6 +42,20 @@ def get_changed_rows(original_df, edited_df):
     changed_mask = (original_df != edited_df).any(axis=1)
     return edited_df[changed_mask]
 
+# Function to save data to Google Sheets
+def save_data(df, spreadsheet_url):
+    logger.info("Attempting to save changes")
+    try:
+        spreadsheet = client.open_by_url(spreadsheet_url)
+        sheet = spreadsheet.sheet1
+        sheet.clear()
+        sheet.update([df.columns.values.tolist()] + df.values.tolist())
+        logger.info("Changes saved successfully")
+        return True
+    except Exception as e:
+        logger.error(f"Error saving changes: {str(e)}")
+        return False
+
 # Load data and initialize session state
 if 'data' not in st.session_state or st.session_state.get('reload_data', False):
     st.session_state.data = load_data()
@@ -74,19 +88,17 @@ st.sidebar.header("Agent Color Reference")
 for agent, color in agent_colors.items():
     st.sidebar.markdown(f"<div style='{color};padding: 5px;'>{agent}</div>", unsafe_allow_html=True)
 
-# Filter buttons for stages
-st.markdown('<div class="stCard" style="display: flex; justify-content: space-between;">', unsafe_allow_html=True)
-stage_filter = st.selectbox("Filter by Stage", current_steps, key="stage_filter")
-
 # Filter widgets
 col1, col2, col3, col4 = st.columns(4)
 with col1:
-    agent_filter = st.selectbox("Filter by Agent", agents, key="agent_filter")
+    stage_filter = st.selectbox("Filter by Stage", current_steps, key="stage_filter")
 with col2:
-    school_filter = st.selectbox("Filter by School", school_options, key="school_filter")
+    agent_filter = st.selectbox("Filter by Agent", agents, key="agent_filter")
 with col3:
-    attempts_filter = st.selectbox("Filter by Attempts", attempts_options, key="attempts_filter")
+    school_filter = st.selectbox("Filter by School", school_options, key="school_filter")
 with col4:
+    attempts_filter = st.selectbox("Filter by Attempts", attempts_options, key="attempts_filter")
+with col1:
     month_filter = st.selectbox("Filter by Month", months, key="month_filter")
 
 # Apply filters
@@ -110,15 +122,38 @@ def highlight_agent(row):
     agent = row['Agent']
     return [agent_colors.get(agent, '')] * len(row)
 
-# Display the filtered and styled dataframe
+# Editable table
 st.title("Student List")
-styled_df = filtered_data.style.apply(highlight_agent, axis=1)
-st.dataframe(styled_df)
+edited_df = st.data_editor(filtered_data, num_rows="dynamic", key="student_data")
 
-# Display only the changed students
-changed_df = get_changed_rows(st.session_state.original_data, filtered_data)
-st.subheader("Changed Students:")
-if not changed_df.empty:
-    st.dataframe(changed_df)
-else:
-    st.info("No changes detected.")
+# Update Google Sheet with edited data
+if st.button("Save Changes"):
+    try:
+        st.session_state.changed_data = get_changed_rows(st.session_state.original_data, edited_df)  # Store changed data
+        
+        if save_data(edited_df, spreadsheet_url):
+            st.session_state.data = edited_df  # Update the session state
+            st.session_state.original_data = edited_df.copy()  # Update the original data
+            st.success("Changes saved successfully!")
+            
+            # Use a spinner while waiting for changes to propagate
+            with st.spinner("Refreshing data..."):
+                time.sleep(2)  # Wait for 2 seconds to allow changes to propagate
+            
+            st.session_state.reload_data = True
+            st.rerun()
+        else:
+            st.error("Failed to save changes. Please try again.")
+    except Exception as e:
+        st.error(f"An error occurred while saving: {str(e)}")
+
+# Function to highlight changed rows
+def highlight_changes(row):
+    return ['background-color: yellow' if row.name in changed_rows else '' for _ in row]
+
+# Highlight changed rows
+changed_rows = st.session_state.changed_data.index if 'changed_data' in st.session_state else []
+
+# Apply styling and display the dataframe
+styled_df = edited_df.style.apply(highlight_agent, axis=1).apply(highlight_changes, axis=1)
+st.dataframe(styled_df)

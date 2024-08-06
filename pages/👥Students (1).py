@@ -146,6 +146,8 @@ def load_data(spreadsheet_id):
 
 # Function to save data to Google Sheets (batch up)
 def save_data(df, spreadsheet_id, sheet_name, student_name):
+    logger.info(f"Attempting to save changes for student: {student_name}")
+
     def replace_invalid_floats(val):
         if isinstance(val, float):
             if pd.isna(val) or np.isinf(val):
@@ -153,7 +155,12 @@ def save_data(df, spreadsheet_id, sheet_name, student_name):
         return val
 
     # Get the row of the specific student
-    student_row = df[df['Student Name'] == student_name].iloc[0]
+    student_row = df[df['Student Name'] == student_name]
+    if student_row.empty:
+        logger.error(f"Student {student_name} not found in the data.")
+        return
+
+    student_row = student_row.iloc[0]
 
     # Replace NaN and inf values with None for this student's data
     student_row = student_row.apply(replace_invalid_floats)
@@ -174,31 +181,42 @@ def save_data(df, spreadsheet_id, sheet_name, student_name):
                 except:
                     student_row[col] = ""
 
-    client = get_google_sheet_client()
-    sheet = client.open_by_key(spreadsheet_id).worksheet(sheet_name)
-    
-    # Find the row of the student in the sheet
-    cell = sheet.find(student_name)
-    if cell is None:
-        logger.error(f"Student {student_name} not found in the sheet.")
-        return
+    try:
+        # Use the service account info from st.secrets
+        creds = Credentials.from_service_account_info(
+            st.secrets["gcp_service_account"],
+            scopes=['https://www.googleapis.com/auth/spreadsheets']
+        )
+        client = gspread.authorize(creds)
+        sheet = client.open_by_key(spreadsheet_id).worksheet(sheet_name)
+        
+        # Find the row of the student in the sheet
+        cell = sheet.find(student_name)
+        if cell is None:
+            logger.error(f"Student {student_name} not found in the sheet.")
+            return
 
-    row_number = cell.row
+        row_number = cell.row
 
-    # Prepare the data for update
-    values = [student_row.tolist()]
-    
-    # Calculate the last column letter
-    num_columns = len(student_row)
-    if num_columns <= 26:
-        last_column = string.ascii_uppercase[num_columns - 1]
-    else:
-        last_column = string.ascii_uppercase[(num_columns - 1) // 26 - 1] + string.ascii_uppercase[(num_columns - 1) % 26]
+        # Prepare the data for update
+        values = [student_row.tolist()]
+        
+        # Calculate the last column letter
+        num_columns = len(student_row)
+        if num_columns <= 26:
+            last_column = string.ascii_uppercase[num_columns - 1]
+        else:
+            last_column = string.ascii_uppercase[(num_columns - 1) // 26 - 1] + string.ascii_uppercase[(num_columns - 1) % 26]
 
-    # Update only the specific student's row
-    sheet.update(f'A{row_number}:{last_column}{row_number}', values)
+        # Update only the specific student's row
+        sheet.update(f'A{row_number}:{last_column}{row_number}', values)
 
-    logger.info(f"Updated data for student: {student_name}")
+        logger.info(f"Successfully updated data for student: {student_name}")
+    except Exception as e:
+        logger.error(f"Error saving changes for student {student_name}: {str(e)}")
+        raise
+
+    logger.info(f"Save completed for student: {student_name}")
 
 def format_date(date_string):
     if pd.isna(date_string) or date_string == 'NaT':

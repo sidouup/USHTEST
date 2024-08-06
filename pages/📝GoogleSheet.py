@@ -2,10 +2,9 @@ import streamlit as st
 import gspread
 from google.oauth2.service_account import Credentials
 import pandas as pd
+import numpy as np  # Ensure NumPy is imported
 import time
 import logging
-import numpy as np  # Ensure NumPy is imported
-
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -39,6 +38,53 @@ def load_data():
     df = df.astype(str)  # Convert all to string to prevent type issues later
     df['DATE'] = pd.to_datetime(df['DATE'], dayfirst=True, errors='coerce')  # Handle DATE conversion
     return df
+
+# Function to get changed rows
+def get_changed_rows(original_df, edited_df):
+    # Ensure both DataFrames have the same columns in the same order
+    edited_df = edited_df.reindex(columns=original_df.columns)
+    
+    # Debugging output
+    print("Original DataFrame Columns:", original_df.columns)
+    print("Edited DataFrame Columns:", edited_df.columns)
+    
+    # Reset the index to ensure alignment for comparison
+    original_df = original_df.reset_index(drop=True)
+    edited_df = edited_df.reset_index(drop=True)
+    
+    # Compare the DataFrames to find changes
+    changed_mask = (original_df != edited_df).any(axis=1)
+    changed_rows = edited_df[changed_mask]
+    return changed_rows
+
+# Function to save data to Google Sheets
+def save_data(changed_data, spreadsheet_url):
+    logger.info("Attempting to save changes")
+    try:
+        spreadsheet = client.open_by_url(spreadsheet_url)
+        sheet = spreadsheet.sheet1
+
+        # Convert datetime objects back to strings if needed
+        if 'DATE' in changed_data.columns:
+            changed_data['DATE'] = changed_data['DATE'].dt.strftime('%d/%m/%Y %H:%M:%S')
+
+        changed_data.replace([np.nan, np.inf, -np.inf], 'NaN', inplace=True)  # Handle NaN and infinite values
+
+        # Batch update the changed rows using 'indexs' for the correct Google Sheets row
+        updated_rows = []
+        for index, row in changed_data.iterrows():
+            cell_range = f'A{row["indexs"]}'  # Use the indexs for the range
+            updated_rows.append({
+                'range': cell_range,
+                'values': [row.drop('indexs').values.tolist()]  # Drop the indexs from data being sent to Sheets
+            })
+        
+        sheet.batch_update(updated_rows)
+        logger.info("Changes saved successfully")
+        return True
+    except Exception as e:
+        logger.error(f"Error saving changes: {str(e)}")
+        return False
 
 # Load data and initialize session state
 if 'data' not in st.session_state or st.session_state.get('reload_data', False):
@@ -90,44 +136,6 @@ filtered_data.sort_values(by='DATE', inplace=True)
 # Use a key for the data_editor to ensure proper updates
 edited_df = st.data_editor(filtered_data, num_rows="dynamic", key="student_data")
 
-# Function to get changed rows
-def get_changed_rows(original_df, edited_df):
-    original_df_sorted = original_df.sort_values(by='DATE').reset_index(drop=True)
-    edited_df_sorted = edited_df.sort_values(by='DATE').reset_index(drop=True)
-    # Ensure both DataFrames have the same columns in the same order
-    original_df_sorted = original_df_sorted[edited_df_sorted.columns]
-    changed_mask = (original_df_sorted != edited_df_sorted).any(axis=1)
-    return edited_df_sorted.loc[changed_mask]
-
-# Function to save data to Google Sheets
-def save_data(changed_data, spreadsheet_url):
-    logger.info("Attempting to save changes")
-    try:
-        spreadsheet = client.open_by_url(spreadsheet_url)
-        sheet = spreadsheet.sheet1
-
-        # Convert datetime objects back to strings if needed
-        if 'DATE' in changed_data.columns:
-            changed_data['DATE'] = changed_data['DATE'].dt.strftime('%d/%m/%Y %H:%M:%S')
-
-        changed_data.replace([np.nan, np.inf, -np.inf], 'NaN', inplace=True)  # Handle NaN and infinite values
-
-        # Batch update the changed rows using 'indexs' for the correct Google Sheets row
-        updated_rows = []
-        for index, row in changed_data.iterrows():
-            cell_range = f'A{row["indexs"]}'  # Use the indexs for the range
-            updated_rows.append({
-                'range': cell_range,
-                'values': [row.drop('indexs').values.tolist()]  # Drop the indexs from data being sent to Sheets
-            })
-        
-        sheet.batch_update(updated_rows)
-        logger.info("Changes saved successfully")
-        return True
-    except Exception as e:
-        logger.error(f"Error saving changes: {str(e)}")
-        return False
-
 # Update Google Sheet with edited data
 if st.button("Save Changes"):
     try:
@@ -149,9 +157,3 @@ if st.button("Save Changes"):
             st.info("No changes detected.")
     except Exception as e:
         st.error(f"An error occurred while saving: {str(e)}")
-
-# Optionally display original and edited DataFrames for debugging
-# st.write("Original DataFrame:")
-# st.write(st.session_state.original_data)
-# st.write("Edited DataFrame:")
-# st.write(edited_df)

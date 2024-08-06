@@ -2,6 +2,7 @@ import streamlit as st
 import gspread
 from google.oauth2.service_account import Credentials
 import pandas as pd
+import numpy as np
 import time
 import logging
 
@@ -107,6 +108,9 @@ def save_data(changed_data, spreadsheet_url):
 
         # Convert datetime objects back to strings
         changed_data['DATE'] = changed_data['DATE'].dt.strftime('%d/%m/%Y %H:%M:%S')
+
+        # Replace problematic values with a placeholder
+        changed_data.replace([np.inf, -np.inf, np.nan], 'NaN', inplace=True)
 
         # Batch update the changed rows
         updated_rows = []

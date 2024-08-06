@@ -39,21 +39,27 @@ def load_data():
 
 # Function to get changed rows
 # Function to get changed rows
+# Function to get changed rows
 def get_changed_rows(original_df, edited_df):
-    # Ensure both DataFrames have the same columns
-    all_columns = sorted(set(original_df.columns).union(set(edited_df.columns)))
-    original_df = original_df.reindex(columns=all_columns, fill_value='NaN')  # Fill missing columns with NaN
-    edited_df = edited_df.reindex(columns=all_columns, fill_value='NaN')
+    # Standardize columns in both DataFrames
+    all_columns = sorted(set(original_df.columns).union(edited_df.columns))
+    original_df = original_df.reindex(columns=all_columns).fillna('NaN')  # Fill missing columns with placeholder
+    edited_df = edited_df.reindex(columns=all_columns).fillna('NaN')
 
-    # Reset index to ensure rows are compared in sequence
+    # Standardize index in both DataFrames to ensure identical alignment
     original_df.reset_index(drop=True, inplace=True)
     edited_df.reset_index(drop=True, inplace=True)
 
-    # Find rows that have changed
-    changed_mask = original_df != edited_df
-    changed_rows = edited_df[changed_mask.any(axis=1)]
+    # Find rows that have changed using numpy to avoid issues with direct comparison of differing types
+    changes = np.where(original_df != edited_df)
+    changed_rows_indices = np.unique(changes[0])  # Get unique indices of changed rows
+
+    # Extract changed rows from edited DataFrame using the identified indices
+    changed_rows = edited_df.iloc[changed_rows_indices]
 
     return changed_rows
+
+# Ensure you test this function separately to validate the handling of changes
 
 # Load data and initialize session state
 if 'data' not in st.session_state or st.session_state.get('reload_data', False):

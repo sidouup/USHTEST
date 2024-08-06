@@ -36,8 +36,12 @@ def load_data():
 
 # Function to get changed rows
 def get_changed_rows(original_df, edited_df):
-    original_df = original_df.reset_index(drop=True)
-    edited_df = edited_df.reset_index(drop=True)
+    original_df = original_df.reset_index(drop=True).astype(str)
+    edited_df = edited_df.reset_index(drop=True).astype(str)
+    
+    # Ensure both dataframes have the same columns in the same order
+    edited_df = edited_df[original_df.columns]
+    
     comparison_df = original_df != edited_df
     changed_rows = comparison_df.any(axis=1)
     return edited_df[changed_rows]

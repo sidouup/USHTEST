@@ -52,8 +52,8 @@ if 'original_data' not in st.session_state:
     st.session_state.original_data = st.session_state.data.copy()
 
 # Extract month and year for filtering
-st.session_state.data['DATE'] = pd.to_datetime(st.session_state.data['DATE'], errors='coerce')
-st.session_state.data['Month'] = st.session_state.data['DATE'].dt.strftime('%Y-%m').fillna('Invalid Date')
+st.session_state.data['DATE'] = st.session_state.data['DATE'].str.replace("'", "")
+st.session_state.data['Month'] = pd.to_datetime(st.session_state.data['DATE'], errors='coerce').dt.strftime('%Y-%m').fillna('Invalid Date')
 months = ["All"] + sorted(st.session_state.data['Month'].unique())
 
 # Define filter options

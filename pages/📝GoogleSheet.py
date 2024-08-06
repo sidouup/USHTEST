@@ -46,6 +46,9 @@ def save_data(df, spreadsheet_url):
         spreadsheet = client.open_by_url(spreadsheet_url)
         sheet = spreadsheet.sheet1
 
+        # Ensure DATE column is in datetime format
+        df['DATE'] = pd.to_datetime(df['DATE'], errors='coerce')
+
         # Convert datetime objects back to strings
         df['DATE'] = df['DATE'].dt.strftime('%d/%m/%Y %H:%M:%S')
 
@@ -113,6 +116,9 @@ edited_df = st.data_editor(filtered_data, num_rows="dynamic", key="student_data"
 # Update Google Sheet with edited data
 if st.button("Save Changes"):
     try:
+        # Ensure DATE column is in datetime format
+        edited_df['DATE'] = pd.to_datetime(edited_df['DATE'], errors='coerce')
+        
         st.session_state.original_data.update(edited_df)  # Update the original dataset with edited data
         
         if save_data(st.session_state.original_data, spreadsheet_url):

@@ -57,8 +57,28 @@ if 'original_data' not in st.session_state:
 # Display the editable dataframe
 st.title("Student List")
 
+# Filters
+agents = st.multiselect('Filter by Agent', options=st.session_state.data['Agent'].unique())
+months = st.multiselect('Filter by Month', options=st.session_state.data['DATE'].dt.month.unique())
+stages = st.multiselect('Filter by Stage', options=st.session_state.data['Stage'].unique())
+schools = st.multiselect('Filter by Chosen School', options=st.session_state.data['Chosen School'].unique())
+attempts = st.multiselect('Filter by Attempts', options=st.session_state.data['Attempts'].unique())
+
+filtered_data = st.session_state.data.copy()
+
+if agents:
+    filtered_data = filtered_data[filtered_data['Agent'].isin(agents)]
+if months:
+    filtered_data = filtered_data[filtered_data['DATE'].dt.month.isin(months)]
+if stages:
+    filtered_data = filtered_data[filtered_data['Stage'].isin(stages)]
+if schools:
+    filtered_data = filtered_data[filtered_data['Chosen School'].isin(schools)]
+if attempts:
+    filtered_data = filtered_data[filtered_data['Attempts'].isin(attempts)]
+
 # Use a key for the data_editor to ensure proper updates
-edited_df = st.data_editor(st.session_state.data, num_rows="dynamic", key="student_data")
+edited_df = st.data_editor(filtered_data, num_rows="dynamic", key="student_data")
 
 # Function to save data to Google Sheets
 def save_data(changed_data, spreadsheet_url):

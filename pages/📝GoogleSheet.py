@@ -34,8 +34,10 @@ def load_data():
     spreadsheet = client.open_by_url(spreadsheet_url)
     sheet = spreadsheet.sheet1
     data = sheet.get_all_records()
-    df = pd.DataFrame(data).astype(str)
-    df['DATE'] = pd.to_datetime(df['DATE'], dayfirst=True, errors='coerce')
+    df = pd.DataFrame(data)
+    df['indexs'] = df.index + 2  # Start from 2 because Google Sheets starts from 1 and row 1 is likely headers
+    df = df.astype(str)  # Convert all to string to prevent type issues later
+    df['DATE'] = pd.to_datetime(df['DATE'], dayfirst=True, errors='coerce')  # Handle DATE conversion
     return df
 
 # Load data and initialize session state
@@ -103,17 +105,22 @@ def save_data(changed_data, spreadsheet_url):
     try:
         spreadsheet = client.open_by_url(spreadsheet_url)
         sheet = spreadsheet.sheet1
-        # Convert datetime objects back to strings
-        changed_data['DATE'] = changed_data['DATE'].dt.strftime('%d/%m/%Y %H:%M:%S')
-        # Replace problematic values with a placeholder
-        changed_data.replace([np.nan, np.inf, -np.inf], 'NaN', inplace=True)
-        # Batch update the changed rows
+
+        # Convert datetime objects back to strings if needed
+        if 'DATE' in changed_data.columns:
+            changed_data['DATE'] = changed_data['DATE'].dt.strftime('%d/%m/%Y %H:%M:%S')
+
+        changed_data.replace([np.nan, np.inf, -np.inf], 'NaN', inplace=True)  # Handle NaN and infinite values
+
+        # Batch update the changed rows using 'indexs' for the correct Google Sheets row
         updated_rows = []
         for index, row in changed_data.iterrows():
+            cell_range = f'A{row["indexs"]}'  # Use the indexs for the range
             updated_rows.append({
-                'range': f'A{index + 2}',
-                'values': [row.values.tolist()]
+                'range': cell_range,
+                'values': [row.drop('indexs').values.tolist()]  # Drop the indexs from data being sent to Sheets
             })
+        
         sheet.batch_update(updated_rows)
         logger.info("Changes saved successfully")
         return True

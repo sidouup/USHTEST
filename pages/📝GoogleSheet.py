@@ -38,11 +38,17 @@ def load_data():
 
 # Function to get changed rows
 def get_changed_rows(original_df, edited_df):
-    if original_df.shape != edited_df.shape:
-        return edited_df  # If shapes are different, consider all rows as changed
+    original_df_sorted = original_df.copy()
+    original_df_sorted['DATE'] = pd.to_datetime(original_df_sorted['DATE'], dayfirst=True, errors='coerce')
+    original_df_sorted.sort_values(by='DATE', inplace=True)
+    edited_df_sorted = edited_df.copy()
+    edited_df_sorted.sort_values(by='DATE', inplace=True)
+
+    if original_df_sorted.shape != edited_df_sorted.shape:
+        return edited_df_sorted  # If shapes are different, consider all rows as changed
     
-    changed_mask = (original_df != edited_df).any(axis=1)
-    return edited_df.loc[changed_mask]
+    changed_mask = (original_df_sorted != edited_df_sorted).any(axis=1)
+    return edited_df_sorted.loc[changed_mask]
 
 # Load data and initialize session state
 if 'data' not in st.session_state or st.session_state.get('reload_data', False):
@@ -89,6 +95,9 @@ if schools:
 if attempts:
     filtered_data = filtered_data[filtered_data['Attempts'].isin(attempts)]
 
+# Sort filtered data for display
+filtered_data.sort_values(by='DATE', inplace=True)
+
 # Use a key for the data_editor to ensure proper updates
 edited_df = st.data_editor(filtered_data, num_rows="dynamic", key="student_data")
 
@@ -122,9 +131,6 @@ if st.button("Save Changes"):
         
         # Only save data if there are actual changes
         if not st.session_state.changed_data.empty:
-            # Sort the data before saving
-            st.session_state.changed_data.sort_values(by='DATE', inplace=True)
-            
             if save_data(st.session_state.changed_data, spreadsheet_url):
                 st.session_state.data = edited_df  # Update the session state
                 st.session_state.original_data = edited_df.copy()  # Update the original data

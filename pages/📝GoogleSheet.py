@@ -27,7 +27,7 @@ df = pd.DataFrame(data).astype(str)
 
 # Display the editable dataframe
 st.title("Student List")
-edited_df = st.experimental_data_editor(df, num_rows="dynamic")
+edited_df = st.data_editor(df, num_rows="dynamic")
 
 # Update Google Sheet with edited data
 if st.button("Save Changes"):

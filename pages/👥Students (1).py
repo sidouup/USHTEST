@@ -145,60 +145,78 @@ def load_data(spreadsheet_id):
         return pd.DataFrame()
 
 # Function to save data to Google Sheets (batch up)
-from tenacity import retry, stop_after_attempt, wait_exponential
-from google.auth.exceptions import TransportError
+def save_data(df, spreadsheet_id, sheet_name, student_name):
+    logger.info(f"Attempting to save changes for student: {student_name}")
 
-@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
-def update_sheet_with_retry(sheet, range_name, values):
+    def replace_invalid_floats(val):
+        if isinstance(val, float):
+            if pd.isna(val) or np.isinf(val):
+                return None
+        return val
+
+    # Get the row of the specific student
+    student_row = df[df['Student Name'] == student_name]
+    if student_row.empty:
+        logger.error(f"Student {student_name} not found in the data.")
+        return
+
+    student_row = student_row.iloc[0]
+
+    # Replace NaN and inf values with None for this student's data
+    student_row = student_row.apply(replace_invalid_floats)
+
+    # Replace [pd.NA, pd.NaT, float('inf'), float('-inf')] with None
+    student_row = student_row.replace([pd.NA, pd.NaT, float('inf'), float('-inf')], None)
+
+    # Format the date columns to ensure consistency
+    date_columns = ['DATE', 'School Entry Date', 'Entry Date in the US', 'EMBASSY ITW. DATE']
+    for col in date_columns:
+        if col in student_row.index:
+            value = student_row[col]
+            if pd.notna(value):
+                try:
+                    # Convert to datetime and format as string
+                    formatted_date = pd.to_datetime(value).strftime('%d/%m/%Y %H:%M:%S')
+                    student_row[col] = formatted_date
+                except:
+                    student_row[col] = ""
+
     try:
-        sheet.update(range_name, values)
-    except TransportError as e:
-        logger.error(f"TransportError occurred: {e}")
+        # Use the service account info from st.secrets
+        creds = Credentials.from_service_account_info(
+            st.secrets["gcp_service_account"],
+            scopes=['https://www.googleapis.com/auth/spreadsheets']
+        )
+        client = gspread.authorize(creds)
+        sheet = client.open_by_key(spreadsheet_id).worksheet(sheet_name)
+        
+        # Find the row of the student in the sheet
+        cell = sheet.find(student_name)
+        if cell is None:
+            logger.error(f"Student {student_name} not found in the sheet.")
+            return
+
+        row_number = cell.row
+
+        # Prepare the data for update
+        values = [student_row.tolist()]
+        
+        # Calculate the last column letter
+        num_columns = len(student_row)
+        if num_columns <= 26:
+            last_column = string.ascii_uppercase[num_columns - 1]
+        else:
+            last_column = string.ascii_uppercase[(num_columns - 1) // 26 - 1] + string.ascii_uppercase[(num_columns - 1) % 26]
+
+        # Update only the specific student's row
+        sheet.update(f'A{row_number}:{last_column}{row_number}', values)
+
+        logger.info(f"Successfully updated data for student: {student_name}")
+    except Exception as e:
+        logger.error(f"Error saving changes for student {student_name}: {str(e)}")
         raise
 
-def save_data(df, spreadsheet_id, sheet_name, student_name):
-    logger.info(f"Starting save process for student: {student_name}")
-    
-    with st.spinner("Saving changes..."):
-        try:
-            creds = Credentials.from_service_account_info(
-                st.secrets["gcp_service_account"],
-                scopes=['https://www.googleapis.com/auth/spreadsheets']
-            )
-            client = gspread.authorize(creds)
-            sheet = client.open_by_key(spreadsheet_id).worksheet(sheet_name)
-            
-            cell = sheet.find(student_name)
-            if cell is None:
-                logger.error(f"Student {student_name} not found in the sheet.")
-                raise ValueError(f"Student {student_name} not found in the sheet.")
-
-            row_number = cell.row
-            student_row = df[df['Student Name'] == student_name].iloc[0]
-            
-            # Replace NaN and inf values with None
-            student_row = student_row.replace([pd.NA, pd.NaT, float('inf'), float('-inf')], None)
-            
-            # Format date columns
-            date_columns = ['DATE', 'School Entry Date', 'Entry Date in the US', 'EMBASSY ITW. DATE']
-            for col in date_columns:
-                if col in student_row.index and pd.notna(student_row[col]):
-                    student_row[col] = pd.to_datetime(student_row[col]).strftime('%d/%m/%Y %H:%M:%S')
-            
-            values = [student_row.tolist()]
-            num_columns = len(student_row)
-            last_column = chr(64 + min(num_columns, 26)) if num_columns <= 26 else chr(64 + (num_columns - 1) // 26) + chr(64 + (num_columns - 1) % 26 + 1)
-            
-            logger.info(f"Updating sheet for student: {student_name}")
-            update_sheet_with_retry(sheet, f'A{row_number}:{last_column}{row_number}', values)
-            logger.info(f"Sheet updated for student: {student_name}")
-            time.sleep(2)  # Small delay after saving
-        except Exception as e:
-            logger.error(f"Error saving changes for student {student_name}: {str(e)}", exc_info=True)
-            raise
-    
-    logger.info(f"Save process completed for student: {student_name}")
-
+    logger.info(f"Save completed for student: {student_name}")
 
 def format_date(date_string):
     if pd.isna(date_string) or date_string == 'NaT':
@@ -214,12 +232,9 @@ def format_date(date_string):
 
 
 def clear_cache_and_rerun():
-    with st.spinner("Reloading data..."):
-        st.cache_data.clear()
-        st.cache_resource.clear()
-        time.sleep(2)  # Small delay before rerun
+    st.cache_data.clear()
+    st.cache_resource.clear()
     st.rerun()
-
 
 # Function to calculate days until interview
 def calculate_days_until_interview(interview_date):
@@ -977,10 +992,7 @@ def main():
             
                 st.markdown('</div>', unsafe_allow_html=True)
     
-    if st.button("Save Changes", key="save_changes_button", disabled=st.session_state.get('is_saving', False)):
-        try:
-            st.session_state['is_saving'] = True
-            with st.spinner("Saving changes and reloading..."):
+            if st.button("Save Changes", key="save_changes_button"):
                 updated_student = {
                     'First Name': st.session_state.get('first_name', ''),
                     'Last Name': st.session_state.get('last_name', ''),
@@ -1016,19 +1028,25 @@ def main():
                     'Agent': st.session_state.get('Agent', ''),
                     'Application payment ?': st.session_state.get('application_payment', ''),
                 }
-                
+            
+                # Update the data in the DataFrame
                 for key, value in updated_student.items():
                     filtered_data.loc[filtered_data['Student Name'] == student_name, key] = value
-                
-                save_data(filtered_data, spreadsheet_id, 'ALL', student_name)
-                st.session_state['reload_data'] = True
-                clear_cache_and_rerun()
-            st.success("Changes saved successfully!")
-        except Exception as e:
-            st.error(f"Error saving changes: {str(e)}")
-            logger.error(f"Error saving changes: {str(e)}", exc_info=True)
-        finally:
-            st.session_state['is_saving'] = False
+            
+                try:
+                    # Save the updated data back to Google Sheets
+                    save_data(filtered_data, spreadsheet_id, 'ALL', student_name)
+                    st.success("Changes saved successfully!")
+                    
+                    # Set a flag to reload data on next run
+                    st.session_state['reload_data'] = True
+                    
+                    # Clear the cache and rerun the app
+                    st.cache_data.clear()
+                    time.sleep(2)  # Wait for 2 seconds to allow changes to propagate
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Error saving changes: {str(e)}")
                         
     
 

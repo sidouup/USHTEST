@@ -48,7 +48,7 @@ def get_changed_rows(original_df, edited_df):
     edited_df = edited_df[columns]
 
     changed_mask = (original_df != edited_df).any(axis=1)
-    return edited_df.loc[changed_mas
+    return edited_df.loc[changed_mask]
     
 # Load data and initialize session state
 if 'data' not in st.session_state or st.session_state.get('reload_data', False):

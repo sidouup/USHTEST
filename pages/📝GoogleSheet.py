@@ -98,9 +98,4 @@ if 'changed_data' in st.session_state and not st.session_state.changed_data.empt
     st.dataframe(st.session_state.changed_data)
 
 
-# Display only the changed students
-changed_df = get_changed_rows(st.session_state.original_data, edited_df)
-st.subheader("Changed Students:")
-if not changed_df.empty:
-    st.dataframe(changed_df)
 

@@ -60,6 +60,10 @@ st.title("Student List")
 # Use a key for the data_editor to ensure proper updates
 edited_df = st.data_editor(st.session_state.data, num_rows="dynamic", key="student_data")
 
+# Sort the edited dataframe by DATE
+edited_df['DATE'] = pd.to_datetime(edited_df['DATE'], format="%d/%m/%Y %H:%M:%S")
+edited_df.sort_values(by='DATE', inplace=True)
+
 # Function to save data to Google Sheets
 def save_data(df, spreadsheet_url):
     logger.info("Attempting to save changes")

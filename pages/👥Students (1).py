@@ -992,7 +992,7 @@ def main():
             
                 st.markdown('</div>', unsafe_allow_html=True)
     
-            if edit_mode and st.button("Save Changes", key="save_changes_button"):
+            if st.button("Save Changes", key="save_changes_button"):
                 updated_student = {
                     'First Name': st.session_state.get('first_name', ''),
                     'Last Name': st.session_state.get('last_name', ''),
@@ -1014,7 +1014,7 @@ def main():
                     'Password DS-160': st.session_state.get('password_ds160', ''),
                     'Secret Q.': st.session_state.get('secret_q', ''),
                     'Visa Result': st.session_state.get('visa_status', ''),
-                    'Stage': st.session_state.get('current_stage', ''),  # Add this line
+                    'Stage': st.session_state.get('current_stage', ''),
                     'DATE': st.session_state.get('payment_date', ''),
                     'BANK': st.session_state.get('Bankstatment', ''),
                     'Gender': st.session_state.get('Gender', ''),
@@ -1033,19 +1033,21 @@ def main():
                 for key, value in updated_student.items():
                     filtered_data.loc[filtered_data['Student Name'] == student_name, key] = value
             
-                # Save the updated data back to Google Sheets
-                save_data(filtered_data, spreadsheet_id, 'ALL', student_name)
-                st.success("Changes saved successfully!")
-                
-                # Set a flag to reload data on next run
-                st.session_state['reload_data'] = True
-                
-                # Exit edit mode
-                st.session_state['edit_mode'] = False
-                
-                # Rerun the app to show updated data
-                st.rerun()
-            
+                try:
+                    # Save the updated data back to Google Sheets
+                    save_data(filtered_data, spreadsheet_id, 'ALL', student_name)
+                    st.success("Changes saved successfully!")
+                    
+                    # Set a flag to reload data on next run
+                    st.session_state['reload_data'] = True
+                    
+                    # Clear the cache and rerun the app
+                    st.cache_data.clear()
+                    time.sleep(2)  # Wait for 2 seconds to allow changes to propagate
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Error saving changes: {str(e)}")
+                        
     
 
     else:

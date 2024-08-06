@@ -57,6 +57,38 @@ st.title("Student List")
 # Use a key for the data_editor to ensure proper updates
 edited_df = st.data_editor(st.session_state.data, num_rows="dynamic", key="student_data")
 
+# Extract month and year for filtering
+st.session_state.data['DATE'] = pd.to_datetime(st.session_state.data['DATE'], errors='coerce')
+st.session_state.data['Month'] = st.session_state.data['DATE'].dt.strftime('%Y-%m').fillna('Invalid Date')
+months = ["All"] + sorted(st.session_state.data['Month'].unique())
+
+# Define filter options
+current_steps = ["All"] + list(st.session_state.data['Stage'].unique())
+agents = ["All", "Nesrine", "Hamza", "Djazila","Nada"]
+school_options = ["All", "University", "Community College", "CCLS Miami", "CCLS NY NJ", "Connect English", "CONVERSE SCHOOL", "ELI San Francisco", "F2 Visa", "GT Chicago", "BEA Huston", "BIA Huston", "OHLA Miami", "UCDEA", "HAWAII", "Not Partner", "Not yet"]
+attempts_options = ["All", "1 st Try", "2 nd Try", "3 rd Try"]
+
+# Add filter widgets
+selected_month = st.selectbox("Select Month", months)
+selected_step = st.selectbox("Select Current Step", current_steps)
+selected_agent = st.selectbox("Select Agent", agents)
+selected_school = st.selectbox("Select School Option", school_options)
+selected_attempt = st.selectbox("Select Attempt", attempts_options)
+
+# Apply filters to the dataframe
+filtered_data = st.session_state.data.copy()
+
+if selected_month != "All":
+    filtered_data = filtered_data[filtered_data['Month'] == selected_month]
+if selected_step != "All":
+    filtered_data = filtered_data[filtered_data['Stage'] == selected_step]
+if selected_agent != "All":
+    filtered_data = filtered_data[filtered_data['Agent'] == selected_agent]
+if selected_school != "All":
+    filtered_data = filtered_data[filtered_data['Chosen School'] == selected_school]
+if selected_attempt != "All":
+    filtered_data = filtered_data[filtered_data['Attempt'] == selected_attempt]
+
 # Function to save data to Google Sheets
 def save_data(df, spreadsheet_url):
     logger.info("Attempting to save changes")
@@ -97,6 +129,12 @@ st.subheader("All Students:")
 if 'changed_data' in st.session_state and not st.session_state.changed_data.empty:
     st.dataframe(st.session_state.changed_data)
 
+# Display filtered data
+st.subheader("Filtered Students:")
+if not filtered_data.empty:
+    st.dataframe(filtered_data)
+else:
+    st.info("No data matches the selected filters.")
 
 # Display only the changed students
 changed_df = get_changed_rows(st.session_state.original_data, edited_df)

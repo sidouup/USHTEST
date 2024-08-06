@@ -33,7 +33,7 @@ def load_data():
     sheet = spreadsheet.sheet1  # Adjust if you need to access a different sheet
     data = sheet.get_all_records()
     df = pd.DataFrame(data).astype(str)
-    df['DATE'] = pd.to_datetime(df['DATE'], errors='coerce')  # Convert DATE to datetime
+    df['DATE'] = pd.to_datetime(df['DATE'], dayfirst=True, errors='coerce')  # Convert DATE to datetime with dayfirst=True
     df.sort_values(by='DATE', inplace=True)  # Sort by DATE
     return df
 
@@ -66,6 +66,10 @@ def save_data(df, spreadsheet_url):
     try:
         spreadsheet = client.open_by_url(spreadsheet_url)
         sheet = spreadsheet.sheet1
+        
+        # Convert datetime objects back to strings
+        df['DATE'] = df['DATE'].dt.strftime('%d/%m/%Y %H:%M:%S')
+        
         sheet.clear()
         sheet.update([df.columns.values.tolist()] + df.values.tolist())
         logger.info("Changes saved successfully")

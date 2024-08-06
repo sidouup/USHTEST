@@ -103,5 +103,4 @@ changed_df = get_changed_rows(st.session_state.original_data, edited_df)
 st.subheader("Changed Students:")
 if not changed_df.empty:
     st.dataframe(changed_df)
-else:
-    st.info("No changes detected.")
+

@@ -1,101 +1,65 @@
+
 import streamlit as st
-import base64
-from datetime import datetime, timedelta
-import json
+from streamlit_option_menu import option_menu
 
-# Get encryption key from secrets
-ENCRYPTION_KEY = st.secrets["encryption_key"]
+# --- PAGE CONFIGURATION ---
+st.set_page_config(page_title="Login", page_icon="🔒", layout="centered")
 
-# Get users from secrets
-users = st.secrets["users"]
+# --- AUTHENTICATION LOGIC ---
+def check_credentials(username, password):
+    if username == st.secrets["admin_username"] and password == st.secrets["admin_password"]:
+        return "admin"
+    elif username == st.secrets["user_username"] and password == st.secrets["user_password"]:
+        return "user"
+    else:
+        return None
 
-def encrypt(data):
-    return base64.urlsafe_b64encode(json.dumps(data).encode()).decode()
-
-def decrypt(data):
-    return json.loads(base64.urlsafe_b64decode(data.encode()).decode())
-
-def login(username, password):
-    if username in users and users[username]["password"] == password:
-        return users[username]["role"]
-    return None
-
-def init_session_state():
-    if 'logged_in' not in st.session_state:
-        st.session_state.logged_in = False
-    if 'username' not in st.session_state:
-        st.session_state.username = ''
-    if 'role' not in st.session_state:
-        st.session_state.role = ''
-    if 'expiry' not in st.session_state:
-        st.session_state.expiry = None
-
-def check_session():
-    if st.session_state.logged_in:
-        if st.session_state.expiry and datetime.now() > datetime.fromisoformat(st.session_state.expiry):
-            st.session_state.logged_in = False
-            st.session_state.username = ''
-            st.session_state.role = ''
-            st.session_state.expiry = None
-            st.warning("Your session has expired. Please log in again.")
-        else:
-            # Renew session
-            st.session_state.expiry = (datetime.now() + timedelta(minutes=30)).isoformat()
-
-def main():
-    st.title("Multi-page Streamlit App with Persistent Sessions")
-
-    init_session_state()
-    check_session()
-
-    if not st.session_state.logged_in:
+# --- LOGIN FORM ---
+if "logged_in" not in st.session_state:  # Check if user is already logged in
+    with st.form("login_form"):
+        st.markdown("<h2 style='text-align: center;'>Login</h2>", unsafe_allow_html=True)
         username = st.text_input("Username")
         password = st.text_input("Password", type="password")
+        submit_button = st.form_submit_button("Login")
 
-        if st.button("Login"):
-            role = login(username, password)
-            if role:
-                st.session_state.logged_in = True
-                st.session_state.username = username
-                st.session_state.role = role
-                st.session_state.expiry = (datetime.now() + timedelta(minutes=30)).isoformat()
-                st.rerun()
-            else:
-                st.error("Invalid username or password")
-    else:
-        st.write(f"Welcome, {st.session_state.username}! Your role is: {st.session_state.role}")
-        st.write("You can now access other pages based on your role.")
+    # Check credentials
+    if submit_button:
+        role = check_credentials(username, password)
+        if role:
+            st.session_state["logged_in"] = True
+            st.session_state["username"] = username
+            st.session_state["role"] = role
+            st.success("Logged in as {}".format(role))
+            st.rerun()  # Refresh the page after successful login
+        else:
+            st.error("Invalid username or password")
+else:  # --- APP CONTENT ---
+    # Option menu based on user role
+    role = st.session_state["role"]
+    if role == "admin":  # Admin has access to all pages
+        with st.sidebar:
+            selected = option_menu("Main Menu", ["Home", "Analytics", "Settings"], 
+                icons=['house', 'graph-up-arrow', 'gear'], menu_icon="cast", default_index=0)
+            
+else:  # --- APP CONTENT ---
+    with st.sidebar:
+        role = st.session_state["role"]
+        if role == "admin":
+            selected = option_menu("Main Menu", ["Home", "Analytics", "Settings"],
+                icons=['house', 'graph-up-arrow', 'gear'], menu_icon="cast", default_index=0)
+        elif role == "user":
+            selected = option_menu("Main Menu", ["Home", "Profile"], 
+                icons=['house', 'person'], menu_icon="cast", default_index=0)
 
-        if st.button("Logout"):
-            st.session_state.logged_in = False
-            st.session_state.username = ""
-            st.session_state.role = ""
-            st.session_state.expiry = None
-            st.rerun()
+    # Display the selected page
+    if selected == "Home":
+        pages.main.app()  # Call the app() function of the selected page
+    elif selected == "Analytics" and role == "admin":
+        pages.📊Statistics.py.app()
+    elif selected == "Settings" and role == "admin":
+        pages.📝GoogleSheet.app()
+    elif selected == "Profile":
+        pages.🚨Emergency.app()
 
-    # Store session data in query params
-    if st.session_state.logged_in:
-        session_data = encrypt({
-            "username": st.session_state.username,
-            "role": st.session_state.role,
-            "expiry": st.session_state.expiry
-        })
-        st.experimental_set_query_params(session=session_data)
-
-if __name__ == "__main__":
-    # Check for session data in query parameters
-    query_params = st.experimental_get_query_params()
-    if "session" in query_params:
-        try:
-            session_data = decrypt(query_params["session"][0])
-            st.session_state.logged_in = True
-            st.session_state.username = session_data["username"]
-            st.session_state.role = session_data["role"]
-            st.session_state.expiry = session_data["expiry"]
-        except Exception:
-            st.session_state.logged_in = False
-            st.experimental_set_query_params()
-    main()
-
-# Explicitly export the functions
-__all__ = ['init_session_state', 'check_session']
+    # Logout button
+    st.sidebar.button("Logout", on_click=lambda: st.session_state.clear()) 

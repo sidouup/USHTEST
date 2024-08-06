@@ -31,8 +31,7 @@ edited_df = st.data_editor(df, num_rows="dynamic")
 
 # Function to find changed rows
 def find_changed_rows(original_df, edited_df):
-    changed_rows = original_df != edited_df
-    return edited_df[changed_rows.any(axis=1)]
+    return edited_df[(original_df != edited_df).any(axis=1)]
 
 # Update Google Sheet with edited data and show changed rows
 if st.button("Save Changes"):
@@ -47,6 +46,3 @@ if st.button("Save Changes"):
         st.dataframe(changed_rows_df)
     else:
         st.write("No changes detected.")
-
-# Display the editable data frame again
-st.dataframe(edited_df)

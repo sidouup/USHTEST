@@ -62,7 +62,7 @@ months = ["All"] + sorted(st.session_state.data['Month'].unique())
 
 # Define filter options
 current_steps = ["All"] + list(st.session_state.data['Stage'].unique())
-agents = ["All", "Nesrine", "Hamza", "Djazila","Nada"]
+agents = ["All", "Nesrine", "Hamza", "Djazila", "Nada"]
 school_options = ["All", "University", "Community College", "CCLS Miami", "CCLS NY NJ", "Connect English", "CONVERSE SCHOOL", "ELI San Francisco", "F2 Visa", "GT Chicago", "BEA Huston", "BIA Huston", "OHLA Miami", "UCDEA", "HAWAII", "Not Partner", "Not yet"]
 attempts_options = ["All", "1 st Try", "2 nd Try", "3 rd Try"]
 
@@ -92,6 +92,10 @@ if selected_school != "All":
     filtered_data = filtered_data[filtered_data['Chosen School'] == selected_school]
 if selected_attempt != "All":
     filtered_data = filtered_data[filtered_data['Attempt'] == selected_attempt]
+
+# Sort the filtered data by date
+filtered_data['DATE'] = pd.to_datetime(filtered_data['DATE'], errors='coerce')
+filtered_data = filtered_data.sort_values('DATE', ascending=False)
 
 # Function to save data to Google Sheets
 def save_data(df, spreadsheet_url):

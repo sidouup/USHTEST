@@ -38,33 +38,12 @@ def load_data():
     return df
 
 # Function to get changed rows
-# Function to get changed rows
-# Function to get changed rows
 def get_changed_rows(original_df, edited_df):
-    # Ensure both DataFrames have the same columns and sort them
-    common_columns = sorted(set(original_df.columns).union(edited_df.columns))
-    original_df = original_df.reindex(columns=common_columns).fillna('NaN')
-    edited_df = edited_df.reindex(columns=common_columns).fillna('NaN')
-
-    # Reset indices to ensure alignment
-    original_df.reset_index(drop=True, inplace=True)
-    edited_df.reset_index(drop=True, inplace=True)
-
-    # List to store the indices of changed rows
-    changed_rows_indices = []
-
-    # Compare each row individually
-    for idx in range(min(len(original_df), len(edited_df))):
+    changed_rows = []
+    for idx in range(len(original_df)):
         if not original_df.iloc[idx].equals(edited_df.iloc[idx]):
-            changed_rows_indices.append(idx)
-
-    # Get the changed rows from edited_df using the collected indices
-    changed_rows = edited_df.iloc[changed_rows_indices]
-    
-    return changed_rows
-
-
-# Ensure you test this function separately to validate the handling of changes
+            changed_rows.append(edited_df.iloc[idx])
+    return pd.DataFrame(changed_rows)
 
 # Load data and initialize session state
 if 'data' not in st.session_state or st.session_state.get('reload_data', False):

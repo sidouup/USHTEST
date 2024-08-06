@@ -33,12 +33,20 @@ def update_data(sheet_url, df, edited_rows):
     client = get_google_sheet_client()
     sheet = client.open_by_url(sheet_url)
     worksheet = sheet.get_worksheet(0)
+    
+    def convert_to_column_letter(n):
+        string = ""
+        while n > 0:
+            n, remainder = divmod(n - 1, 26)
+            string = chr(65 + remainder) + string
+        return string
+
     for row in edited_rows:
-        cell_range = f"A{row+2}:{chr(65 + len(df.columns) - 1)}{row+2}"
+        cell_range = f"A{row+2}:{convert_to_column_letter(len(df.columns))}{row+2}"
         worksheet.update(cell_range, [df.iloc[row].tolist()])
 
 # Load the data
-sheet_url = "https://docs.google.com/spreadsheets/d/1NkW2a4_eOlDGeVxY9PZk-lEI36PvAv9XoO4ZIwl-Sew/edit?gid=1019724402#gid=1019724402"  # Replace with your Google Sheet URL
+sheet_url = "YOUR_GOOGLE_SHEET_URL"  # Replace with your Google Sheet URL
 data = load_data(sheet_url)
 
 # Display the data

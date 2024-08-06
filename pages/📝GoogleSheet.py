@@ -36,15 +36,11 @@ def load_data():
 
 # Function to get changed rows
 def get_changed_rows(original_df, edited_df):
-    original_df = original_df.reset_index(drop=True).astype(str)
-    edited_df = edited_df.reset_index(drop=True).astype(str)
+    if original_df.shape != edited_df.shape:
+        return edited_df  # If shapes are different, consider all rows as changed
     
-    # Ensure both dataframes have the same columns in the same order
-    edited_df = edited_df[original_df.columns]
-    
-    comparison_df = original_df != edited_df
-    changed_rows = comparison_df.any(axis=1)
-    return edited_df[changed_rows]
+    changed_mask = (original_df != edited_df).any(axis=1)
+    return edited_df[changed_mask]
 
 # Load data and initialize session state
 if 'data' not in st.session_state or st.session_state.get('reload_data', False):
@@ -55,47 +51,11 @@ if 'data' not in st.session_state or st.session_state.get('reload_data', False):
 if 'original_data' not in st.session_state:
     st.session_state.original_data = st.session_state.data.copy()
 
-# Extract month and year for filtering
-st.session_state.data['DATE'] = st.session_state.data['DATE'].str.replace("'", "")
-st.session_state.data['Month'] = pd.to_datetime(st.session_state.data['DATE'], errors='coerce').dt.strftime('%Y-%m').fillna('Invalid Date')
-months = ["All"] + sorted(st.session_state.data['Month'].unique())
-
-# Define filter options
-current_steps = ["All"] + list(st.session_state.data['Stage'].unique())
-agents = ["All", "Nesrine", "Hamza", "Djazila", "Nada"]
-school_options = ["All", "University", "Community College", "CCLS Miami", "CCLS NY NJ", "Connect English", "CONVERSE SCHOOL", "ELI San Francisco", "F2 Visa", "GT Chicago", "BEA Huston", "BIA Huston", "OHLA Miami", "UCDEA", "HAWAII", "Not Partner", "Not yet"]
-attempts_options = ["All", "1 st Try", "2 nd Try", "3 rd Try"]
-
-# Add filter widgets
-selected_month = st.selectbox("Select Month", months)
-selected_step = st.selectbox("Select Current Step", current_steps)
-selected_agent = st.selectbox("Select Agent", agents)
-selected_school = st.selectbox("Select School Option", school_options)
-selected_attempt = st.selectbox("Select Attempt", attempts_options)
-
 # Display the editable dataframe
 st.title("Student List")
 
 # Use a key for the data_editor to ensure proper updates
 edited_df = st.data_editor(st.session_state.data, num_rows="dynamic", key="student_data")
-
-# Apply filters to the edited dataframe
-filtered_data = edited_df.copy()
-
-if selected_month != "All":
-    filtered_data = filtered_data[filtered_data['Month'] == selected_month]
-if selected_step != "All":
-    filtered_data = filtered_data[filtered_data['Stage'] == selected_step]
-if selected_agent != "All":
-    filtered_data = filtered_data[filtered_data['Agent'] == selected_agent]
-if selected_school != "All":
-    filtered_data = filtered_data[filtered_data['Chosen School'] == selected_school]
-if selected_attempt != "All":
-    filtered_data = filtered_data[filtered_data['Attempt'] == selected_attempt]
-
-# Sort the filtered data by date
-filtered_data['DATE'] = pd.to_datetime(filtered_data['DATE'], errors='coerce')
-filtered_data = filtered_data.sort_values('DATE', ascending=False)
 
 # Function to save data to Google Sheets
 def save_data(df, spreadsheet_url):
@@ -137,12 +97,6 @@ st.subheader("All Students:")
 if 'changed_data' in st.session_state and not st.session_state.changed_data.empty:
     st.dataframe(st.session_state.changed_data)
 
-# Display filtered data
-st.subheader("Filtered Students:")
-if not filtered_data.empty:
-    st.dataframe(filtered_data)
-else:
-    st.info("No data matches the selected filters.")
 
 # Display only the changed students
 changed_df = get_changed_rows(st.session_state.original_data, edited_df)

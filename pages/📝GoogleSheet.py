@@ -2,6 +2,12 @@ import streamlit as st
 import gspread
 from google.oauth2.service_account import Credentials
 import pandas as pd
+import time
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Page configuration
 st.set_page_config(page_title="Student List", layout="wide")
@@ -40,17 +46,37 @@ st.title("Student List")
 # Use a key for the data_editor to ensure proper updates
 edited_df = st.data_editor(st.session_state.data, num_rows="dynamic", key="student_data")
 
-# Update Google Sheet with edited data
-if st.button("Save Changes"):
+# Function to save data to Google Sheets
+def save_data(df, spreadsheet_url):
+    logger.info("Attempting to save changes")
     try:
         spreadsheet = client.open_by_url(spreadsheet_url)
         sheet = spreadsheet.sheet1
         sheet.clear()
-        sheet.update([edited_df.columns.values.tolist()] + edited_df.values.tolist())
-        st.session_state.data = edited_df  # Update the session state
-        st.success("Changes saved successfully!")
-        # Clear the cache to ensure fresh data on next load
-        load_data.clear()
+        sheet.update([df.columns.values.tolist()] + df.values.tolist())
+        logger.info("Changes saved successfully")
+        return True
+    except Exception as e:
+        logger.error(f"Error saving changes: {str(e)}")
+        return False
+
+# Update Google Sheet with edited data
+if st.button("Save Changes"):
+    try:
+        if save_data(edited_df, spreadsheet_url):
+            st.session_state.data = edited_df  # Update the session state
+            st.success("Changes saved successfully!")
+            
+            # Clear the cache to ensure fresh data on next load
+            load_data.clear()
+            
+            # Use a spinner while waiting for changes to propagate
+            with st.spinner("Refreshing data..."):
+                time.sleep(2)  # Wait for 2 seconds to allow changes to propagate
+            
+            st.rerun()
+        else:
+            st.error("Failed to save changes. Please try again.")
     except Exception as e:
         st.error(f"An error occurred while saving: {str(e)}")
 

@@ -69,9 +69,9 @@ with col1:
     agents = st.multiselect('Filter by Agent', options=st.session_state.data['Agent'].unique())
 
 with col2:
-    # Create a new column 'Months' for filtering
-    st.session_state.data['Months'] = st.session_state.data['DATE'].dt.strftime('%B %Y')
-    months_years = st.multiselect('Filter by Month', options=st.session_state.data['Months'].unique())
+    # Create a new column 'Month_Year' for filtering
+    st.session_state.data['Month_Year'] = st.session_state.data['DATE'].dt.strftime('%B %Y')
+    months_years = st.multiselect('Filter by Month', options=st.session_state.data['Month_Year'].unique())
 
 with col3:
     stages = st.multiselect('Filter by Stage', options=st.session_state.data['Stage'].unique())
@@ -87,7 +87,7 @@ filtered_data = st.session_state.data.copy()
 if agents:
     filtered_data = filtered_data[filtered_data['Agent'].isin(agents)]
 if months_years:
-    filtered_data = filtered_data[filtered_data['Months'].isin(months_years)]
+    filtered_data = filtered_data[filtered_data['Month_Year'].isin(months_years)]
 if stages:
     filtered_data = filtered_data[filtered_data['Stage'].isin(stages)]
 if schools:
@@ -152,3 +152,7 @@ if st.button("Save Changes"):
     except Exception as e:
         st.error(f"An error occurred while saving: {str(e)}")
 
+# Display the current state of the data
+st.subheader("All Students:")
+if 'changed_data' in st.session_state and not st.session_state.changed_data.empty:
+    st.dataframe(st.session_state.changed_data)

@@ -104,11 +104,12 @@ if schools:
 if attempts:
     filtered_data = filtered_data[filtered_data['Attempts'].isin(attempts)]
 
-# Sort filtered data for display
+# Sort filtered data for display using DATE as day-first
+filtered_data['DATE'] = pd.to_datetime(filtered_data['DATE'], dayfirst=True, errors='coerce')
 filtered_data.sort_values(by='DATE', inplace=True)
 
 # Use a key for the data_editor to ensure proper updates
-edited_df = st.data_editor(filtered_data, num_rows="dynamic", key="student_data")
+edited_df = st.experimental_data_editor(filtered_data, num_rows="dynamic", key="student_data")
 
 # Update Google Sheet with edited data
 if st.button("Save Changes"):
@@ -125,7 +126,7 @@ if st.button("Save Changes"):
                 time.sleep(2)  # Wait for 2 seconds to allow changes to propagate
             
             st.session_state.reload_data = True
-            st.rerun()
+            st.experimental_rerun()
         else:
             st.error("Failed to save changes. Please try again.")
     except Exception as e:

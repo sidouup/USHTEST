@@ -40,15 +40,18 @@ def load_data():
 
 # Function to get changed rows
 def get_changed_rows(original_df, edited_df):
+    original_df_sorted = original_df.sort_values(by='Original_Index').reset_index(drop=True)
+    edited_df_sorted = edited_df.sort_values(by='Original_Index').reset_index(drop=True)
+
     # Ensure both DataFrames have the same columns in the same order
-    edited_df = edited_df[original_df.columns]
+    original_df_sorted = original_df_sorted[edited_df_sorted.columns]
 
     # Debugging: Check column alignment
-    logger.info(f"Original columns: {original_df.columns}")
-    logger.info(f"Edited columns: {edited_df.columns}")
+    logger.info(f"Original columns: {list(original_df_sorted.columns)}")
+    logger.info(f"Edited columns: {list(edited_df_sorted.columns)}")
 
-    changed_mask = (original_df != edited_df).any(axis=1)
-    return edited_df.loc[changed_mask]
+    changed_mask = (original_df_sorted != edited_df_sorted).any(axis=1)
+    return edited_df_sorted.loc[changed_mask]
 
 # Load data and initialize session state
 if 'data' not in st.session_state or st.session_state.get('reload_data', False):
@@ -133,8 +136,8 @@ def save_data(changed_data, spreadsheet_url):
 if st.button("Save Changes"):
     try:
         # Ensure the edited DataFrame aligns with the original DataFrame
-        edited_df_aligned = st.session_state.original_data.copy().loc[edited_df['Original_Index']].reset_index(drop=True)
-        edited_df_aligned.update(edited_df.drop(['Filtered_Index'], axis=1))
+        edited_df_aligned = st.session_state.original_data.copy()
+        edited_df_aligned.update(edited_df.drop(['Filtered_Index'], axis=1), overwrite=False)
 
         st.session_state.changed_data = get_changed_rows(st.session_state.original_data, edited_df_aligned)  # Store changed data
 

@@ -18,8 +18,7 @@ def get_google_sheet_client():
     creds = Credentials.from_service_account_info(SERVICE_ACCOUNT_INFO, scopes=SCOPES)
     return gspread.authorize(creds)
 
-# Function to load the data from the Google Sheet
-@st.cache
+# Function to load the data from the Google Sheet without caching
 def load_data(sheet_url):
     client = get_google_sheet_client()
     sheet = client.open_by_url(sheet_url)
@@ -50,7 +49,9 @@ def update_data(sheet_url, df, edited_rows):
         row_changes = df.iloc[row]
         for col in df.columns:
             if row_changes[col] != data.iloc[row][col]:
-                changes.append(f"Row {row+1}, Column {col} (Original: {data.iloc[row][col]}, New: {row_changes[col]})")
+                first_name = df.at[row, 'First Name'] if 'First Name' in df.columns else 'N/A'
+                last_name = df.at[row, 'Last Name'] if 'Last Name' in df.columns else 'N/A'
+                changes.append(f"First Name: {first_name}, Last Name: {last_name}, Column: {col} (Original: {data.iloc[row][col]}, New: {row_changes[col]})")
     
     return changes
 

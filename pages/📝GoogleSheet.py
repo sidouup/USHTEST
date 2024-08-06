@@ -37,17 +37,35 @@ def load_data():
     df['DATE'] = pd.to_datetime(df['DATE'], dayfirst=True, errors='coerce')  # Convert DATE to datetime with dayfirst=True
     return df
 
+def align_dataframes(df1, df2):
+    """
+    Aligns two DataFrames by ensuring they have the same columns and index.
+    """
+    # Ensure both DataFrames have the same columns
+    all_columns = sorted(list(set(df1.columns) | set(df2.columns)))
+    df1 = df1.reindex(columns=all_columns, fill_value='')
+    df2 = df2.reindex(columns=all_columns, fill_value='')
+
+    # Reset and align index
+    df1 = df1.reset_index(drop=True)
+    df2 = df2.reset_index(drop=True)
+
+    # Ensure dtypes are the same
+    for col in all_columns:
+        dtype = np.find_common_type([df1[col].dtype, df2[col].dtype], [])
+        df1[col] = df1[col].astype(dtype)
+        df2[col] = df2[col].astype(dtype)
+
+    return df1, df2
+
 def get_changed_rows(original_df, edited_df):
-    # Ensure both DataFrames have the same index
-    original_df = original_df.reset_index(drop=True)
-    edited_df = edited_df.reset_index(drop=True)
-
-    # Ensure both DataFrames have the same columns in the same order
-    columns = list(original_df.columns)
-    original_df = original_df[columns]
-    edited_df = edited_df[columns]
-
-    changed_mask = (original_df != edited_df).any(axis=1)
+    """
+    Compares two DataFrames and returns rows that have changed.
+    """
+    original_df, edited_df = align_dataframes(original_df, edited_df)
+    
+    # Compare DataFrames
+    changed_mask = ~(original_df == edited_df).all(axis=1)
     return edited_df.loc[changed_mask]
     
 # Load data and initialize session state
@@ -137,15 +155,10 @@ if st.button("Save Changes"):
         original_data = st.session_state.original_data.copy()
         edited_df_copy = edited_df.copy()
 
-        # Reset index and align columns
-        original_data = original_data.reset_index(drop=True)
-        edited_df_copy = edited_df_copy.reset_index(drop=True)
+        # Align DataFrames
+        original_data, edited_df_copy = align_dataframes(original_data, edited_df_copy)
 
-        # Ensure both DataFrames have the same columns in the same order
-        columns = list(original_data.columns)
-        original_data = original_data[columns]
-        edited_df_copy = edited_df_copy[columns]
-
+        # Get changed rows
         st.session_state.changed_data = get_changed_rows(original_data, edited_df_copy)
         
         # Only save data if there are actual changes
@@ -168,3 +181,12 @@ if st.button("Save Changes"):
     except Exception as e:
         st.error(f"An error occurred while saving: {str(e)}")
         logging.error(f"Error details: {e}", exc_info=True)
+
+# Add a debug button to print DataFrame information
+if st.button("Debug DataFrame Info"):
+    st.write("Original DataFrame Info:")
+    st.write(st.session_state.original_data.info())
+    st.write("\nEdited DataFrame Info:")
+    st.write(edited_df.info())
+    st.write("\nOriginal DataFrame Columns:", st.session_state.original_data.columns.tolist())
+    st.write("Edited DataFrame Columns:", edited_df.columns.tolist())

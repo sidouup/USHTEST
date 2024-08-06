@@ -37,8 +37,11 @@ def load_data():
 # Load data and initialize session state
 if 'data' not in st.session_state or st.session_state.get('reload_data', False):
     st.session_state.data = load_data()
-    st.session_state.original_data = st.session_state.data.copy()
     st.session_state.reload_data = False
+
+# Always ensure original_data is initialized
+if 'original_data' not in st.session_state:
+    st.session_state.original_data = st.session_state.data.copy()
 
 # Display the editable dataframe
 st.title("Student List")

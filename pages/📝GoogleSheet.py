@@ -9,8 +9,11 @@ st.set_page_config(page_title="Student List", layout="wide")
 # Use Streamlit secrets for service account info
 SERVICE_ACCOUNT_INFO = st.secrets["gcp_service_account"]
 
+# Define the required scope
+SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
+
 # Authenticate with Google Sheets
-creds = Credentials.from_service_account_info(SERVICE_ACCOUNT_INFO)
+creds = Credentials.from_service_account_info(SERVICE_ACCOUNT_INFO, scopes=SCOPES)
 client = gspread.authorize(creds)
 
 # Open the Google Sheet using the provided link

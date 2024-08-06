@@ -35,15 +35,19 @@ def load_data():
     df['DATE'] = pd.to_datetime(df['DATE'], dayfirst=True, errors='coerce')
     return df
 
-# Function to save data to Google Sheets
-def save_data(data):
+def save_data(edited_df, original_df):
     spreadsheet = client.open_by_url(spreadsheet_url)
     sheet = spreadsheet.sheet1
-    sheet.clear()
-    sheet.update([data.columns.values.tolist()] + data.values.tolist())
+    # Find rows that have changed
+    changes = edited_df.compare(original_df, keep_equal=True)
+    for row in changes.index:
+        # Update only changed rows
+        sheet.update(f'A{row+2}:Z{row+2}', [edited_df.loc[row].values.tolist()])
 
 # Load data
 data = load_data()
+if 'original_data' not in st.session_state:
+    st.session_state.original_data = data.copy()
 
 # Display the editable dataframe
 st.title("Student List")
@@ -89,7 +93,8 @@ edited_df = st.data_editor(filtered_data, num_rows="dynamic", key="student_data"
 # Button to save the edited data
 if st.button("Save Changes"):
     try:
-        save_data(edited_df)
+        save_data(edited_df, st.session_state.original_data)
+        st.session_state.original_data = edited_df.copy()
         st.success("Data saved successfully!")
     except Exception as e:
         st.error(f"An error occurred while saving: {e}")

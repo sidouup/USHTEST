@@ -34,7 +34,6 @@ def load_data():
     data = sheet.get_all_records()
     df = pd.DataFrame(data).astype(str)
     df['DATE'] = pd.to_datetime(df['DATE'], dayfirst=True, errors='coerce')  # Convert DATE to datetime with dayfirst=True
-    df.sort_values(by='DATE', inplace=True)  # Sort by DATE
     return df
 
 # Function to get changed rows
@@ -121,19 +120,26 @@ if st.button("Save Changes"):
     try:
         st.session_state.changed_data = get_changed_rows(st.session_state.original_data, edited_df)  # Store changed data
         
-        if save_data(st.session_state.changed_data, spreadsheet_url):
-            st.session_state.data = edited_df  # Update the session state
-            st.session_state.original_data = edited_df.copy()  # Update the original data
-            st.success("Changes saved successfully!")
+        # Only save data if there are actual changes
+        if not st.session_state.changed_data.empty:
+            # Sort the data before saving
+            st.session_state.changed_data.sort_values(by='DATE', inplace=True)
             
-            # Use a spinner while waiting for changes to propagate
-            with st.spinner("Refreshing data..."):
-                time.sleep(2)  # Wait for 2 seconds to allow changes to propagate
-            
-            st.session_state.reload_data = True
-            st.rerun()
+            if save_data(st.session_state.changed_data, spreadsheet_url):
+                st.session_state.data = edited_df  # Update the session state
+                st.session_state.original_data = edited_df.copy()  # Update the original data
+                st.success("Changes saved successfully!")
+                
+                # Use a spinner while waiting for changes to propagate
+                with st.spinner("Refreshing data..."):
+                    time.sleep(2)  # Wait for 2 seconds to allow changes to propagate
+                
+                st.session_state.reload_data = True
+                st.rerun()
+            else:
+                st.error("Failed to save changes. Please try again.")
         else:
-            st.error("Failed to save changes. Please try again.")
+            st.info("No changes detected.")
     except Exception as e:
         st.error(f"An error occurred while saving: {str(e)}")
 

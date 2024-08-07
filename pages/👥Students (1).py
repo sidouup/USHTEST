@@ -143,78 +143,34 @@ def load_data(spreadsheet_id):
         st.error(f"An error occurred: {str(e)}")
         return pd.DataFrame()
 
-def save_data(df, spreadsheet_id, sheet_name, student_name):
-    logger.info(f"Attempting to save changes for student: {student_name}")
-
-    def replace_invalid_floats(val):
-        if isinstance(val, float):
-            if pd.isna(val) or np.isinf(val):
-                return None
-        return val
-
-    # Get the row of the specific student
-    student_row = df[df['Student Name'] == student_name]
-    if student_row.empty:
-        logger.error(f"Student {student_name} not found in the data.")
-        return
-
-    student_row = student_row.iloc[0]
-
-    # Replace NaN and inf values with None for this student's data
-    student_row = student_row.apply(replace_invalid_floats)
-
-    # Replace [pd.NA, pd.NaT, float('inf'), float('-inf')] with None
-    student_row = student_row.replace([pd.NA, pd.NaT, float('inf'), float('-inf')], None)
-
-    # Format the date columns to ensure consistency
-    date_columns = ['DATE', 'School Entry Date', 'Entry Date in the US', 'EMBASSY ITW. DATE']
-    for col in date_columns:
-        if col in student_row.index:
-            value = student_row[col]
-            if pd.notna(value):
-                try:
-                    # Convert to datetime and format as string
-                    formatted_date = pd.to_datetime(value).strftime('%d/%m/%Y %H:%M:%S')
-                    student_row[col] = formatted_date
-                except:
-                    student_row[col] = ""
-
+def save_data(df, spreadsheet_id, sheet_name):
+    logger.info("Attempting to save changes")
     try:
-        # Use the service account info from st.secrets
-        creds = Credentials.from_service_account_info(
-            st.secrets["gcp_service_account"],
-            scopes=['https://www.googleapis.com/auth/spreadsheets']
-        )
-        client = gspread.authorize(creds)
-        sheet = client.open_by_key(spreadsheet_id).worksheet(sheet_name)
-        
-        # Find the row of the student in the sheet
-        cell = sheet.find(student_name)
-        if cell is None:
-            logger.error(f"Student {student_name} not found in the sheet.")
-            return
+        client = get_google_sheet_client()
+        spreadsheet = client.open_by_key(spreadsheet_id)
+        sheet = spreadsheet.worksheet(sheet_name)
 
-        row_number = cell.row
+        # Convert DATE column back to string for saving
+        date_columns = ['DATE', 'School Entry Date', 'Entry Date in the US', 'EMBASSY ITW. DATE']
+        for col in date_columns:
+            if col in df.columns:
+                df[col] = pd.to_datetime(df[col], dayfirst=True, errors='coerce')  # Ensure DATE is datetime
+                df[col] = df[col].dt.strftime('%d/%m/%Y %H:%M:%S')
 
-        # Prepare the data for update
-        values = [student_row.tolist()]
-        
-        # Calculate the last column letter
-        num_columns = len(student_row)
-        if num_columns <= 26:
-            last_column = string.ascii_uppercase[num_columns - 1]
-        else:
-            last_column = string.ascii_uppercase[(num_columns - 1) // 26 - 1] + string.ascii_uppercase[(num_columns - 1) % 26]
+        # Replace problematic values with a placeholder
+        df.replace([np.inf, -np.inf, np.nan], 'NaN', inplace=True)
 
-        # Update only the specific student's row
-        sheet.update(f'A{row_number}:{last_column}{row_number}', values)
+        # Clear the existing sheet
+        sheet.clear()
 
-        logger.info(f"Successfully updated data for student: {student_name}")
+        # Update the sheet with new data, including the "Student Name" column
+        sheet.update([df.columns.values.tolist()] + df.values.tolist())
+
+        logger.info("Changes saved successfully")
+        return True
     except Exception as e:
-        logger.error(f"Error saving changes for student {student_name}: {str(e)}")
-        raise
-
-    logger.info(f"Save completed for student: {student_name}")
+        logger.error(f"Error saving changes: {str(e)}")
+        return False
 
 def format_date(date_string):
     if pd.isna(date_string) or date_string == 'NaT':
@@ -1025,13 +981,16 @@ def main():
                         'Agent': st.session_state.get('Agent', selected_student['Agent']),
                         'Application payment ?': st.session_state.get('application_payment', selected_student['Application payment ?']),
                     }
-
+            
                     # Update the data in the DataFrame
                     for key, value in updated_student.items():
                         filtered_data.loc[filtered_data['Student Name'] == student_name, key] = value
-
+            
+                    # Ensure the "Student Name" column is updated
+                    filtered_data['Student Name'] = filtered_data['First Name'] + " " + filtered_data['Last Name']
+            
                     # Save the updated data back to Google Sheets
-                    if save_data(filtered_data, spreadsheet_id, 'ALL', student_name):
+                    if save_data(filtered_data, spreadsheet_id, 'ALL'):
                         st.success("Changes saved successfully!")
                         st.session_state['reload_data'] = True
                         st.cache_data.clear()
@@ -1042,7 +1001,7 @@ def main():
                         st.error("Failed to save changes. Please try again.")
                 except Exception as e:
                     st.error(f"An error occurred while saving: {str(e)}")
-
+        
     else:
         st.error("No data available. Please check your Google Sheets connection and data.")
 

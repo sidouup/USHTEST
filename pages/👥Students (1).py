@@ -221,7 +221,7 @@ def update_student_data():
         selected_student = st.session_state['selected_student']
         data = st.session_state['data']
         
-        for key in ['first_name', 'last_name', 'Age', 'Gender', 'phone_number', 'email', 'emergency_contact', 'address', 'attempts', 'chosen_school', 'specialite', 'duration', 'Bankstatment', 'school_entry_date', 'entry_date_in_us', 'address_us', 'email_rdv', 'password_rdv', 'embassy_itw_date', 'ds160_maker', 'password_ds160', 'secret_q', 'Prep_ITW', 'payment_date', 'payment_method', 'payment_type', 'compte', 'sevis_payment', 'application_payment', 'current_step']:
+        for key in ['first_name', 'last_name', 'Age', 'Gender', 'phone_number', 'email', 'emergency_contact', 'address', 'attempts', 'chosen_school', 'specialite', 'duration', 'Bankstatment', 'school_entry_date', 'entry_date_in_us', 'address_us', 'email_rdv', 'password_rdv', 'embassy_itw_date', 'ds160_maker', 'password_ds160', 'secret_q', 'Prep_ITW', 'DATE', 'payment_method', 'payment_type', 'compte', 'sevis_payment', 'application_payment', 'current_step']:
             if key in st.session_state:
                 data.loc[data['Student Name'] == selected_student, key] = st.session_state[key]
 
@@ -240,7 +240,7 @@ def main():
     if 'active_tab' not in st.session_state:
         st.session_state.active_tab = "Personal"
     # Initialize other session state variables
-    for key in ['visa_status', 'current_step', 'payment_date', 'payment_method', 'payment_type', 'compte', 'sevis_payment', 'application_payment']:
+    for key in ['visa_status', 'current_step', 'DATE', 'payment_method', 'payment_type', 'compte', 'sevis_payment', 'application_payment']:
         if key not in st.session_state:
             st.session_state[key] = None
 

@@ -627,7 +627,7 @@ def main():
                     )
                     ds160_maker = st.text_input("DS-160 Maker", selected_student['DS-160 maker'], key="ds160_maker", on_change=update_student_data)
                     password_ds160 = st.text_input("Password DS-160", selected_student['Password DS-160'], key="password_ds160", on_change=update_student_data)
-                    secret_q = st.text_input("Secret Question", selected_student['Secret Q°'], key="secret_q", on_change=update_student_data)
+                    secret_q = st.text_input("Secret Question", selected_student['Secret Q.'], key="secret_q", on_change=update_student_data)
                     Prep_ITW = st.selectbox(
                         "ITW Prep.", 
                         Prep_ITW_opt, 
@@ -641,7 +641,7 @@ def main():
                     st.write(f"**Embassy Interview Date:** {format_date(selected_student['EMBASSY ITW. DATE'])}")
                     st.write(f"**DS-160 Maker:** {selected_student['DS-160 maker']}")
                     st.write(f"**Password DS-160:** {selected_student['Password DS-160']}")
-                    st.write(f"**Secret Question:** {selected_student['Secret Q°']}")
+                    st.write(f"**Secret Question:** {selected_student['Secret Q.']}")
                     st.write(f"**ITW Prep:** {selected_student['Prep ITW']}")
                 st.markdown('</div>', unsafe_allow_html=True)
 

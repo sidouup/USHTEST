@@ -83,10 +83,10 @@ with col1:
 
 with col2:
     # Sort months chronologically
-    all_months = pd.to_datetime(st.session_state.data['DATE']).dt.to_period('M').astype(str).unique()
-    sorted_months = sorted(all_months, key=lambda x: pd.to_datetime(x))
-    months_years = ["All"] + list(sorted_months)
-    selected_months = st.multiselect('Filter by Month', options=months_years)
+    all_months = sorted(st.session_state.data['Months'].unique(), 
+                        key=lambda x: datetime.strptime(x, '%B %Y'))
+    months_years = ["All"] + list(all_months)
+    selected_months = st.multiselect('Filter by Month', options=months_years, default=["All"])
 
 with col3:
     stages = ["All", 'PAYMENT & MAIL', 'APPLICATION', 'SCAN & SEND', 'ARAMEX & RDV', 'DS-160', 'ITW Prep.', 'CLIENTS']

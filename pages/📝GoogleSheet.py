@@ -78,19 +78,29 @@ st.title("Student List")
 col1, col2, col3, col4, col5 = st.columns(5)
 
 with col1:
-    agents = st.multiselect('Filter by Agent', options=st.session_state.data['Agent'].unique())
+    agents = ["All", "Nesrine", "Hamza", "Djazila", "Nada"]
+    selected_agents = st.multiselect('Filter by Agent', options=agents)
 
 with col2:
-    months_years = st.multiselect('Filter by Month', options=st.session_state.data['Months'].unique())
+    # Sort months chronologically
+    all_months = pd.to_datetime(st.session_state.data['DATE']).dt.to_period('M').astype(str).unique()
+    sorted_months = sorted(all_months, key=lambda x: pd.to_datetime(x))
+    months_years = ["All"] + list(sorted_months)
+    selected_months = st.multiselect('Filter by Month', options=months_years)
 
 with col3:
-    stages = st.multiselect('Filter by Stage', options=st.session_state.data['Stage'].unique())
+    stages = ["All", 'PAYMENT & MAIL', 'APPLICATION', 'SCAN & SEND', 'ARAMEX & RDV', 'DS-160', 'ITW Prep.', 'CLIENTS']
+    selected_stages = st.multiselect('Filter by Stage', options=stages)
 
 with col4:
-    schools = st.multiselect('Filter by Chosen School', options=st.session_state.data['Chosen School'].unique())
+    school_options = ["All", "University", "Community College", "CCLS Miami", "CCLS NY NJ", "Connect English",
+                      "CONVERSE SCHOOL", "ELI San Francisco", "F2 Visa", "GT Chicago", "BEA Huston", "BIA Huston",
+                      "OHLA Miami", "UCDEA", "HAWAII", "Not Partner", "Not yet"]
+    selected_schools = st.multiselect('Filter by Chosen School', options=school_options)
 
 with col5:
-    attempts = st.multiselect('Filter by Attempts', options=st.session_state.data['Attempts'].unique())
+    attempts_options = ["All", "1 st Try", "2 nd Try", "3 rd Try"]
+    selected_attempts = st.multiselect('Filter by Attempts', options=attempts_options)
 
 filtered_data = st.session_state.data.copy()
 

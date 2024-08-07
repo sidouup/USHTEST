@@ -1030,7 +1030,7 @@ def main():
                 }
             
                 # Update the data in the DataFrame
-                for key, value in updated_student items():
+                for key, value in updated_student.items():
                     filtered_data.loc[filtered_data['Student Name'] == student_name, key] = value
             
                 try:

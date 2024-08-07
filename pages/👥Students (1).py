@@ -649,7 +649,7 @@ def main():
                 st.markdown('<div class="stCard">', unsafe_allow_html=True)
                 st.subheader("💰 Payment Information")
                 if edit_mode:
-                    payment_date = pd.to_datetime(selected_student['Payment Date'], errors='coerce', dayfirst=True)
+                    payment_date = pd.to_datetime(selected_student['DATE'], errors='coerce', dayfirst=True)
                     payment_date = st.date_input(
                         "Payment Date",
                         value=payment_date if not pd.isna(payment_date) else None,
@@ -692,7 +692,7 @@ def main():
                         on_change=update_student_data
                     )
                 else:
-                    st.write(f"**Payment Date:** {format_date(selected_student['Payment Date'])}")
+                    st.write(f"**Payment Date:** {format_date(selected_student['DATE'])}")
                     st.write(f"**Payment Method:** {selected_student['Payment Method']}")
                     st.write(f"**Payment Type:** {selected_student['Payment Type']}")
                     st.write(f"**Compte:** {selected_student['Compte']}")

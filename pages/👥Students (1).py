@@ -616,8 +616,8 @@ def main():
                 st.markdown('<div class="stCard">', unsafe_allow_html=True)
                 st.subheader("🇺🇸 Embassy Information")
                 if edit_mode:
-                    email_rdv = st.text_input("Email Rdv", selected_student['E-mail rdv'], key="email_rdv", on_change=update_student_data)
-                    password_rdv = st.text_input("Password Rdv", selected_student['Password rdv'], key="password_rdv", on_change=update_student_data)
+                    email_rdv = st.text_input("Email Rdv", selected_student['E-MAIL RDV'], key="email_rdv", on_change=update_student_data)
+                    password_rdv = st.text_input("Password Rdv", selected_student['PASSWORD RDV'], key="password_rdv", on_change=update_student_data)
                     embassy_itw_date = pd.to_datetime(selected_student['EMBASSY ITW. DATE'], errors='coerce', dayfirst=True)
                     embassy_itw_date = st.date_input(
                         "Embassy Interview Date",
@@ -636,8 +636,8 @@ def main():
                         on_change=update_student_data
                     )
                 else:
-                    st.write(f"**Email Rdv:** {selected_student['E-mail rdv']}")
-                    st.write(f"**Password Rdv:** {selected_student['Password rdv']}")
+                    st.write(f"**Email Rdv:** {selected_student['E-MAIL RDV']}")
+                    st.write(f"**Password Rdv:** {selected_student['PASSWORD RDV']}")
                     st.write(f"**Embassy Interview Date:** {format_date(selected_student['EMBASSY ITW. DATE'])}")
                     st.write(f"**DS-160 Maker:** {selected_student['DS-160 maker']}")
                     st.write(f"**Password DS-160:** {selected_student['Password DS-160']}")

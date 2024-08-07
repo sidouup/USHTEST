@@ -135,7 +135,15 @@ def load_data(spreadsheet_id):
                 df.dropna(how='all', inplace=True)
                 combined_data = pd.concat([combined_data, df], ignore_index=True)
         
-        combined_data.drop_duplicates(subset='Student Name', keep='last', inplace=True)
+        # Handle duplicates by appending a number to duplicate names
+        combined_data['Student Name'] = combined_data['Student Name'].astype(str)
+        name_counts = combined_data['Student Name'].value_counts()
+        for name, count in name_counts.items():
+            if count > 1:
+                indices = combined_data[combined_data['Student Name'] == name].index
+                for i, idx in enumerate(indices):
+                    combined_data.at[idx, 'Student Name'] = f"{name} {i+1}"
+        
         combined_data.reset_index(drop=True, inplace=True)
 
         return combined_data

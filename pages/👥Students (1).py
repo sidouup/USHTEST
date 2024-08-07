@@ -570,6 +570,9 @@ def main():
     else:
         data = st.session_state['data']
 
+    # Combine First Name and Last Name for all rows
+    data['Student Name'] = data['First Name'] + " " + data['Last Name']
+
     if not data.empty:
         current_steps = ["All"] + list(data['Stage'].unique())
         agents = ["All", "Nesrine", "Hamza", "Djazila","Nada"]
@@ -591,6 +594,7 @@ def main():
         with col4:
             attempts_filter = st.selectbox("Filter by Attempts", attempts_options, key="attempts_filter")
 
+        # Apply filters
         filtered_data = data
         if status_filter != "All":
             filtered_data = filtered_data[filtered_data['Stage'] == status_filter]
@@ -600,13 +604,10 @@ def main():
             filtered_data = filtered_data[filtered_data['Chosen School'] == school_filter]
         if attempts_filter != "All":
             filtered_data = filtered_data[filtered_data['Attempts'] == attempts_filter]
-        
-        # Combine First Name and Last Name for all rows
-        data['Student Name'] = data['First Name'] + " " + data['Last Name']
-        
+
         # Combine First Name and Last Name for filtered data
         filtered_data['Student Name'] = filtered_data['First Name'] + " " + filtered_data['Last Name']
-        
+
         student_names = filtered_data['Student Name'].tolist()
         
         if not filtered_data.empty:
@@ -740,8 +741,6 @@ def main():
             student_name = selected_student['Student Name']
 
             edit_mode = st.toggle("Edit Mode", value=False)
-
-
 
             # Tabs for student information
             tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["Personal", "School", "Embassy", "Payment","Stage", "Documents"])
@@ -1052,4 +1051,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

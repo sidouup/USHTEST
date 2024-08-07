@@ -591,7 +591,6 @@ def main():
         with col4:
             attempts_filter = st.selectbox("Filter by Attempts", attempts_options, key="attempts_filter")
 
-        # Apply filters
         filtered_data = data
         if status_filter != "All":
             filtered_data = filtered_data[filtered_data['Stage'] == status_filter]
@@ -601,6 +600,12 @@ def main():
             filtered_data = filtered_data[filtered_data['Chosen School'] == school_filter]
         if attempts_filter != "All":
             filtered_data = filtered_data[filtered_data['Attempts'] == attempts_filter]
+        
+        # Combine First Name and Last Name for all rows
+        data['Student Name'] = data['First Name'] + " " + data['Last Name']
+        
+        # Combine First Name and Last Name for filtered data
+        filtered_data['Student Name'] = filtered_data['First Name'] + " " + filtered_data['Last Name']
         
         student_names = filtered_data['Student Name'].tolist()
         

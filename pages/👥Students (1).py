@@ -534,7 +534,7 @@ def main():
         .stButton>button {
             background-color: #ff7f50;
             color: white;
-            font-weight: bold;
+            font-weight: bold.
         }
         .stButton>button:hover {
             background-color: #ff6347;
@@ -542,23 +542,23 @@ def main():
         .stTextInput input {
             font-size: 1rem;
             padding: 10px;
-            margin-bottom: 10px;
+            margin-bottom: 10px.
         }
         .progress-container {
             width: 100%;
             background-color: #e0e0e0;
-            border-radius: 10px;
+            border-radius: 10px.
             margin-bottom: 1rem;
         }
         .progress-bar {
             height: 20px;
             background-color: #4caf50;
-            border-radius: 10px;
+            border-radius: 10px.
             transition: width 0.5s ease-in-out;
-            text-align: center;
-            line-height: 20px;
+            text-align: center.
+            line-height: 20px.
             color: white;
-            font-weight: bold;
+            font-weight: bold.
         }
     </style>
     """, unsafe_allow_html=True)
@@ -1030,7 +1030,7 @@ def main():
                 }
             
                 # Update the data in the DataFrame
-                for key, value in updated_student.items():
+                for key, value in updated_student items():
                     filtered_data.loc[filtered_data['Student Name'] == student_name, key] = value
             
                 try:
@@ -1058,5 +1058,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-

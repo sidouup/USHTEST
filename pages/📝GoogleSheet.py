@@ -35,7 +35,7 @@ def load_data():
     sheet = spreadsheet.sheet1  # Adjust if you need to access a different sheet
     data = sheet.get_all_records()
     df = pd.DataFrame(data)
-    df['DATE'] = pd.to_datetime(df['DATE'], dayfirst=True, errors='coerce')  # Convert DATE to datetime with dayfirst=True
+    df['DATE'] = pd.to_datetime(df['DATE'], format='%d/%m/%Y %H:%M:%S', errors='coerce')  # Convert DATE to datetime with dayfirst=True
     df['Months'] = df['DATE'].dt.strftime('%B %Y')  # Create a new column 'Months' for filtering
     return df
 
@@ -47,7 +47,7 @@ def save_data(df, spreadsheet_url):
         sheet = spreadsheet.sheet1
 
         # Convert DATE column back to string
-        df['DATE'] = pd.to_datetime(df['DATE'], dayfirst=True, errors='coerce')  # Ensure DATE is datetime
+        df['DATE'] = pd.to_datetime(df['DATE'], errors='coerce')  # Ensure DATE is datetime
         df['DATE'] = df['DATE'].dt.strftime('%d/%m/%Y %H:%M:%S')
 
         # Replace problematic values with a placeholder
@@ -119,7 +119,7 @@ edited_df = st.data_editor(filtered_data, num_rows="dynamic", key="student_data"
 if st.button("Save Changes"):
     try:
         # Convert DATE column back to string for saving
-        edited_df['DATE'] = pd.to_datetime(edited_df['DATE'], dayfirst=True, errors='coerce')
+        edited_df['DATE'] = pd.to_datetime(edited_df['DATE'], format='%d/%m/%Y %H:%M:%S', errors='coerce')
         edited_df['DATE'] = edited_df['DATE'].dt.strftime('%d/%m/%Y %H:%M:%S')
         
         st.session_state.original_data.update(edited_df)  # Update the original dataset with edited data

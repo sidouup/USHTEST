@@ -160,19 +160,11 @@ def save_data(df, spreadsheet_id, sheet_name):
         # Replace problematic values with a placeholder
         df.replace([np.inf, -np.inf, np.nan], 'NaN', inplace=True)
 
-        # Update only the modified rows in the existing sheet
-        sheet_data = sheet.get_all_records()
-        sheet_df = pd.DataFrame(sheet_data)
+        # Clear the existing sheet
+        sheet.clear()
 
-        for index, row in df.iterrows():
-            student_name = row['Student Name']
-            matching_rows = sheet_df[sheet_df['Student Name'] == student_name]
-
-            if not matching_rows.empty:
-                row_index = matching_rows.index[0] + 2  # +2 because DataFrame index is 0-based and Google Sheets is 1-based with header row
-                row_data = row.tolist()
-                # Update the row in the sheet
-                sheet.update(f'A{row_index}:ZZ{row_index}', [row_data])
+        # Update the sheet with new data, including the "Student Name" column
+        sheet.update([df.columns.values.tolist()] + df.values.tolist())
 
         logger.info("Changes saved successfully")
         return True

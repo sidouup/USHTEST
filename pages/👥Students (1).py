@@ -14,13 +14,13 @@ import asyncio
 import aiohttp
 import threading
 import re
-
+st.set_page_config(page_title="Student Application Tracker", layout="wide")
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Page configuration
-st.set_page_config(page_title="Student Application Tracker", layout="wide")
+
 
 # Use Streamlit secrets for service account info
 SERVICE_ACCOUNT_INFO = st.secrets["gcp_service_account"]
@@ -230,7 +230,6 @@ def update_student_data():
 
 # Main function
 def main():
-    st.set_page_config(page_title="Student Application Tracker", layout="wide")
     
     if 'student_changed' not in st.session_state:
         st.session_state.student_changed = False

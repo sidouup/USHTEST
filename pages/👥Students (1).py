@@ -153,6 +153,16 @@ def load_data(spreadsheet_id):
 
 def save_data(df, spreadsheet_id, sheet_name):
     logger.info("Attempting to save changes")
+
+    # Handle duplicates by appending a number to duplicate names
+    df['Student Name'] = df['Student Name'].astype(str)
+    name_counts = df['Student Name'].value_counts()
+    for name, count in name_counts.items():
+        if count > 1:
+            indices = df[df['Student Name'] == name].index
+            for i, idx in enumerate(indices):
+                df.at[idx, 'Student Name'] = f"{name} {i+1}"
+    
     try:
         client = get_google_sheet_client()
         spreadsheet = client.open_by_key(spreadsheet_id)

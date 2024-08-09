@@ -30,10 +30,8 @@ def generate_email_body(students, school):
 # Function to generate PDF for each student and ensure all pages are A4
 def generate_student_pdf(student, documents):
     pdf = FPDF(format='A4')
-    pdf.set_auto_page_break(auto=True, margin=15)
-    
-    # Add student details to PDF
     pdf.add_page()
+
     pdf.set_font("Arial", size=12)
     pdf.cell(200, 10, txt=f"Student Application: {student['name']}", ln=True, align='C')
 
@@ -46,36 +44,35 @@ def generate_student_pdf(student, documents):
     pdf.cell(200, 10, txt=f"Start Date: {student['start_date']}", ln=True)
     pdf.cell(200, 10, txt=f"Length of Program: {student['length']}", ln=True)
 
-    pdf_output_path = f"{student['name'].replace(' ', '_')}_application.pdf"
-    pdf.output(pdf_output_path)
+    pdf_output = BytesIO()
+    pdf.output(pdf_output)
+    pdf_output.seek(0)
 
+    pdf_writer = PyPDF2.PdfWriter()
+    
+    # Add the generated PDF
+    pdf_reader = PyPDF2.PdfReader(pdf_output)
+    first_page = pdf_reader.pages[0]
+    pdf_writer.add_page(first_page)
+
+    # Get the size of the first page
+    first_page_size = first_page.mediabox
+
+    # Add the uploaded PDF documents
     if documents:
-        pdf_writer = PyPDF2.PdfWriter()
-
-        # Add the generated PDF
-        with open(pdf_output_path, "rb") as f:
-            pdf_reader = PyPDF2.PdfReader(f)
-            for page in pdf_reader.pages:
-                pdf_writer.add_page(page)
-
-        # Add the uploaded PDF documents
         for document in documents:
             if document.type == "application/pdf":
-                with open(f"/tmp/{document.name}", "wb") as f:
-                    f.write(document.getbuffer())
-                with open(f"/tmp/{document.name}", "rb") as f:
-                    pdf_reader = PyPDF2.PdfReader(f)
-                    for page in pdf_reader.pages:
-                        pdf_writer.add_page(page)
-        
-        merged_pdf_path = f"{student['name'].replace(' ', '_')}_merged_application.pdf"
-        with open(merged_pdf_path, "wb") as f:
-            pdf_writer.write(f)
-        
-        os.remove(pdf_output_path)  # Remove original to avoid confusion
-        return merged_pdf_path
+                pdf_reader = PyPDF2.PdfReader(document)
+                for page in pdf_reader.pages:
+                    # Resize the page to match the first page
+                    page.scale_to(first_page_size.width, first_page_size.height)
+                    pdf_writer.add_page(page)
 
-    return pdf_output_path
+    merged_pdf_path = f"{student['name'].replace(' ', '_')}_merged_application.pdf"
+    with open(merged_pdf_path, "wb") as f:
+        pdf_writer.write(f)
+
+    return merged_pdf_path
 
 # Agent email mapping
 agents = {

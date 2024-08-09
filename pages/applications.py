@@ -9,7 +9,6 @@ import io
 import os
 import tempfile
 
-
 # Function to generate email body
 def generate_email_body(students, school):
     greeting = f"Hello {school},\n\n"
@@ -44,7 +43,7 @@ def generate_student_pdf(student, documents):
     pdf.cell(200, 10, txt=f"Address: {student['address']}", ln=True)
     pdf.cell(200, 10, txt=f"Email: {student['email']}", ln=True)
     pdf.cell(200, 10, txt=f"Phone Number: {student['phone']}", ln=True)
-    pdf.cell(200, 10, txt=f"Program Choice: {student['program']}", ln=True)
+    pdf.cell(200, 10, txt[f"Program Choice: {student['program']}", ln=True)
     pdf.cell(200, 10, txt=f"Start Date: {student['start_date']}", ln=True)
     pdf.cell(200, 10, txt=f"Length of Program: {student['length']}", ln=True)
 

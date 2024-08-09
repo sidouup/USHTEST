@@ -4,8 +4,9 @@ import smtplib
 import ssl
 from fpdf import FPDF
 import PyPDF2
+from PIL import Image
+import io
 import os
-from io import BytesIO
 
 # Function to generate email body
 def generate_email_body(students, school):

@@ -4,7 +4,6 @@ import smtplib
 import ssl
 from fpdf import FPDF
 import PyPDF2
-import fitz  # PyMuPDF
 from PIL import Image
 import os
 
@@ -70,15 +69,6 @@ def generate_student_pdf(student, documents):
     pdf_output_path = f"{student['name'].replace(' ', '_')}_application.pdf"
     pdf.output(pdf_output_path)
     return pdf_output_path
-
-# Function to preview the PDF by converting it to images using PyMuPDF
-def preview_pdf(pdf_path):
-    doc = fitz.open(pdf_path)
-    for page_number in range(len(doc)):
-        page = doc.load_page(page_number)
-        pix = page.get_pixmap()
-        img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-        st.image(img, use_column_width=True)
 
 # Agent email mapping
 agents = {
@@ -158,11 +148,6 @@ if "logged_in" in st.session_state and st.session_state["logged_in"]:
             st.session_state["pdf_files"] = pdf_files  # Store generated PDF file paths in session state
 
             st.success("PDFs generated successfully!")
-
-            # Preview generated PDFs
-            for pdf_file in pdf_files:
-                st.subheader(f"Preview of {os.path.basename(pdf_file)}")
-                preview_pdf(pdf_file)
         else:
             st.error("Please make sure all required fields are filled out for each student and that a recipient email is provided.")
 

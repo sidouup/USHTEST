@@ -9,9 +9,9 @@ def verify_login(email_address, password):
         context = ssl.create_default_context()
         with smtplib.SMTP_SSL("smtp.titan.email", 465, context=context) as server:
             server.login(email_address, password)
-        return True
+        return True, None  # Return True and no error message if successful
     except Exception as e:
-        return False, str(e)
+        return False, str(e)  # Return False and the error message if it fails
 
 # Step 1: Login
 st.title("Titan Email Sender")

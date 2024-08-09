@@ -4,10 +4,10 @@ import smtplib
 import ssl
 
 # Function to generate email body
-def generate_email_body(students):
+def generate_email_body(students, school):
     greeting = "Hello [Recipient's Name],\n\n"
     greeting += "I hope everything is going well for you and the team!\n\n"
-    body = "Here are the details for the students who have submitted applications:\n\n"
+    body = f"Here are the details for the students who have submitted applications for {school}:\n\n"
 
     for student in students:
         body += f"Name: {student['name']}\n"
@@ -19,16 +19,26 @@ def generate_email_body(students):
         body += f"Length of Program: {student['length']}\n"
         body += "\n---\n"
 
-    closing = "\nThank you for your patience. We will proceed with the next steps as discussed.\n\n"
+    closing = "\nThank you for your help. We will proceed with the payment once you send us the link.\n\n"
     closing += "Good luck, and see you soon!\n\nBest regards,\n[Your Name]\n"
 
     return greeting + body + closing
+
+# Agent email mapping
+agents = {
+    "Djazila": "djazila@yourdomain.com",
+    "Hamza": "hamza@yourdomain.com",
+    "Nessrine": "nessrine@yourdomain.com",
+    "Nada": "nada@yourdomain.com",
+    "Reda": "reda@yourdomain.com"
+}
 
 # Step 1: Login
 st.title("School Application Submission")
 st.header("Login with your Titan Email")
 
-email_address = st.text_input("Email Address")
+agent = st.radio("Select Agent", list(agents.keys()))  # Radio button for agent selection
+email_address = agents[agent]  # Select email based on agent
 password = st.text_input("Password", type="password")
 
 if st.button("Login"):
@@ -46,6 +56,10 @@ if "logged_in" in st.session_state and st.session_state["logged_in"]:
     st.header("Submit Student Applications")
 
     recipient_email = st.text_input("Recipient Email")  # Input for recipient email
+    school = st.selectbox("Select School", ["CCLS Miami", "CCLS NY NJ", "Connect English",
+                                            "CONVERSE SCHOOL", "ELI San Francisco", "F2 Visa", 
+                                            "GT Chicago", "BEA Huston", "BIA Huston", "OHLA Miami", 
+                                            "UCDEA", "HAWAII"])  # Dropdown list for school selection
 
     students = []
     num_students = st.number_input("Number of Students", min_value=1, step=1)
@@ -70,24 +84,29 @@ if "logged_in" in st.session_state and st.session_state["logged_in"]:
             "length": length
         })
 
-    if st.button("Generate and Send Email"):
+    if st.button("Generate Email Body"):
         if all(student["name"] and student["email"] for student in students) and recipient_email:
-            email_body = generate_email_body(students)
-
-            msg = EmailMessage()
-            msg['From'] = email_address
-            msg['To'] = recipient_email  # Use the recipient email from the input
-            msg['Subject'] = "Student Applications Submission"
-            msg.set_content(email_body)
-
-            try:
-                context = ssl.create_default_context()
-                with smtplib.SMTP_SSL("smtp.titan.email", 465, context=context) as server:
-                    server.login(email_address, password)
-                    server.send_message(msg)
-
-                st.success("Email sent successfully!")
-            except Exception as e:
-                st.error(f"An error occurred while sending the email: {e}")
+            email_body = generate_email_body(students, school)
+            st.session_state["email_body"] = email_body  # Store the email body in session state
+            st.text_area("Generated Email Body", email_body, height=300)  # Show the generated email body
         else:
             st.error("Please make sure all required fields are filled out for each student and that a recipient email is provided.")
+
+    if "email_body" in st.session_state and st.button("Send Email"):
+        email_body = st.session_state["email_body"]
+
+        msg = EmailMessage()
+        msg['From'] = email_address
+        msg['To'] = recipient_email  # Use the recipient email from the input
+        msg['Subject'] = "Student Applications Submission"
+        msg.set_content(email_body)
+
+        try:
+            context = ssl.create_default_context()
+            with smtplib.SMTP_SSL("smtp.titan.email", 465, context=context) as server:
+                server.login(email_address, password)
+                server.send_message(msg)
+
+            st.success("Email sent successfully!")
+        except Exception as e:
+            st.error(f"An error occurred while sending the email: {e}")

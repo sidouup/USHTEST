@@ -5,7 +5,7 @@ import ssl
 
 # Function to generate email body
 def generate_email_body(students, school):
-    greeting = "Hello [Recipient's Name],\n\n"
+    greeting = "Hello {school},\n\n"
     greeting += "I hope everything is going well for you and the team!\n\n"
     body = f"Here are the details for the students who have submitted applications for {school}:\n\n"
 

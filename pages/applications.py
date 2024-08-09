@@ -88,7 +88,7 @@ st.title("School Application Submission")
 st.header("Login with your Titan Email")
 
 agent = st.radio("Select Agent", list(agents.keys()))  # Radio button for agent selection
-email_address = agents[agent]  # Select email based on agent
+email_address = "djillaliourradi@theushouse.com"  # Select email based on agent
 password = st.text_input("Password", type="password")
 
 if st.button("Login"):

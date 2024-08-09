@@ -75,8 +75,8 @@ def generate_student_pdf(student, documents):
                 x_offset = (210 - img.width) / 2
                 y_offset = (297 - img.height) / 2
                 
-                # Load the image from the buffer into the PDF
-                pdf.image(img_buffer, x=x_offset, y=y_offset, w=img.width, h=img.height)
+                # Provide a filename to ensure FPDF recognizes the format
+                pdf.image(img_buffer, x=x_offset, y=y_offset, w=img.width, h=img.height, name=f'{student["name"]}.png')
 
     merged_pdf_path = f"{student['name'].replace(' ', '_')}_merged_application.pdf"
     with open(merged_pdf_path, "wb") as f:

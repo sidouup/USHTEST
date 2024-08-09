@@ -43,7 +43,7 @@ def generate_student_pdf(student, documents):
     pdf.cell(200, 10, txt=f"Address: {student['address']}", ln=True)
     pdf.cell(200, 10, txt=f"Email: {student['email']}", ln=True)
     pdf.cell(200, 10, txt=f"Phone Number: {student['phone']}", ln=True)
-    pdf.cell(200, 10, txt[f"Program Choice: {student['program']}", ln=True)
+    pdf.cell(200, 10, txt=f"Program Choice: {student['program']}", ln=True)
     pdf.cell(200, 10, txt=f"Start Date: {student['start_date']}", ln=True)
     pdf.cell(200, 10, txt=f"Length of Program: {student['length']}", ln=True)
 
@@ -175,21 +175,24 @@ if "logged_in" in st.session_state and st.session_state["logged_in"]:
         # Debugging output to check variable values
         st.write(f"Debugging: full_name={full_name}, address={address}, email={email}, phone={phone}")
 
-        students.append({
-            "name": full_name,
-            "address": address,
-            "email": email,
-            "phone": phone,
-            "program": program,
-            "start_date": start_date,
-            "length": length,
-            "documents": {
-                "passport": passport,
-                "bank_statement": bank_statement,
-                "affidavit": affidavit,
-                "sponsor_id": sponsor_id
-            }
-        })
+        if full_name and address and email and phone:
+            students.append({
+                "name": full_name,
+                "address": address,
+                "email": email,
+                "phone": phone,
+                "program": program,
+                "start_date": start_date,
+                "length": length,
+                "documents": {
+                    "passport": passport,
+                    "bank_statement": bank_statement,
+                    "affidavit": affidavit,
+                    "sponsor_id": sponsor_id
+                }
+            })
+        else:
+            st.warning(f"Please fill out all fields for Student {i+1}")
 
     if st.button("Generate Email Body and PDFs"):
         if all(student["name"] and student["email"] for student in students):

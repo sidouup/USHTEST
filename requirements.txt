@@ -13,3 +13,4 @@ aiohttp
 streamlit_toggle
 streamlit-server-state
 streamlit-option-menu
+fpdf

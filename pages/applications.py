@@ -4,6 +4,7 @@ import smtplib
 import ssl
 from fpdf import FPDF
 import PyPDF2
+from PIL import Image
 import os
 
 # Function to generate email body
@@ -27,9 +28,9 @@ def generate_email_body(students, school):
 
     return greeting + body + closing
 
-# Function to generate PDF for each student and merge with uploaded PDF
-def generate_student_pdf(student, document):
-    pdf = FPDF()
+# Function to generate PDF for each student and merge with uploaded PDFs/images
+def generate_student_pdf(student, documents):
+    pdf = FPDF(format='A4')
     pdf.add_page()
 
     pdf.set_font("Arial", size=12)
@@ -44,35 +45,30 @@ def generate_student_pdf(student, document):
     pdf.cell(200, 10, txt=f"Start Date: {student['start_date']}", ln=True)
     pdf.cell(200, 10, txt=f"Length of Program: {student['length']}", ln=True)
 
+    # Append uploaded documents to the PDF
+    for document in documents:
+        if document.type == "application/pdf":
+            pdf_path = f"/tmp/{student['name'].replace(' ', '_')}_temp.pdf"
+            with open(pdf_path, "wb") as f:
+                f.write(document.getbuffer())
+            pdf.add_page()
+            pdf_reader = PyPDF2.PdfReader(pdf_path)
+            for page in pdf_reader.pages:
+                pdf_writer = PyPDF2.PdfWriter()
+                pdf_writer.add_page(page)
+            os.remove(pdf_path)
+        elif document.type.startswith("image/"):
+            image = Image.open(document)
+            image = image.convert("RGB")
+            image = image.resize((210, 297))  # Resize image to fit A4
+            image_path = f"/tmp/{student['name'].replace(' ', '_')}_temp.jpg"
+            image.save(image_path)
+            pdf.image(image_path, x=0, y=0, w=210, h=297)
+            os.remove(image_path)
+
     pdf_output_path = f"{student['name'].replace(' ', '_')}_application.pdf"
     pdf.output(pdf_output_path)
-
-    # Merge with uploaded PDF document if available
-    if document:
-        merged_pdf_path = f"{student['name'].replace(' ', '_')}_merged_application.pdf"
-        merge_pdfs(pdf_output_path, document, merged_pdf_path)
-        return merged_pdf_path
-
     return pdf_output_path
-
-# Function to merge PDFs
-def merge_pdfs(pdf1_path, pdf2_file, output_path):
-    pdf_writer = PyPDF2.PdfWriter()
-
-    # Read the first PDF
-    with open(pdf1_path, 'rb') as pdf1_file:
-        pdf1_reader = PyPDF2.PdfReader(pdf1_file)
-        for page in pdf1_reader.pages:
-            pdf_writer.add_page(page)
-
-    # Read the uploaded PDF
-    pdf2_reader = PyPDF2.PdfReader(pdf2_file)
-    for page in pdf2_reader.pages:
-        pdf_writer.add_page(page)
-
-    # Write out the merged PDF
-    with open(output_path, 'wb') as output_pdf:
-        pdf_writer.write(output_pdf)
 
 # Agent email mapping
 agents = {
@@ -123,7 +119,7 @@ if "logged_in" in st.session_state and st.session_state["logged_in"]:
         program = st.text_input(f"Program Choice of Student {i+1}")
         start_date = st.date_input(f"Start Date of Student {i+1}")
         length = st.text_input(f"Length of Program for Student {i+1}")
-        document = st.file_uploader(f"Upload PDF document for {name}", type=["pdf"])
+        documents = st.file_uploader(f"Upload documents for {name}", type=["pdf", "jpg", "jpeg", "png"], accept_multiple_files=True)
 
         students.append({
             "name": name,
@@ -133,7 +129,7 @@ if "logged_in" in st.session_state and st.session_state["logged_in"]:
             "program": program,
             "start_date": start_date,
             "length": length,
-            "document": document
+            "documents": documents
         })
 
     if st.button("Generate Email Body and PDFs"):
@@ -146,12 +142,22 @@ if "logged_in" in st.session_state and st.session_state["logged_in"]:
             # Generate PDFs for each student
             pdf_files = []
             for student in students:
-                pdf_file = generate_student_pdf(student, student["document"])
+                pdf_file = generate_student_pdf(student, student["documents"])
                 pdf_files.append(pdf_file)
 
             st.session_state["pdf_files"] = pdf_files  # Store generated PDF file paths in session state
 
             st.success("PDFs generated successfully!")
+
+            # Display generated PDFs
+            for pdf_file in pdf_files:
+                with open(pdf_file, "rb") as f:
+                    st.download_button(
+                        label=f"Download {os.path.basename(pdf_file)}",
+                        data=f,
+                        file_name=os.path.basename(pdf_file),
+                        mime="application/pdf"
+                    )
         else:
             st.error("Please make sure all required fields are filled out for each student and that a recipient email is provided.")
 

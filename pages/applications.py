@@ -67,10 +67,16 @@ def generate_student_pdf(student, documents):
                 max_width, max_height = 190, 277  # A4 size in mm minus margins
                 img.thumbnail((max_width, max_height))
                 
+                # Save the image to a buffer
+                img_buffer = io.BytesIO()
+                img.save(img_buffer, format='PNG')
+                img_buffer.seek(0)
+
                 x_offset = (210 - img.width) / 2
                 y_offset = (297 - img.height) / 2
                 
-                pdf.image(document, x=x_offset, y=y_offset, w=img.width, h=img.height)
+                # Load the image from the buffer into the PDF
+                pdf.image(img_buffer, x=x_offset, y=y_offset, w=img.width, h=img.height)
 
     merged_pdf_path = f"{student['name'].replace(' ', '_')}_merged_application.pdf"
     with open(merged_pdf_path, "wb") as f:

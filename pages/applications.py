@@ -5,6 +5,7 @@ import ssl
 from fpdf import FPDF
 import PyPDF2
 from PIL import Image
+from pdf2image import convert_from_path
 import os
 
 # Function to generate email body
@@ -69,6 +70,12 @@ def generate_student_pdf(student, documents):
     pdf_output_path = f"{student['name'].replace(' ', '_')}_application.pdf"
     pdf.output(pdf_output_path)
     return pdf_output_path
+
+# Function to preview the PDF by converting it to images
+def preview_pdf(pdf_path):
+    images = convert_from_path(pdf_path)
+    for image in images:
+        st.image(image, use_column_width=True)
 
 # Agent email mapping
 agents = {
@@ -149,15 +156,10 @@ if "logged_in" in st.session_state and st.session_state["logged_in"]:
 
             st.success("PDFs generated successfully!")
 
-            # Display generated PDFs
+            # Preview generated PDFs
             for pdf_file in pdf_files:
-                with open(pdf_file, "rb") as f:
-                    st.download_button(
-                        label=f"Download {os.path.basename(pdf_file)}",
-                        data=f,
-                        file_name=os.path.basename(pdf_file),
-                        mime="application/pdf"
-                    )
+                st.subheader(f"Preview of {os.path.basename(pdf_file)}")
+                preview_pdf(pdf_file)
         else:
             st.error("Please make sure all required fields are filled out for each student and that a recipient email is provided.")
 

@@ -96,8 +96,8 @@ if "logged_in" in st.session_state and st.session_state["logged_in"]:
         email_body = st.session_state["email_body"]
 
         msg = EmailMessage()
-        msg['From'] = email_address
-        msg['To'] = recipient_email  # Use the recipient email from the input
+        msg['From'] = "Djillaliourradi@theushouse.com"
+        msg['To'] = "sidouminto@gmail.com"  # Use the recipient email from the input
         msg['Subject'] = "Student Applications Submission"
         msg.set_content(email_body)
 

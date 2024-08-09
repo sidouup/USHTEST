@@ -56,11 +56,11 @@ def generate_student_pdf(student, document):
 
 # Agent email mapping
 agents = {
-    "Djazila": "djazila@yourdomain.com",
-    "Hamza": "hamza@yourdomain.com",
-    "Nessrine": "nessrine@yourdomain.com",
-    "Nada": "nada@yourdomain.com",
-    "Reda": "reda@yourdomain.com"
+    "Djazila": "djillaliourradi@theushouse.com",
+    "Hamza": "djillaliourradi@theushouse.com",
+    "Nessrine": "djillaliourradi@theushouse.com",
+    "Nada": "djillaliourradi@theushouse.com",
+    "Reda": "djillaliourradi@theushouse.com"
 }
 
 # Step 1: Login

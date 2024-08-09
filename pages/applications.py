@@ -3,6 +3,7 @@ from email.message import EmailMessage
 import smtplib
 import ssl
 from fpdf import FPDF
+import PyPDF2
 import os
 
 # Function to generate email body
@@ -26,7 +27,7 @@ def generate_email_body(students, school):
 
     return greeting + body + closing
 
-# Function to generate PDF for each student
+# Function to generate PDF for each student and merge with uploaded PDF
 def generate_student_pdf(student, document):
     pdf = FPDF()
     pdf.add_page()
@@ -43,16 +44,35 @@ def generate_student_pdf(student, document):
     pdf.cell(200, 10, txt=f"Start Date: {student['start_date']}", ln=True)
     pdf.cell(200, 10, txt=f"Length of Program: {student['length']}", ln=True)
 
-    pdf.ln(10)
-    if document:
-        pdf.cell(200, 10, txt="Attached Document:", ln=True)
-        pdf.ln(10)
-        # Assuming the document is a text file for simplicity. Adapt this for different file types.
-        pdf.multi_cell(0, 10, document.read().decode('latin-1'))  # Decoding needed for reading bytes in some text files
+    pdf_output_path = f"{student['name'].replace(' ', '_')}_application.pdf"
+    pdf.output(pdf_output_path)
 
-    pdf_file_path = f"{student['name'].replace(' ', '_')}_application.pdf"
-    pdf.output(pdf_file_path)
-    return pdf_file_path
+    # Merge with uploaded PDF document if available
+    if document:
+        merged_pdf_path = f"{student['name'].replace(' ', '_')}_merged_application.pdf"
+        merge_pdfs(pdf_output_path, document, merged_pdf_path)
+        return merged_pdf_path
+
+    return pdf_output_path
+
+# Function to merge PDFs
+def merge_pdfs(pdf1_path, pdf2_file, output_path):
+    pdf_writer = PyPDF2.PdfWriter()
+
+    # Read the first PDF
+    with open(pdf1_path, 'rb') as pdf1_file:
+        pdf1_reader = PyPDF2.PdfReader(pdf1_file)
+        for page in pdf1_reader.pages:
+            pdf_writer.add_page(page)
+
+    # Read the uploaded PDF
+    pdf2_reader = PyPDF2.PdfReader(pdf2_file)
+    for page in pdf2_reader.pages:
+        pdf_writer.add_page(page)
+
+    # Write out the merged PDF
+    with open(output_path, 'wb') as output_pdf:
+        pdf_writer.write(output_pdf)
 
 # Agent email mapping
 agents = {
@@ -103,7 +123,7 @@ if "logged_in" in st.session_state and st.session_state["logged_in"]:
         program = st.text_input(f"Program Choice of Student {i+1}")
         start_date = st.date_input(f"Start Date of Student {i+1}")
         length = st.text_input(f"Length of Program for Student {i+1}")
-        document = st.file_uploader(f"Upload document for {name}", type=["pdf", "txt", "docx"])
+        document = st.file_uploader(f"Upload PDF document for {name}", type=["pdf"])
 
         students.append({
             "name": name,

@@ -63,7 +63,8 @@ def generate_student_pdf(student, documents):
     if documents:
         for document in documents:
             if document.type == "application/pdf":
-                pdf_reader = PyPDF2.PdfReader(document)
+                document_bytes = BytesIO(document.read())
+                pdf_reader = PyPDF2.PdfReader(document_bytes)
                 for page in pdf_reader.pages:
                     # Resize the page to match the first page
                     page.scale_to(first_page_size.width, first_page_size.height)

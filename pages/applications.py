@@ -216,38 +216,41 @@ if "logged_in" in st.session_state and st.session_state["logged_in"]:
 # Ensure that "Send Email" only works if email_body is already defined
 if "email_body" in st.session_state and "pdf_files" in st.session_state:
     if st.button("Send Email"):
-        email_body = st.session_state["email_body"]
+        email_body = st.session_state.get("email_body", "")  # Safely get email_body from session state
 
-        msg = EmailMessage()
-        msg['From'] = email_address
-        msg['To'] = recipient_email  # Automatically selected school email
-        msg['Subject'] = "Student Applications Submission"
-        msg.set_content(email_body)
+        if not email_body:
+            st.error("Email body is not defined. Please generate the email body and PDFs first.")
+        else:
+            msg = EmailMessage()
+            msg['From'] = email_address
+            msg['To'] = recipient_email  # Automatically selected school email
+            msg['Subject'] = "Student Applications Submission"
+            msg.set_content(email_body)
 
-        # Attach PDFs to the email
-        for pdf_file in st.session_state["pdf_files"]:
-            with open(pdf_file, "rb") as f:
-                file_data = f.read()
-                file_name = os.path.basename(pdf_file)
-                msg.add_attachment(file_data, maintype="application", subtype="pdf", filename=file_name)
-
-        try:
-            context = ssl.create_default_context()
-            with smtplib.SMTP_SSL("smtp.titan.email", 465, context=context) as server:
-                server.login(email_address, password)
-                server.send_message(msg)
-
-            st.success("Email sent successfully!")
-            # Cleanup: Remove PDF files after sending
+            # Attach PDFs to the email
             for pdf_file in st.session_state["pdf_files"]:
-                os.remove(pdf_file)
+                with open(pdf_file, "rb") as f:
+                    file_data = f.read()
+                    file_name = os.path.basename(pdf_file)
+                    msg.add_attachment(file_data, maintype="application", subtype="pdf", filename=file_name)
 
-            # Send a copy to the agent's email address
-            msg['To'] = email_address  # Send to agent's email
-            with smtplib.SMTP_SSL("smtp.titan.email", 465, context=context) as server:
-                server.send_message(msg)
+            try:
+                context = ssl.create_default_context()
+                with smtplib.SMTP_SSL("smtp.titan.email", 465, context=context) as server:
+                    server.login(email_address, password)
+                    server.send_message(msg)
 
-            st.success(f"Copy of the email sent to {email_address}!")
-            
-        except Exception as e:
-            st.error(f"An error occurred while sending the email: {e}")
+                st.success("Email sent successfully!")
+                # Cleanup: Remove PDF files after sending
+                for pdf_file in st.session_state["pdf_files"]:
+                    os.remove(pdf_file)
+
+                # Send a copy to the agent's email address
+                msg['To'] = email_address  # Send to agent's email
+                with smtplib.SMTP_SSL("smtp.titan.email", 465, context=context) as server:
+                    server.send_message(msg)
+
+                st.success(f"Copy of the email sent to {email_address}!")
+                
+            except Exception as e:
+                st.error(f"An error occurred while sending the email: {e}")

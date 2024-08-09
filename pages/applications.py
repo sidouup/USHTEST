@@ -66,8 +66,11 @@ def generate_student_pdf(student, documents):
                 document_bytes = BytesIO(document.read())
                 pdf_reader = PyPDF2.PdfReader(document_bytes)
                 for page in pdf_reader.pages:
-                    # Resize the page to match the first page
-                    page.scale_to(first_page_size.width, first_page_size.height)
+                    try:
+                        # Attempt to scale the page, but if it fails, add the page as is
+                        page.scale_to(first_page_size.width, first_page_size.height)
+                    except Exception as e:
+                        st.warning(f"Unable to scale page in document {document.name}. Adding original page.")
                     pdf_writer.add_page(page)
 
     merged_pdf_path = f"{student['name'].replace(' ', '_')}_merged_application.pdf"
@@ -75,7 +78,7 @@ def generate_student_pdf(student, documents):
         pdf_writer.write(f)
 
     return merged_pdf_path
-
+    
 # Agent email mapping
 agents = {
     "Djazila": "djillaliourradi@theushouse.com",

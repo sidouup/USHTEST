@@ -142,37 +142,39 @@ if "logged_in" in st.session_state and st.session_state["logged_in"]:
     students = []
     num_students = st.number_input("Number of Students", min_value=1, step=1)
 
-    for i in range(num_students):
-        st.subheader(f"Student {i+1}")
-        first_name = st.text_input(f"First Name of Student {i+1}")
-        last_name = st.text_input(f"Last Name of Student {i+1}")
-        full_name = f"{first_name} {last_name}"
-        address = st.text_input(f"Address of Student {i+1}")
-        email = st.text_input(f"Email of Student {i+1}")
-        phone = st.text_input(f"Phone Number of Student {i+1}")
-        program = st.text_input(f"Program Choice of Student {i+1}")
-        start_date = st.date_input(f"Start Date of Student {i+1}")
-        length = st.text_input(f"Length of Program for Student {i+1}")
-        passport = st.file_uploader(f"Upload Passport for {full_name}", type=["pdf", "png", "jpg", "jpeg"])
-        bank_statement = st.file_uploader(f"Upload Bank Statement for {full_name}", type=["pdf", "png", "jpg", "jpeg"])
-        affidavit = st.file_uploader(f"Upload Affidavit Support Letter for {full_name}", type=["pdf", "png", "jpg", "jpeg"])
-        sponsor_id = st.file_uploader(f"Upload Sponsor ID for {full_name}", type=["pdf", "png", "jpg", "jpeg"])
+for i in range(num_students):
+    st.subheader(f"Student {i+1}")
+    first_name = st.text_input(f"First Name of Student {i+1}", key=f"first_name_{i}")
+    last_name = st.text_input(f"Last Name of Student {i+1}", key=f"last_name_{i}")
+    full_name = f"{first_name} {last_name}"
+    address = st.text_input(f"Address of Student {i+1}", key=f"address_{i}")
+    email = st.text_input(f"Email of Student {i+1}", key=f"email_{i}")
+    phone = st.text_input(f"Phone Number of Student {i+1}", key=f"phone_{i}")
+    program = st.text_input(f"Program Choice of Student {i+1}", key=f"program_{i}")
+    start_date = st.date_input(f"Start Date of Student {i+1}", key=f"start_date_{i}")
+    length = st.text_input(f"Length of Program for Student {i+1}", key=f"length_{i}")
+    
+    # Adding unique keys to each file uploader
+    passport = st.file_uploader(f"Upload Passport for {full_name}", type=["pdf", "png", "jpg", "jpeg"], key=f"passport_{i}")
+    bank_statement = st.file_uploader(f"Upload Bank Statement for {full_name}", type=["pdf", "png", "jpg", "jpeg"], key=f"bank_statement_{i}")
+    affidavit = st.file_uploader(f"Upload Affidavit Support Letter for {full_name}", type=["pdf", "png", "jpg", "jpeg"], key=f"affidavit_{i}")
+    sponsor_id = st.file_uploader(f"Upload Sponsor ID for {full_name}", type=["pdf", "png", "jpg", "jpeg"], key=f"sponsor_id_{i}")
 
-        students.append({
-            "name": full_name,
-            "address": address,
-            "email": email,
-            "phone": phone,
-            "program": program,
-            "start_date": start_date,
-            "length": length,
-            "documents": {
-                "passport": passport,
-                "bank_statement": bank_statement,
-                "affidavit": affidavit,
-                "sponsor_id": sponsor_id
-            }
-        })
+    students.append({
+        "name": full_name,
+        "address": address,
+        "email": email,
+        "phone": phone,
+        "program": program,
+        "start_date": start_date,
+        "length": length,
+        "documents": {
+            "passport": passport,
+            "bank_statement": bank_statement,
+            "affidavit": affidavit,
+            "sponsor_id": sponsor_id
+        }
+    })
 
     if st.button("Generate Email Body and PDFs"):
         if all(student["name"] and student["email"] for student in students) and recipient_email:

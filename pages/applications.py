@@ -148,8 +148,8 @@ if st.button("Login"):
 if "logged_in" in st.session_state and st.session_state["logged_in"]:
     st.header("Submit Student Applications")
 
-    school = st.selectbox("Select School", list(school_emails.keys()))  # Dropdown list for school selection
-    recipient_email = school_emails[school]  # Automatically set recipient email based on school selection
+    school = st.selectbox("Select School", list(school_emails.keys()))
+    recipient_email = school_emails[school]
 
     students = []
     num_students = st.number_input("Number of Students", min_value=1, step=1)
@@ -166,14 +166,10 @@ if "logged_in" in st.session_state and st.session_state["logged_in"]:
         start_date = st.date_input(f"Start Date of Student {i+1}", key=f"start_date_{i}")
         length = st.text_input(f"Length of Program for Student {i+1}", key=f"length_{i}")
         
-        # Adding unique keys to each file uploader
         passport = st.file_uploader(f"Upload Passport for {full_name}", type=["pdf", "png", "jpg", "jpeg"], key=f"passport_{i}")
         bank_statement = st.file_uploader(f"Upload Bank Statement for {full_name}", type=["pdf", "png", "jpg", "jpeg"], key=f"bank_statement_{i}")
         affidavit = st.file_uploader(f"Upload Affidavit Support Letter for {full_name}", type=["pdf", "png", "jpg", "jpeg"], key=f"affidavit_{i}")
         sponsor_id = st.file_uploader(f"Upload Sponsor ID for {full_name}", type=["pdf", "png", "jpg", "jpeg"], key=f"sponsor_id_{i}")
-
-        # Debugging output to check variable values
-        st.write(f"Debugging: full_name={full_name}, address={address}, email={email}, phone={phone}")
 
         if full_name and address and email and phone:
             students.append({
@@ -197,60 +193,56 @@ if "logged_in" in st.session_state and st.session_state["logged_in"]:
     if st.button("Generate Email Body and PDFs"):
         if all(student["name"] and student["email"] for student in students):
             email_body = generate_email_body(students, school)
-            st.session_state["email_body"] = email_body  # Store the email body in session state
+            st.session_state["email_body"] = email_body
 
-            st.text_area("Generated Email Body", email_body, height=300)  # Show the generated email body
+            st.text_area("Generated Email Body", email_body, height=300)
 
-            # Generate PDFs for each student
             pdf_files = []
             for student in students:
                 pdf_file = generate_student_pdf(student, student["documents"])
                 pdf_files.append(pdf_file)
 
-            st.session_state["pdf_files"] = pdf_files  # Store generated PDF file paths in session state
+            st.session_state["pdf_files"] = pdf_files
 
             st.success("PDFs generated successfully!")
         else:
             st.error("Please make sure all required fields are filled out for each student.")
 
-# Ensure that "Send Email" only works if email_body is already defined
-if "email_body" in st.session_state and "pdf_files" in st.session_state:
-    if st.button("Send Email"):
-        email_body = st.session_state.get("email_body", "")  # Safely get email_body from session state
+    # Move this block outside of the student input loop
+    if "email_body" in st.session_state and "pdf_files" in st.session_state:
+        if st.button("Send Email"):
+            email_body = st.session_state.get("email_body", "")
 
-        if not email_body:
-            st.error("Email body is not defined. Please generate the email body and PDFs first.")
-        else:
-            msg = EmailMessage()
-            msg['From'] = email_address
-            msg['To'] = recipient_email  # Automatically selected school email
-            msg['Subject'] = "Student Applications Submission"
-            msg.set_content(email_body)
+            if not email_body:
+                st.error("Email body is not defined. Please generate the email body and PDFs first.")
+            else:
+                msg = EmailMessage()
+                msg['From'] = email_address
+                msg['To'] = recipient_email
+                msg['Subject'] = "Student Applications Submission"
+                msg.set_content(email_body)
 
-            # Attach PDFs to the email
-            for pdf_file in st.session_state["pdf_files"]:
-                with open(pdf_file, "rb") as f:
-                    file_data = f.read()
-                    file_name = os.path.basename(pdf_file)
-                    msg.add_attachment(file_data, maintype="application", subtype="pdf", filename=file_name)
-
-            try:
-                context = ssl.create_default_context()
-                with smtplib.SMTP_SSL("smtp.titan.email", 465, context=context) as server:
-                    server.login(email_address, password)
-                    server.send_message(msg)
-
-                st.success("Email sent successfully!")
-                # Cleanup: Remove PDF files after sending
                 for pdf_file in st.session_state["pdf_files"]:
-                    os.remove(pdf_file)
+                    with open(pdf_file, "rb") as f:
+                        file_data = f.read()
+                        file_name = os.path.basename(pdf_file)
+                        msg.add_attachment(file_data, maintype="application", subtype="pdf", filename=file_name)
 
-                # Send a copy to the agent's email address
-                msg['To'] = email_address  # Send to agent's email
-                with smtplib.SMTP_SSL("smtp.titan.email", 465, context=context) as server:
-                    server.send_message(msg)
+                try:
+                    context = ssl.create_default_context()
+                    with smtplib.SMTP_SSL("smtp.titan.email", 465, context=context) as server:
+                        server.login(email_address, password)
+                        server.send_message(msg)
 
-                st.success(f"Copy of the email sent to {email_address}!")
-                
-            except Exception as e:
-                st.error(f"An error occurred while sending the email: {e}")
+                    st.success("Email sent successfully!")
+                    for pdf_file in st.session_state["pdf_files"]:
+                        os.remove(pdf_file)
+
+                    msg['To'] = email_address
+                    with smtplib.SMTP_SSL("smtp.titan.email", 465, context=context) as server:
+                        server.send_message(msg)
+
+                    st.success(f"Copy of the email sent to {email_address}!")
+                    
+                except Exception as e:
+                    st.error(f"An error occurred while sending the email: {e}")

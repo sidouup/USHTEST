@@ -4,8 +4,8 @@ import smtplib
 import ssl
 from fpdf import FPDF
 import PyPDF2
+import fitz  # PyMuPDF
 from PIL import Image
-from pdf2image import convert_from_path
 import os
 
 # Function to generate email body
@@ -71,11 +71,14 @@ def generate_student_pdf(student, documents):
     pdf.output(pdf_output_path)
     return pdf_output_path
 
-# Function to preview the PDF by converting it to images
+# Function to preview the PDF by converting it to images using PyMuPDF
 def preview_pdf(pdf_path):
-    images = convert_from_path(pdf_path)
-    for image in images:
-        st.image(image, use_column_width=True)
+    doc = fitz.open(pdf_path)
+    for page_number in range(len(doc)):
+        page = doc.load_page(page_number)
+        pix = page.get_pixmap()
+        img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+        st.image(img, use_column_width=True)
 
 # Agent email mapping
 agents = {

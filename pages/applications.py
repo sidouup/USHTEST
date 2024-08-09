@@ -56,8 +56,8 @@ def generate_student_pdf(student, documents):
     pdf_writer.add_page(pdf_reader.pages[0])
 
     # Process uploaded documents
-    if documents:
-        for document in documents:
+    for doc_type, document in documents.items():
+        if document:
             if document.type == "application/pdf":
                 doc_reader = PyPDF2.PdfReader(io.BytesIO(document.read()))
                 for page in doc_reader.pages:
@@ -144,24 +144,34 @@ if "logged_in" in st.session_state and st.session_state["logged_in"]:
 
     for i in range(num_students):
         st.subheader(f"Student {i+1}")
-        name = st.text_input(f"Name of Student {i+1}")
+        first_name = st.text_input(f"First Name of Student {i+1}")
+        last_name = st.text_input(f"Last Name of Student {i+1}")
+        full_name = f"{first_name} {last_name}"
         address = st.text_input(f"Address of Student {i+1}")
         email = st.text_input(f"Email of Student {i+1}")
         phone = st.text_input(f"Phone Number of Student {i+1}")
         program = st.text_input(f"Program Choice of Student {i+1}")
         start_date = st.date_input(f"Start Date of Student {i+1}")
         length = st.text_input(f"Length of Program for Student {i+1}")
-        documents = st.file_uploader(f"Upload documents for {name}", type=["pdf", "png", "jpg", "jpeg"], accept_multiple_files=True)
+        passport = st.file_uploader(f"Upload Passport for {full_name}", type=["pdf", "png", "jpg", "jpeg"])
+        bank_statement = st.file_uploader(f"Upload Bank Statement for {full_name}", type=["pdf", "png", "jpg", "jpeg"])
+        affidavit = st.file_uploader(f"Upload Affidavit Support Letter for {full_name}", type=["pdf", "png", "jpg", "jpeg"])
+        sponsor_id = st.file_uploader(f"Upload Sponsor ID for {full_name}", type=["pdf", "png", "jpg", "jpeg"])
 
         students.append({
-            "name": name,
+            "name": full_name,
             "address": address,
             "email": email,
             "phone": phone,
             "program": program,
             "start_date": start_date,
             "length": length,
-            "documents": documents
+            "documents": {
+                "passport": passport,
+                "bank_statement": bank_statement,
+                "affidavit": affidavit,
+                "sponsor_id": sponsor_id
+            }
         })
 
     if st.button("Generate Email Body and PDFs"):

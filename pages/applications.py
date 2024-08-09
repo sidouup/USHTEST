@@ -172,7 +172,9 @@ if "logged_in" in st.session_state and st.session_state["logged_in"]:
         bank_statement = st.file_uploader(f"Upload Bank Statement for {full_name}", type=["pdf", "png", "jpg", "jpeg"], key=f"bank_statement_{i}")
         affidavit = st.file_uploader(f"Upload Affidavit Support Letter for {full_name}", type=["pdf", "png", "jpg", "jpeg"], key=f"affidavit_{i}")
         sponsor_id = st.file_uploader(f"Upload Sponsor ID for {full_name}", type=["pdf", "png", "jpg", "jpeg"], key=f"sponsor_id_{i}")
-
+# Debugging output to check variable values
+        st.write(f"Debugging: full_name={full_name}, address={address}, email={email}, phone={phone}")
+        
         students.append({
             "name": full_name,
             "address": address,
@@ -188,7 +190,6 @@ if "logged_in" in st.session_state and st.session_state["logged_in"]:
                 "sponsor_id": sponsor_id
             }
         })
-
 # Ensure email_body is properly created and stored before sending emails
 
     if st.button("Generate Email Body and PDFs"):

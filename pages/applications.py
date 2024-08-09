@@ -93,7 +93,7 @@ def generate_student_pdf(student, documents):
                 x_offset = (210 - img.width * scale_factor) / 2
                 y_offset = (297 - img.height * scale_factor) / 2
                 
-                pdf_image.image(img, x=x_offset, y=y_offset, w=img.width * scale_factor, h=img.height * scale_factor)
+                pdf_image.image(io.BytesIO(document.getvalue()), x=x_offset, y=y_offset, w=img.width * scale_factor, h=img.height * scale_factor)
                 pdf_image_output = pdf_image.output(dest='S').encode('latin-1')
                 pdf_writer.add_page(PyPDF2.PdfReader(io.BytesIO(pdf_image_output)).pages[0])
 

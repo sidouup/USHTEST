@@ -45,33 +45,56 @@ def generate_student_pdf(student, documents):
     pdf.cell(200, 10, txt=f"Start Date: {student['start_date']}", ln=True)
     pdf.cell(200, 10, txt=f"Length of Program: {student['length']}", ln=True)
 
-    # Get PDF as bytes
-    pdf_bytes = pdf.output(dest='S').encode('latin-1')
-    pdf_output = BytesIO(pdf_bytes)
-
-    pdf_writer = PyPDF2.PdfWriter()
+    # Save the initial page
+    pdf_output = pdf.output(dest='S').encode('latin-1')
     
-    # Add the generated PDF
-    pdf_reader = PyPDF2.PdfReader(pdf_output)
-    first_page = pdf_reader.pages[0]
-    pdf_writer.add_page(first_page)
+    pdf_writer = PyPDF2.PdfWriter()
+    pdf_reader = PyPDF2.PdfReader(io.BytesIO(pdf_output))
+    pdf_writer.add_page(pdf_reader.pages[0])
 
-    # Get the size of the first page
-    first_page_size = first_page.mediabox
-
-    # Add the uploaded PDF documents
+    # Process uploaded documents
     if documents:
         for document in documents:
             if document.type == "application/pdf":
-                document_bytes = BytesIO(document.read())
-                pdf_reader = PyPDF2.PdfReader(document_bytes)
-                for page in pdf_reader.pages:
-                    try:
-                        # Attempt to scale the page, but if it fails, add the page as is
-                        page.scale_to(first_page_size.width, first_page_size.height)
-                    except Exception as e:
-                        st.warning(f"Unable to scale page in document {document.name}. Adding original page.")
-                    pdf_writer.add_page(page)
+                doc_reader = PyPDF2.PdfReader(io.BytesIO(document.read()))
+                for page in doc_reader.pages:
+                    # Create a new blank A4 page
+                    blank_page = PyPDF2.PageObject.create_blank_page(width=595.276, height=841.890)  # A4 size in points
+                    
+                    # Get the dimensions of the content
+                    content_width = float(page.mediabox.width)
+                    content_height = float(page.mediabox.height)
+                    
+                    # Calculate scaling factor to fit within A4, maintaining aspect ratio
+                    scale_factor = min(595.276 / content_width, 841.890 / content_height)
+                    
+                    # Calculate position to center the content
+                    x_offset = (595.276 - content_width * scale_factor) / 2
+                    y_offset = (841.890 - content_height * scale_factor) / 2
+                    
+                    # Merge the content onto the blank page
+                    blank_page.merge_page(page, expand=False)
+                    blank_page.scale(scale_factor, scale_factor)
+                    blank_page.mediabox.lower_left = (x_offset, y_offset)
+                    blank_page.mediabox.upper_right = (x_offset + content_width * scale_factor, y_offset + content_height * scale_factor)
+                    
+                    pdf_writer.add_page(blank_page)
+            elif document.type.startswith('image'):
+                img = Image.open(io.BytesIO(document.read()))
+                pdf_image = FPDF(format='A4')
+                pdf_image.add_page()
+                
+                # Calculate scaling factor to fit within A4, maintaining aspect ratio
+                max_width, max_height = 190, 277  # Slightly smaller than A4 to account for margins
+                scale_factor = min(max_width / img.width, max_height / img.height)
+                
+                # Calculate position to center the image
+                x_offset = (210 - img.width * scale_factor) / 2
+                y_offset = (297 - img.height * scale_factor) / 2
+                
+                pdf_image.image(img, x=x_offset, y=y_offset, w=img.width * scale_factor, h=img.height * scale_factor)
+                pdf_image_output = pdf_image.output(dest='S').encode('latin-1')
+                pdf_writer.add_page(PyPDF2.PdfReader(io.BytesIO(pdf_image_output)).pages[0])
 
     merged_pdf_path = f"{student['name'].replace(' ', '_')}_merged_application.pdf"
     with open(merged_pdf_path, "wb") as f:

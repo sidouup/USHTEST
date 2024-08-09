@@ -45,6 +45,8 @@ if st.button("Login"):
 if "logged_in" in st.session_state and st.session_state["logged_in"]:
     st.header("Submit Student Applications")
 
+    recipient_email = st.text_input("Recipient Email")  # Input for recipient email
+
     students = []
     num_students = st.number_input("Number of Students", min_value=1, step=1)
 
@@ -69,12 +71,12 @@ if "logged_in" in st.session_state and st.session_state["logged_in"]:
         })
 
     if st.button("Generate and Send Email"):
-        if all(student["name"] and student["email"] for student in students):
+        if all(student["name"] and student["email"] for student in students) and recipient_email:
             email_body = generate_email_body(students)
 
             msg = EmailMessage()
             msg['From'] = email_address
-            msg['To'] = "[Recipient's Email]"  # Replace with the actual recipient's email
+            msg['To'] = recipient_email  # Use the recipient email from the input
             msg['Subject'] = "Student Applications Submission"
             msg.set_content(email_body)
 
@@ -88,4 +90,4 @@ if "logged_in" in st.session_state and st.session_state["logged_in"]:
             except Exception as e:
                 st.error(f"An error occurred while sending the email: {e}")
         else:
-            st.error("Please make sure all required fields are filled out for each student.")
+            st.error("Please make sure all required fields are filled out for each student and that a recipient email is provided.")

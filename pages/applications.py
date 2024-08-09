@@ -4,7 +4,6 @@ import smtplib
 import ssl
 from fpdf import FPDF
 import PyPDF2
-from PIL import Image
 import os
 
 # Function to generate email body
@@ -28,7 +27,7 @@ def generate_email_body(students, school):
 
     return greeting + body + closing
 
-# Function to generate PDF for each student and merge with uploaded PDFs/images
+# Function to generate PDF for each student and merge with uploaded PDFs
 def generate_student_pdf(student, documents):
     pdf = FPDF(format='A4')
     pdf.add_page()
@@ -45,29 +44,36 @@ def generate_student_pdf(student, documents):
     pdf.cell(200, 10, txt=f"Start Date: {student['start_date']}", ln=True)
     pdf.cell(200, 10, txt=f"Length of Program: {student['length']}", ln=True)
 
-    # Append uploaded documents to the PDF
-    for document in documents:
-        if document.type == "application/pdf":
-            pdf_path = f"/tmp/{student['name'].replace(' ', '_')}_temp.pdf"
-            with open(pdf_path, "wb") as f:
-                f.write(document.getbuffer())
-            pdf.add_page()
-            pdf_reader = PyPDF2.PdfReader(pdf_path)
-            for page in pdf_reader.pages:
-                pdf_writer = PyPDF2.PdfWriter()
-                pdf_writer.add_page(page)
-            os.remove(pdf_path)
-        elif document.type.startswith("image/"):
-            image = Image.open(document)
-            image = image.convert("RGB")
-            image = image.resize((210, 297))  # Resize image to fit A4
-            image_path = f"/tmp/{student['name'].replace(' ', '_')}_temp.jpg"
-            image.save(image_path)
-            pdf.image(image_path, x=0, y=0, w=210, h=297)
-            os.remove(image_path)
-
     pdf_output_path = f"{student['name'].replace(' ', '_')}_application.pdf"
     pdf.output(pdf_output_path)
+
+    # Append uploaded PDF documents
+    if documents:
+        pdf_writer = PyPDF2.PdfWriter()
+        
+        # Add the generated PDF
+        with open(pdf_output_path, "rb") as f:
+            pdf_reader = PyPDF2.PdfReader(f)
+            for page in pdf_reader.pages:
+                pdf_writer.add_page(page)
+
+        # Add the uploaded PDF documents
+        for document in documents:
+            if document.type == "application/pdf":
+                with open(f"/tmp/{document.name}", "wb") as f:
+                    f.write(document.getbuffer())
+                with open(f"/tmp/{document.name}", "rb") as f:
+                    pdf_reader = PyPDF2.PdfReader(f)
+                    for page in pdf_reader.pages:
+                        pdf_writer.add_page(page)
+        
+        merged_pdf_path = f"{student['name'].replace(' ', '_')}_merged_application.pdf"
+        with open(merged_pdf_path, "wb") as f:
+            pdf_writer.write(f)
+        
+        os.remove(pdf_output_path)  # Remove original to avoid confusion
+        return merged_pdf_path
+
     return pdf_output_path
 
 # Agent email mapping
@@ -119,7 +125,7 @@ if "logged_in" in st.session_state and st.session_state["logged_in"]:
         program = st.text_input(f"Program Choice of Student {i+1}")
         start_date = st.date_input(f"Start Date of Student {i+1}")
         length = st.text_input(f"Length of Program for Student {i+1}")
-        documents = st.file_uploader(f"Upload documents for {name}", type=["pdf", "jpg", "jpeg", "png"], accept_multiple_files=True)
+        documents = st.file_uploader(f"Upload documents for {name}", type=["pdf"], accept_multiple_files=True)
 
         students.append({
             "name": name,

@@ -7,6 +7,8 @@ import PyPDF2
 from PIL import Image
 import io
 import os
+import tempfile
+
 
 # Function to generate email body
 def generate_email_body(students, school):
@@ -67,16 +69,19 @@ def generate_student_pdf(student, documents):
                 max_width, max_height = 190, 277  # A4 size in mm minus margins
                 img.thumbnail((max_width, max_height))
                 
-                # Save the image to a buffer
-                img_buffer = io.BytesIO()
-                img.save(img_buffer, format='PNG')
-                img_buffer.seek(0)
-
+                # Save the image to a temporary file
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmpfile:
+                    img.save(tmpfile, format='PNG')
+                    tmpfile_path = tmpfile.name
+                
                 x_offset = (210 - img.width) / 2
                 y_offset = (297 - img.height) / 2
                 
-                # Provide a filename to ensure FPDF recognizes the format
-                pdf.image(img_buffer, x=x_offset, y=y_offset, w=img.width, h=img.height, name=f'{student["name"]}.png')
+                # Use the temporary file path to insert the image into the PDF
+                pdf.image(tmpfile_path, x=x_offset, y=y_offset, w=img.width, h=img.height)
+
+                # Cleanup: remove the temporary file
+                os.remove(tmpfile_path)
 
     merged_pdf_path = f"{student['name'].replace(' ', '_')}_merged_application.pdf"
     with open(merged_pdf_path, "wb") as f:

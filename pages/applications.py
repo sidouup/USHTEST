@@ -45,9 +45,9 @@ def generate_student_pdf(student, documents):
     pdf.cell(200, 10, txt=f"Start Date: {student['start_date']}", ln=True)
     pdf.cell(200, 10, txt=f"Length of Program: {student['length']}", ln=True)
 
-    pdf_output = BytesIO()
-    pdf.output(pdf_output)
-    pdf_output.seek(0)
+    # Get PDF as bytes
+    pdf_bytes = pdf.output(dest='S').encode('latin-1')
+    pdf_output = BytesIO(pdf_bytes)
 
     pdf_writer = PyPDF2.PdfWriter()
     

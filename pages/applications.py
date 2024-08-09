@@ -4,6 +4,7 @@ import smtplib
 import ssl
 from fpdf import FPDF
 import PyPDF2
+from PIL import Image
 import os
 
 # Function to generate email body
@@ -27,11 +28,13 @@ def generate_email_body(students, school):
 
     return greeting + body + closing
 
-# Function to generate PDF for each student and merge with uploaded PDFs
+# Function to generate PDF for each student and ensure all pages are A4
 def generate_student_pdf(student, documents):
     pdf = FPDF(format='A4')
+    pdf.set_auto_page_break(auto=True, margin=15)
+    
+    # Add student details to PDF
     pdf.add_page()
-
     pdf.set_font("Arial", size=12)
     pdf.cell(200, 10, txt=f"Student Application: {student['name']}", ln=True, align='C')
 
@@ -44,36 +47,45 @@ def generate_student_pdf(student, documents):
     pdf.cell(200, 10, txt=f"Start Date: {student['start_date']}", ln=True)
     pdf.cell(200, 10, txt=f"Length of Program: {student['length']}", ln=True)
 
-    pdf_output_path = f"{student['name'].replace(' ', '_')}_application.pdf"
-    pdf.output(pdf_output_path)
-
-    # Append uploaded PDF documents
-    if documents:
-        pdf_writer = PyPDF2.PdfWriter()
-        
-        # Add the generated PDF
-        with open(pdf_output_path, "rb") as f:
-            pdf_reader = PyPDF2.PdfReader(f)
-            for page in pdf_reader.pages:
+    # Process uploaded documents
+    for document in documents:
+        if document.type.startswith("image/"):
+            # Handle images
+            image = Image.open(document)
+            image = image.convert("RGB")
+            image.thumbnail((595, 842))  # Resize to fit A4 dimensions (595x842 points)
+            image_path = f"/tmp/{student['name'].replace(' ', '_')}_temp.jpg"
+            image.save(image_path)
+            pdf.add_page()
+            pdf.image(image_path, x=0, y=0, w=210, h=297)  # Insert image as A4
+            os.remove(image_path)
+        elif document.type == "application/pdf":
+            # Handle PDFs
+            pdf_path = f"/tmp/{document.name}"
+            with open(pdf_path, "wb") as f:
+                f.write(document.getbuffer())
+            pdf_reader = PyPDF2.PdfReader(pdf_path)
+            for page_num in range(len(pdf_reader.pages)):
+                page = pdf_reader.pages[page_num]
+                pdf_writer = PyPDF2.PdfWriter()
                 pdf_writer.add_page(page)
 
-        # Add the uploaded PDF documents
-        for document in documents:
-            if document.type == "application/pdf":
-                with open(f"/tmp/{document.name}", "wb") as f:
-                    f.write(document.getbuffer())
-                with open(f"/tmp/{document.name}", "rb") as f:
-                    pdf_reader = PyPDF2.PdfReader(f)
-                    for page in pdf_reader.pages:
-                        pdf_writer.add_page(page)
-        
-        merged_pdf_path = f"{student['name'].replace(' ', '_')}_merged_application.pdf"
-        with open(merged_pdf_path, "wb") as f:
-            pdf_writer.write(f)
-        
-        os.remove(pdf_output_path)  # Remove original to avoid confusion
-        return merged_pdf_path
+                output_pdf_path = f"/tmp/resized_{page_num}.pdf"
+                with open(output_pdf_path, "wb") as output_pdf:
+                    pdf_writer.write(output_pdf)
 
+                # Add to main PDF
+                pdf.add_page()
+                pdf.set_xy(0, 0)
+                pdf.set_font("Arial", size=12)
+                pdf.multi_cell(0, 10, txt=f"Attached PDF: {document.name}")
+                pdf.ln(10)
+                pdf.image(output_pdf_path, x=0, y=0, w=210, h=297)
+                os.remove(output_pdf_path)
+            os.remove(pdf_path)
+
+    pdf_output_path = f"{student['name'].replace(' ', '_')}_application.pdf"
+    pdf.output(pdf_output_path)
     return pdf_output_path
 
 # Agent email mapping
@@ -125,7 +137,7 @@ if "logged_in" in st.session_state and st.session_state["logged_in"]:
         program = st.text_input(f"Program Choice of Student {i+1}")
         start_date = st.date_input(f"Start Date of Student {i+1}")
         length = st.text_input(f"Length of Program for Student {i+1}")
-        documents = st.file_uploader(f"Upload documents for {name}", type=["pdf"], accept_multiple_files=True)
+        documents = st.file_uploader(f"Upload documents for {name}", type=["pdf", "jpg", "jpeg", "png"], accept_multiple_files=True)
 
         students.append({
             "name": name,

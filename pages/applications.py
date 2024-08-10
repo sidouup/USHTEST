@@ -296,7 +296,7 @@ def new_application():
             st.session_state.form_data = {key: '' for key in st.session_state.form_data}
             
             # Rerun the app to clear the inputs
-            st.experimental_rerun()
+            st.rerun()
         else:
             st.warning("Please fill out all required fields. ⚠️")
 

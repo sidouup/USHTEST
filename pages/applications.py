@@ -208,6 +208,83 @@ school_emails = {
     "HAWAII": "sidouminto@gmail.com"
 }
 
+import streamlit as st
+import smtplib
+import ssl
+from email.message import EmailMessage
+from fpdf import FPDF
+import PyPDF2
+from PIL import Image
+import io
+import os
+import tempfile
+import requests
+
+# Set page config at the very beginning
+st.set_page_config(page_title="School Application CRM 🎓", layout="wide")
+
+# Custom CSS for a more modern look
+st.markdown("""
+<style>
+    .stApp {
+        max-width: 1200px;
+        margin: 0 auto;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .stButton>button {
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+        margin: 4px 2px;
+        cursor: pointer;
+        border-radius: 4px;
+    }
+    .stTextInput>div>div>input {
+        background-color: #f1f3f4;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+    .stSelectbox>div>div>select {
+        background-color: #f1f3f4;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# Keep your existing helper functions here:
+# generate_email_body, generate_student_pdf
+
+# Agent email mapping using Streamlit secrets
+agents = {
+    "Djazila": st.secrets["Djazila_email"],
+    "Hamza": st.secrets["Hamza_email"],
+    "Nessrine": st.secrets["Nessrine_email"],
+    "Nada": st.secrets["Nada_email"],
+    "Reda": st.secrets["Reda_email"]
+}
+
+# School email mapping (for now all are the same)
+school_emails = {
+    "CCLS Miami": "sidouminto@gmail.com",
+    "CCLS NY NJ": "sidouminto@gmail.com",
+    "Connect English": "sidouminto@gmail.com",
+    "CONVERSE SCHOOL": "sidouminto@gmail.com",
+    "ELI San Francisco": "sidouminto@gmail.com",
+    "F2 Visa": "sidouminto@gmail.com",
+    "GT Chicago": "sidouminto@gmail.com",
+    "BEA Huston": "sidouminto@gmail.com",
+    "BIA Huston": "sidouminto@gmail.com",
+    "OHLA Miami": "sidouminto@gmail.com",
+    "UCDEA": "sidouminto@gmail.com",
+    "HAWAII": "sidouminto@gmail.com"
+}
+
 def login():
     with st.sidebar:
         st.image("https://assets.zyrosite.com/cdn-cgi/image/format=auto,w=297,h=404,fit=crop/YBgonz9JJqHRMK43/blue-red-minimalist-high-school-logo-9-AVLN0K6MPGFK2QbL.png", width=100)
@@ -229,20 +306,34 @@ def login():
 def new_application():
     st.header("New Student Application 📝")
     
+    # Initialize session state for form inputs if not already present
+    if 'form_data' not in st.session_state:
+        st.session_state.form_data = {
+            'school': '',
+            'first_name': '',
+            'last_name': '',
+            'email': '',
+            'program': '',
+            'address': '',
+            'phone': '',
+            'length': ''
+        }
+    
     col1, col2 = st.columns(2)
     
     with col1:
-        school = st.selectbox("Select School 🏫", list(school_emails.keys()))
-        first_name = st.text_input("First Name 👤")
-        last_name = st.text_input("Last Name 👤")
-        email = st.text_input("Email 📧")
-        program = st.text_input("Program Choice 📚")
+        school = st.selectbox("Select School 🏫", list(school_emails.keys()), key='school')
+        st.session_state['selected_school'] = school  # Store the selected school in session state
+        first_name = st.text_input("First Name 👤", key='first_name', value=st.session_state.form_data['first_name'])
+        last_name = st.text_input("Last Name 👤", key='last_name', value=st.session_state.form_data['last_name'])
+        email = st.text_input("Email 📧", key='email', value=st.session_state.form_data['email'])
+        program = st.text_input("Program Choice 📚", key='program', value=st.session_state.form_data['program'])
     
     with col2:
-        address = st.text_input("Address 🏠")
-        phone = st.text_input("Phone Number 📞")
+        address = st.text_input("Address 🏠", key='address', value=st.session_state.form_data['address'])
+        phone = st.text_input("Phone Number 📞", key='phone', value=st.session_state.form_data['phone'])
         start_date = st.date_input("Start Date 📅")
-        length = st.text_input("Length of Program ⏳")
+        length = st.text_input("Length of Program ⏳", key='length', value=st.session_state.form_data['length'])
     
     st.subheader("Document Upload 📎")
     col3, col4 = st.columns(2)
@@ -276,6 +367,12 @@ def new_application():
                 st.session_state.students = []
             st.session_state.students.append(student)
             st.success("Student added successfully! ✅")
+            
+            # Clear the form data
+            st.session_state.form_data = {key: '' for key in st.session_state.form_data}
+            
+            # Rerun the app to clear the inputs
+            st.experimental_rerun()
         else:
             st.warning("Please fill out all required fields. ⚠️")
 
@@ -296,16 +393,20 @@ def review_and_submit():
                     st.write(f"**Length:** ⏳ {student['length']}")
         
         if st.button("Generate Email and PDFs 📨"):
-            email_body = generate_email_body(st.session_state.students, school)
-            st.session_state["email_body"] = email_body
-            st.text_area("Generated Email Body 📧", email_body, height=200)
-            
-            pdf_files = []
-            for student in st.session_state.students:
-                pdf_file = generate_student_pdf(student, student["documents"])
-                pdf_files.append(pdf_file)
-            st.session_state["pdf_files"] = pdf_files
-            st.success("PDFs generated successfully! 📄✅")
+            if 'selected_school' in st.session_state:
+                school = st.session_state['selected_school']
+                email_body = generate_email_body(st.session_state.students, school)
+                st.session_state["email_body"] = email_body
+                st.text_area("Generated Email Body 📧", email_body, height=200)
+                
+                pdf_files = []
+                for student in st.session_state.students:
+                    pdf_file = generate_student_pdf(student, student["documents"])
+                    pdf_files.append(pdf_file)
+                st.session_state["pdf_files"] = pdf_files
+                st.success("PDFs generated successfully! 📄✅")
+            else:
+                st.error("Please select a school in the New Application tab first. ❌")
         
         if "email_body" in st.session_state and "pdf_files" in st.session_state:
             if st.button("Send Email 🚀"):
@@ -331,5 +432,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-
 

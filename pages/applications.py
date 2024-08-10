@@ -46,9 +46,11 @@ def generate_student_pdf(student, documents):
     # Add the logo to the PDF
     pdf.image(logo_path, x=10, y=8, w=50)
 
+    # Adjust space below the logo to prevent overlap
+    pdf.ln(40)  # Increase this value if the overlap persists
+
     # Student information
     pdf.set_font("Arial", size=12)
-    pdf.ln(20)  # Adjust space below the logo
     pdf.cell(200, 10, txt=f"Student Application: {student['name']}", ln=True, align='C')
 
     pdf.ln(10)

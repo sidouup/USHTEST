@@ -13,8 +13,8 @@ import requests
 # Function to generate email body
 def generate_email_body(students, school):
     greeting = f"Hello {school},\n\n"
-    greeting += "I hope everything is going well for you and the team!\n\n"
-    body = f"Here are the details for the students who have submitted applications for {school}:\n\n"
+    greeting += "I hope this message finds you well!\n\n"
+    body = f"Please find below the details for the students who have submitted applications to {school}:\n\n"
 
     for student in students:
         body += f"Name: {student['name']}\n"
@@ -26,8 +26,8 @@ def generate_email_body(students, school):
         body += f"Length of Program: {student['length']}\n"
         body += "\n---\n"
 
-    closing = "\nThank you for your help. We will proceed with the payment once you send us the link.\n\n"
-    closing += "Good luck, and see you soon!\n\nBest regards,\n[Your Name]\n"
+    closing = "\nThank you for your assistance. We will proceed with the payment once you provide the link.\n\n"
+    closing += "Best regards,\n[Your Name]\n"
 
     return greeting + body + closing
 
@@ -46,21 +46,48 @@ def generate_student_pdf(student, documents):
     # Add the logo to the PDF
     pdf.image(logo_path, x=10, y=8, w=50)
 
-    # Adjust space below the logo to prevent overlap
-    pdf.ln(40)  # Increase this value if the overlap persists
+    # Adjust space below the logo to prevent overlap and move the text down
+    pdf.ln(70)  # Increased space below the logo
 
     # Student information
-    pdf.set_font("Arial", size=12)
+    pdf.set_font("Arial", "B", 16)
     pdf.cell(200, 10, txt=f"Student Application: {student['name']}", ln=True, align='C')
 
     pdf.ln(10)
-    pdf.cell(200, 10, txt=f"Name: {student['name']}", ln=True)
-    pdf.cell(200, 10, txt=f"Address: {student['address']}", ln=True)
-    pdf.cell(200, 10, txt=f"Email: {student['email']}", ln=True)
-    pdf.cell(200, 10, txt=f"Phone Number: {student['phone']}", ln=True)
-    pdf.cell(200, 10, txt=f"Program Choice: {student['program']}", ln=True)
-    pdf.cell(200, 10, txt=f"Start Date: {student['start_date']}", ln=True)
-    pdf.cell(200, 10, txt=f"Length of Program: {student['length']}", ln=True)
+    pdf.set_font("Arial", "B", 12)
+    pdf.cell(50, 10, txt="Name:", ln=False)
+    pdf.set_font("Arial", size=12)
+    pdf.cell(0, 10, txt=student['name'], ln=True)
+
+    pdf.set_font("Arial", "B", 12)
+    pdf.cell(50, 10, txt="Address:", ln=False)
+    pdf.set_font("Arial", size=12)
+    pdf.cell(0, 10, txt=student['address'], ln=True)
+
+    pdf.set_font("Arial", "B", 12)
+    pdf.cell(50, 10, txt="Email:", ln=False)
+    pdf.set_font("Arial", size=12)
+    pdf.cell(0, 10, txt=student['email'], ln=True)
+
+    pdf.set_font("Arial", "B", 12)
+    pdf.cell(50, 10, txt="Phone Number:", ln=False)
+    pdf.set_font("Arial", size=12)
+    pdf.cell(0, 10, txt=student['phone'], ln=True)
+
+    pdf.set_font("Arial", "B", 12)
+    pdf.cell(50, 10, txt="Program Choice:", ln=False)
+    pdf.set_font("Arial", size=12)
+    pdf.cell(0, 10, txt=student['program'], ln=True)
+
+    pdf.set_font("Arial", "B", 12)
+    pdf.cell(50, 10, txt="Start Date:", ln=False)
+    pdf.set_font("Arial", size=12)
+    pdf.cell(0, 10, txt=str(student['start_date']), ln=True)
+
+    pdf.set_font("Arial", "B", 12)
+    pdf.cell(50, 10, txt="Length of Program:", ln=False)
+    pdf.set_font("Arial", size=12)
+    pdf.cell(0, 10, txt=student['length'], ln=True)
 
     # Save the initial page
     pdf_output = pdf.output(dest='S').encode('latin-1')

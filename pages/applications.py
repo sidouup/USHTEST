@@ -8,6 +8,7 @@ from PIL import Image
 import io
 import os
 import tempfile
+import requests
 
 # Function to generate email body
 def generate_email_body(students, school):
@@ -35,7 +36,19 @@ def generate_student_pdf(student, documents):
     pdf = FPDF(format='A4')
     pdf.add_page()
 
+    # Add the logo
+    logo_url = "https://assets.zyrosite.com/cdn-cgi/image/format=auto,w=297,h=404,fit=crop/YBgonz9JJqHRMK43/blue-red-minimalist-high-school-logo-9-AVLN0K6MPGFK2QbL.png"
+    logo_response = requests.get(logo_url)
+    logo_img = Image.open(io.BytesIO(logo_response.content))
+    logo_path = "logo_temp.png"
+    logo_img.save(logo_path)
+
+    # Add the logo to the PDF
+    pdf.image(logo_path, x=10, y=8, w=50)
+
+    # Student information
     pdf.set_font("Arial", size=12)
+    pdf.ln(20)  # Adjust space below the logo
     pdf.cell(200, 10, txt=f"Student Application: {student['name']}", ln=True, align='C')
 
     pdf.ln(10)
@@ -98,6 +111,9 @@ def generate_student_pdf(student, documents):
     pdf_name = f"{student['name'].replace(' ', '_')}.pdf"  # Name the PDF with first and last name
     with open(pdf_name, "wb") as f:
         pdf_writer.write(f)
+
+    # Remove the logo temporary file
+    os.remove(logo_path)
 
     return pdf_name
 

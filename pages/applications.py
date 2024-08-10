@@ -69,6 +69,8 @@ def generate_email_body(students, school):
     return greeting + body + closing
 
 # Function to generate PDF for each student and ensure all pages are A4
+from PIL import UnidentifiedImageError
+
 def generate_student_pdf(student, documents):
     pdf = FPDF(format='A4')
     pdf.add_page()
@@ -141,38 +143,43 @@ def generate_student_pdf(student, documents):
                 for page in doc_reader.pages:
                     pdf_writer.add_page(page)
             elif document.type.startswith('image'):
-                img = Image.open(io.BytesIO(document.read()))
-                
-                # Convert image to a PDF page
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as img_tmp_file:
-                    img.save(img_tmp_file, format='PNG')
-                    img_tmp_file_path = img_tmp_file.name
-                
-                img_pdf = FPDF(format='A4')
-                img_pdf.add_page()
+                try:
+                    img = Image.open(io.BytesIO(document.read()))
 
-                max_width, max_height = 190, 277  # A4 size in mm minus margins
-                img.thumbnail((max_width, max_height))
+                    # Convert image to a PDF page
+                    with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as img_tmp_file:
+                        img.save(img_tmp_file, format='PNG')
+                        img_tmp_file_path = img_tmp_file.name
 
-                x_offset = (210 - img.width) / 2
-                y_offset = (297 - img.height) / 2
-                
-                # Insert the image into the PDF
-                img_pdf.image(img_tmp_file_path, x=x_offset, y=y_offset, w=img.width, h=img.height)
+                    img_pdf = FPDF(format='A4')
+                    img_pdf.add_page()
 
-                # Save the image as PDF
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as img_pdf_file:
-                    img_pdf.output(img_pdf_file.name)
-                    img_pdf_file_path = img_pdf_file.name
+                    max_width, max_height = 190, 277  # A4 size in mm minus margins
+                    img.thumbnail((max_width, max_height))
 
-                # Append the image PDF to the main PDF
-                img_pdf_reader = PyPDF2.PdfReader(img_pdf_file_path)
-                for page in img_pdf_reader.pages:
-                    pdf_writer.add_page(page)
-                
-                # Cleanup: remove the temporary files
-                os.remove(img_tmp_file_path)
-                os.remove(img_pdf_file_path)
+                    x_offset = (210 - img.width) / 2
+                    y_offset = (297 - img.height) / 2
+
+                    # Insert the image into the PDF
+                    img_pdf.image(img_tmp_file_path, x=x_offset, y=y_offset, w=img.width, h=img.height)
+
+                    # Save the image as PDF
+                    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as img_pdf_file:
+                        img_pdf.output(img_pdf_file.name)
+                        img_pdf_file_path = img_pdf_file.name
+
+                    # Append the image PDF to the main PDF
+                    img_pdf_reader = PyPDF2.PdfReader(img_pdf_file_path)
+                    for page in img_pdf_reader.pages:
+                        pdf_writer.add_page(page)
+
+                    # Cleanup: remove the temporary files
+                    os.remove(img_tmp_file_path)
+                    os.remove(img_pdf_file_path)
+                except UnidentifiedImageError:
+                    st.error(f"The uploaded file for {doc_type} is not a recognized image.")
+            else:
+                st.error(f"Unsupported file type for {doc_type}: {document.type}")
 
     pdf_name = f"{student['name'].replace(' ', '_')}.pdf"  # Name the PDF with first and last name
     with open(pdf_name, "wb") as f:

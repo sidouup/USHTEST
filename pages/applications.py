@@ -70,6 +70,7 @@ def generate_email_body(students, school):
 
 # Function to generate PDF for each student and ensure all pages are A4
 from PIL import UnidentifiedImageError
+from PyPDF2.errors import PdfReadError, EmptyFileError
 
 def generate_student_pdf(student, documents):
     pdf = FPDF(format='A4')
@@ -138,12 +139,18 @@ def generate_student_pdf(student, documents):
     # Process uploaded documents
     for doc_type, document in documents.items():
         if document:
-            if document.type == "application/pdf":
-                doc_reader = PyPDF2.PdfReader(io.BytesIO(document.read()))
-                for page in doc_reader.pages:
-                    pdf_writer.add_page(page)
-            elif document.type.startswith('image'):
-                try:
+            try:
+                if document.type == "application/pdf":
+                    # Check if the file is empty
+                    document_bytes = document.read()
+                    if not document_bytes:
+                        st.error(f"The uploaded file for {doc_type} is empty.")
+                        continue
+
+                    doc_reader = PyPDF2.PdfReader(io.BytesIO(document_bytes))
+                    for page in doc_reader.pages:
+                        pdf_writer.add_page(page)
+                elif document.type.startswith('image'):
                     img = Image.open(io.BytesIO(document.read()))
 
                     # Convert image to a PDF page
@@ -176,10 +183,14 @@ def generate_student_pdf(student, documents):
                     # Cleanup: remove the temporary files
                     os.remove(img_tmp_file_path)
                     os.remove(img_pdf_file_path)
-                except UnidentifiedImageError:
-                    st.error(f"The uploaded file for {doc_type} is not a recognized image.")
-            else:
-                st.error(f"Unsupported file type for {doc_type}: {document.type}")
+            except UnidentifiedImageError:
+                st.error(f"The uploaded file for {doc_type} is not a recognized image.")
+            except PdfReadError:
+                st.error(f"The uploaded PDF file for {doc_type} could not be read. It may be corrupted.")
+            except EmptyFileError:
+                st.error(f"The uploaded PDF file for {doc_type} is empty.")
+            except Exception as e:
+                st.error(f"An unexpected error occurred while processing the {doc_type}: {e}")
 
     pdf_name = f"{student['name'].replace(' ', '_')}.pdf"  # Name the PDF with first and last name
     with open(pdf_name, "wb") as f:

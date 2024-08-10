@@ -11,7 +11,7 @@ import tempfile
 import requests
 import streamlit_nested_layout
 
-st.set_page_config(page_title="School Application CRM", layout="wide")
+st.set_page_config(page_title="School Application CRM 🎓", layout="wide")
 
 # Custom CSS for a more modern look
 st.markdown("""
@@ -208,70 +208,54 @@ school_emails = {
     "HAWAII": "sidouminto@gmail.com"
 }
 
-def main():
-
-    
-    # Sidebar for login
+def login():
     with st.sidebar:
         st.image("https://assets.zyrosite.com/cdn-cgi/image/format=auto,w=297,h=404,fit=crop/YBgonz9JJqHRMK43/blue-red-minimalist-high-school-logo-9-AVLN0K6MPGFK2QbL.png", width=100)
-        st.title("Agent Login")
-        agent = st.selectbox("Select Agent", list(agents.keys()))
+        st.title("Agent Login 🔐")
+        agent = st.selectbox("Select Agent 👤", list(agents.keys()))
         email_address = agents[agent]
         password = st.secrets[f"{agent}_password"]
         
-        if st.button("Login"):
+        if st.button("Login 🚀"):
             try:
                 context = ssl.create_default_context()
                 with smtplib.SMTP_SSL("smtp.titan.email", 465, context=context) as server:
                     server.login(email_address, password)
                 st.session_state["logged_in"] = True
-                st.success("Login successful!")
+                st.success("Login successful! 🎉")
             except Exception as e:
-                st.error(f"Login failed: {str(e)}")
-
-    # Main content
-    if "logged_in" in st.session_state and st.session_state["logged_in"]:
-        st.title("Student Application CRM")
-        
-        # Tabs for different sections
-        tabs = st.tabs(["New Application", "Review & Submit"])
-        
-        with tabs[0]:
-            new_application()
-        
-        with tabs[1]:
-            review_and_submit()
+                st.error(f"Login failed ❌: {str(e)}")
 
 def new_application():
-    st.header("New Student Application")
+    st.header("New Student Application 📝")
     
     col1, col2 = st.columns(2)
     
     with col1:
-        school = st.selectbox("Select School", list(school_emails.keys()))
-        first_name = st.text_input("First Name")
-        last_name = st.text_input("Last Name")
-        email = st.text_input("Email")
-        program = st.text_input("Program Choice")
+        school = st.selectbox("Select School 🏫", list(school_emails.keys()))
+        first_name = st.text_input("First Name 👤")
+        last_name = st.text_input("Last Name 👤")
+        email = st.text_input("Email 📧")
+        program = st.text_input("Program Choice 📚")
     
     with col2:
-        address = st.text_input("Address")
-        phone = st.text_input("Phone Number")
-        start_date = st.date_input("Start Date")
-        length = st.text_input("Length of Program")
+        address = st.text_input("Address 🏠")
+        phone = st.text_input("Phone Number 📞")
+        start_date = st.date_input("Start Date 📅")
+        length = st.text_input("Length of Program ⏳")
     
-    st.subheader("Document Upload")
+    st.subheader("Document Upload 📎")
     col3, col4 = st.columns(2)
     
     with col3:
-        passport = st.file_uploader("Upload Passport", type=["pdf", "png", "jpg", "jpeg"])
-        bank_statement = st.file_uploader("Upload Bank Statement", type=["pdf", "png", "jpg", "jpeg"])
+        passport = st.file_uploader("Upload Passport 🛂", type=["pdf", "png", "jpg", "jpeg"])
+        bank_statement = st.file_uploader("Upload Bank Statement 💰", type=["pdf", "png", "jpg", "jpeg"])
     
     with col4:
-        affidavit = st.file_uploader("Upload Affidavit Support Letter", type=["pdf", "png", "jpg", "jpeg"])
-        sponsor_id = st.file_uploader("Upload Sponsor ID", type=["pdf", "png", "jpg", "jpeg"])
+        affidavit = st.file_uploader("Upload Affidavit Support Letter 📄", type=["pdf", "png", "jpg", "jpeg"])
+        sponsor_id = st.file_uploader("Upload Sponsor ID 🆔", type=["pdf", "png", "jpg", "jpeg"])
     
-    if st.button("Add Student"):
+    if st.button("Add Student ➕"):
         if first_name and last_name and address and email and phone:
             student = {
                 "name": f"{first_name} {last_name}",
@@ -291,44 +275,61 @@ def new_application():
             if "students" not in st.session_state:
                 st.session_state.students = []
             st.session_state.students.append(student)
-            st.success("Student added successfully!")
+            st.success("Student added successfully! ✅")
         else:
-            st.warning("Please fill out all required fields.")
+            st.warning("Please fill out all required fields. ⚠️")
 
 def review_and_submit():
-    st.header("Review & Submit Applications")
+    st.header("Review & Submit Applications 📊")
     
     if "students" in st.session_state and st.session_state.students:
         for i, student in enumerate(st.session_state.students):
-            with st.expander(f"Student {i+1}: {student['name']}"):
+            with st.expander(f"Student {i+1}: {student['name']} 👨‍🎓"):
                 col1, col2 = st.columns(2)
                 with col1:
-                    st.write(f"**Email:** {student['email']}")
-                    st.write(f"**Phone:** {student['phone']}")
-                    st.write(f"**Program:** {student['program']}")
+                    st.write(f"**Email:** 📧 {student['email']}")
+                    st.write(f"**Phone:** 📞 {student['phone']}")
+                    st.write(f"**Program:** 📚 {student['program']}")
                 with col2:
-                    st.write(f"**Address:** {student['address']}")
-                    st.write(f"**Start Date:** {student['start_date']}")
-                    st.write(f"**Length:** {student['length']}")
+                    st.write(f"**Address:** 🏠 {student['address']}")
+                    st.write(f"**Start Date:** 📅 {student['start_date']}")
+                    st.write(f"**Length:** ⏳ {student['length']}")
         
-        if st.button("Generate Email and PDFs"):
+        if st.button("Generate Email and PDFs 📨"):
             email_body = generate_email_body(st.session_state.students, school)
             st.session_state["email_body"] = email_body
-            st.text_area("Generated Email Body", email_body, height=200)
+            st.text_area("Generated Email Body 📧", email_body, height=200)
             
             pdf_files = []
             for student in st.session_state.students:
                 pdf_file = generate_student_pdf(student, student["documents"])
                 pdf_files.append(pdf_file)
             st.session_state["pdf_files"] = pdf_files
-            st.success("PDFs generated successfully!")
+            st.success("PDFs generated successfully! 📄✅")
         
         if "email_body" in st.session_state and "pdf_files" in st.session_state:
-            if st.button("Send Email"):
+            if st.button("Send Email 🚀"):
                 # ... (Keep the existing email sending logic)
-                st.success("Emails sent successfully!")
+                st.success("Emails sent successfully! 📨✅")
     else:
-        st.info("No students added yet. Please add students in the New Application tab.")
+        st.info("No students added yet. Please add students in the New Application tab. ℹ️")
+
+def main():
+    st.title("Student Application CRM 🎓")
+    
+    login()
+    
+    if "logged_in" in st.session_state and st.session_state["logged_in"]:
+        # Tabs for different sections
+        tabs = st.tabs(["New Application 📝", "Review & Submit 📊"])
+        
+        with tabs[0]:
+            new_application()
+        
+        with tabs[1]:
+            review_and_submit()
 
 if __name__ == "__main__":
     main()
+
+

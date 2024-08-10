@@ -11,6 +11,8 @@ import tempfile
 import requests
 import streamlit_nested_layout
 
+st.set_page_config(page_title="School Application CRM", layout="wide")
+
 # Custom CSS for a more modern look
 st.markdown("""
 <style>
@@ -207,7 +209,7 @@ school_emails = {
 }
 
 def main():
-    st.set_page_config(page_title="School Application CRM", layout="wide")
+
     
     # Sidebar for login
     with st.sidebar:

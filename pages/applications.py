@@ -370,7 +370,60 @@ def review_and_submit():
         
         if "email_body" in st.session_state and "pdf_files" in st.session_state:
             if st.button("Send Email 🚀"):
-                # ... (rest of the email sending code remains the same)
+                email_body = st.session_state.get("email_body", "")
+                email_address = st.session_state.get("email_address", "")
+                password = st.session_state.get("password", "")
+        
+                if not email_body or not email_address or not password:
+                    st.error("Email details are not defined. Please ensure you're logged in and have generated the email body and PDFs first.")
+                else:
+                    # Send the email to the school
+                    msg = EmailMessage()
+                    msg['From'] = email_address
+                    msg['To'] = school_emails[st.session_state['selected_school']]
+                    msg['Subject'] = "Student Applications Submission"
+                    msg.set_content(email_body)
+        
+                    for pdf_file in st.session_state["pdf_files"]:
+                        with open(pdf_file, "rb") as f:
+                            file_data = f.read()
+                            file_name = os.path.basename(pdf_file)
+                            msg.add_attachment(file_data, maintype="application", subtype="pdf", filename=file_name)
+        
+                    try:
+                        context = ssl.create_default_context()
+                        with smtplib.SMTP_SSL("smtp.titan.email", 465, context=context) as server:
+                            server.login(email_address, password)
+                            server.send_message(msg)
+        
+                        st.success("Email sent successfully to the school!")
+        
+                        # Now send a copy of the email to the agent
+                        agent_msg = EmailMessage()
+                        agent_msg['From'] = email_address
+                        agent_msg['To'] = email_address  # Send to the agent's own email
+                        agent_msg['Subject'] = "Copy of Student Applications Submission"
+                        agent_msg.set_content(email_body)
+        
+                        for pdf_file in st.session_state["pdf_files"]:
+                            with open(pdf_file, "rb") as f:
+                                file_data = f.read()
+                                file_name = os.path.basename(pdf_file)
+                                agent_msg.add_attachment(file_data, maintype="application", subtype="pdf", filename=file_name)
+        
+                        with smtplib.SMTP_SSL("smtp.titan.email", 465, context=context) as server:
+                            server.login(email_address, password)
+                            server.send_message(agent_msg)
+        
+                        st.success(f"Copy of the email sent to {email_address}!")
+        
+                        # Cleanup: Remove PDF files after sending
+                        for pdf_file in st.session_state["pdf_files"]:
+                            os.remove(pdf_file)
+        
+                    except Exception as e:
+                        st.error(f"An error occurred while sending the email: {e}")
+                    st.success("Emails sent successfully! 📨✅")
     else:
         st.info("No students added yet. Please add students in the New Application tab. ℹ️")
 

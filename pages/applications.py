@@ -87,7 +87,7 @@ def generate_student_pdf(student, documents):
     pdf.image(logo_path, x=10, y=8, w=50)
 
     # Adjust space below the logo to prevent overlap and move the text down
-    pdf.ln(70)
+    pdf.ln(70)  # Increased space below the logo
 
     # Student information
     pdf.set_font("Arial", "B", 16)
@@ -266,9 +266,8 @@ def new_application():
     col1, col2 = st.columns(2)
     
     with col1:
-        # Set the school dropdown with a placeholder and clear selection after submission
-        school = st.selectbox("Select School 🏫", [""] + list(school_emails.keys()), key='school', index=0)
-        st.session_state.form_data['school'] = school
+        school = st.selectbox("Select School 🏫", list(school_emails.keys()), key='school')
+        st.session_state['selected_school'] = school  # Store the selected school in session state
         first_name = st.text_input("First Name 👤", key='first_name', value=st.session_state.form_data['first_name'])
         last_name = st.text_input("Last Name 👤", key='last_name', value=st.session_state.form_data['last_name'])
         email = st.text_input("Email 📧", key='email', value=st.session_state.form_data['email'])
@@ -277,7 +276,7 @@ def new_application():
     with col2:
         address = st.text_input("Address 🏠", key='address', value=st.session_state.form_data['address'])
         phone = st.text_input("Phone Number 📞", key='phone', value=st.session_state.form_data['phone'])
-        start_date = st.date_input("Start Date 📅", value=None)
+        start_date = st.date_input("Start Date 📅")
         length = st.text_input("Length of Program ⏳", key='length', value=st.session_state.form_data['length'])
     
     st.subheader("Document Upload 📎")
@@ -292,7 +291,7 @@ def new_application():
         sponsor_id = st.file_uploader("Upload Sponsor ID 🆔", type=["pdf", "png", "jpg", "jpeg"])
     
     if st.button("Add Student ➕"):
-        if school and first_name and last_name and address and email and phone:
+        if first_name and last_name and address and email and phone:
             student = {
                 "name": f"{first_name} {last_name}",
                 "address": address,
@@ -314,16 +313,7 @@ def new_application():
             st.success("Student added successfully! ✅")
             
             # Clear the form data
-            st.session_state.form_data = {
-                'school': '',
-                'first_name': '',
-                'last_name': '',
-                'email': '',
-                'program': '',
-                'address': '',
-                'phone': '',
-                'length': ''
-            }
+            st.session_state.form_data = {key: '' for key in st.session_state.form_data}
             
             # Rerun the app to clear the inputs
             st.rerun()

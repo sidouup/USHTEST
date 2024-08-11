@@ -266,7 +266,8 @@ def new_application():
     col1, col2 = st.columns(2)
     
     with col1:
-        school = st.selectbox("Select School 🏫", list(school_emails.keys()), key='school')
+        # Set the school dropdown with a placeholder and clear selection after submission
+        school = st.selectbox("Select School 🏫", [""] + list(school_emails.keys()), key='school')
         st.session_state.form_data['school'] = school
         first_name = st.text_input("First Name 👤", key='first_name', value=st.session_state.form_data['first_name'])
         last_name = st.text_input("Last Name 👤", key='last_name', value=st.session_state.form_data['last_name'])
@@ -291,7 +292,7 @@ def new_application():
         sponsor_id = st.file_uploader("Upload Sponsor ID 🆔", type=["pdf", "png", "jpg", "jpeg"])
     
     if st.button("Add Student ➕"):
-        if first_name and last_name and address and email and phone:
+        if school and first_name and last_name and address and email and phone:
             student = {
                 "name": f"{first_name} {last_name}",
                 "address": address,
@@ -323,6 +324,9 @@ def new_application():
                 'phone': '',
                 'length': ''
             }
+            
+            # Clear the selection of the school dropdown
+            st.session_state.school = ''
             
             # Rerun the app to clear the inputs
             st.rerun()

@@ -251,19 +251,14 @@ def new_application():
     st.header("New Student Application 📝")
     
     # Initialize session state for form inputs if not already present
-    if 'form_data' not in st.session_state:
-        st.session_state.form_data = {
-            'school': '',
-            'first_name': '',
-            'last_name': '',
-            'email': '',
-            'program': '',
-            'address': '',
-            'phone': '',
-            'length': '',
-            'start_date': None
-        }
+    form_fields = ['school', 'first_name', 'last_name', 'email', 'program', 'address', 'phone', 'length', 'start_date']
+    for field in form_fields:
+        if field not in st.session_state:
+            st.session_state[field] = ''
     
+    if 'start_date' not in st.session_state:
+        st.session_state.start_date = None
+
     col1, col2 = st.columns(2)
     
     with col1:
@@ -316,15 +311,15 @@ def new_application():
             st.success("Student added successfully! ✅")
             
             # Clear the form data
-            for key in st.session_state.form_data.keys():
-                st.session_state[key] = ""
+            for field in form_fields:
+                if field != 'start_date':
+                    st.session_state[field] = ""
             st.session_state.start_date = None
             
             # Clear file uploaders
-            st.session_state.passport = None
-            st.session_state.bank_statement = None
-            st.session_state.affidavit = None
-            st.session_state.sponsor_id = None
+            for doc in ['passport', 'bank_statement', 'affidavit', 'sponsor_id']:
+                if doc in st.session_state:
+                    st.session_state[doc] = None
             
             st.rerun()
         else:

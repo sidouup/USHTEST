@@ -87,7 +87,7 @@ def generate_student_pdf(student, documents):
     pdf.image(logo_path, x=10, y=8, w=50)
 
     # Adjust space below the logo to prevent overlap and move the text down
-    pdf.ln(70)  # Increased space below the logo
+    pdf.ln(70)
 
     # Student information
     pdf.set_font("Arial", "B", 16)
@@ -267,7 +267,7 @@ def new_application():
     
     with col1:
         school = st.selectbox("Select School 🏫", list(school_emails.keys()), key='school')
-        st.session_state['selected_school'] = school  # Store the selected school in session state
+        st.session_state.form_data['school'] = school
         first_name = st.text_input("First Name 👤", key='first_name', value=st.session_state.form_data['first_name'])
         last_name = st.text_input("Last Name 👤", key='last_name', value=st.session_state.form_data['last_name'])
         email = st.text_input("Email 📧", key='email', value=st.session_state.form_data['email'])
@@ -313,7 +313,16 @@ def new_application():
             st.success("Student added successfully! ✅")
             
             # Clear the form data
-            st.session_state.form_data = {key: '' for key in st.session_state.form_data}
+            st.session_state.form_data = {
+                'school': '',
+                'first_name': '',
+                'last_name': '',
+                'email': '',
+                'program': '',
+                'address': '',
+                'phone': '',
+                'length': ''
+            }
             
             # Rerun the app to clear the inputs
             st.rerun()

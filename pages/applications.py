@@ -241,6 +241,8 @@ def login():
                 with smtplib.SMTP_SSL("smtp.titan.email", 465, context=context) as server:
                     server.login(email_address, password)
                 st.session_state["logged_in"] = True
+                st.session_state["email_address"] = email_address  # Store email_address in session state
+                st.session_state["password"] = password  # Store password in session state
                 st.success("Login successful! 🎉")
             except Exception as e:
                 st.error(f"Login failed ❌: {str(e)}")
@@ -353,14 +355,16 @@ def review_and_submit():
         if "email_body" in st.session_state and "pdf_files" in st.session_state:
             if st.button("Send Email 🚀"):
                 email_body = st.session_state.get("email_body", "")
+                email_address = st.session_state.get("email_address", "")
+                password = st.session_state.get("password", "")
         
-                if not email_body:
-                    st.error("Email body is not defined. Please generate the email body and PDFs first.")
+                if not email_body or not email_address or not password:
+                    st.error("Email details are not defined. Please ensure you're logged in and have generated the email body and PDFs first.")
                 else:
                     # Send the email to the school
                     msg = EmailMessage()
                     msg['From'] = email_address
-                    msg['To'] = recipient_email
+                    msg['To'] = school_emails[st.session_state['selected_school']]
                     msg['Subject'] = "Student Applications Submission"
                     msg.set_content(email_body)
         

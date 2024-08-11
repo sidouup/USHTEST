@@ -251,76 +251,71 @@ def new_application():
     st.header("New Student Application 📝")
     
     # Initialize session state for form inputs if not already present
-    form_fields = ['school', 'first_name', 'last_name', 'email', 'program', 'address', 'phone', 'length', 'start_date']
-    for field in form_fields:
-        if field not in st.session_state:
-            st.session_state[field] = ''
+    if 'form_data' not in st.session_state:
+        st.session_state.form_data = {
+            'school': '',
+            'first_name': '',
+            'last_name': '',
+            'email': '',
+            'program': '',
+            'address': '',
+            'phone': '',
+            'length': ''
+        }
     
-    if 'start_date' not in st.session_state:
-        st.session_state.start_date = None
-
     col1, col2 = st.columns(2)
     
     with col1:
-        st.selectbox("Select School 🏫", list(school_emails.keys()), key='school')
-        st.text_input("First Name 👤", key='first_name')
-        st.text_input("Last Name 👤", key='last_name')
-        st.text_input("Email 📧", key='email')
-        st.text_input("Program Choice 📚", key='program')
+        school = st.selectbox("Select School 🏫", list(school_emails.keys()), key='school')
+        st.session_state['selected_school'] = school  # Store the selected school in session state
+        first_name = st.text_input("First Name 👤", key='first_name', value=st.session_state.form_data['first_name'])
+        last_name = st.text_input("Last Name 👤", key='last_name', value=st.session_state.form_data['last_name'])
+        email = st.text_input("Email 📧", key='email', value=st.session_state.form_data['email'])
+        program = st.text_input("Program Choice 📚", key='program', value=st.session_state.form_data['program'])
     
     with col2:
-        st.text_input("Address 🏠", key='address')
-        st.text_input("Phone Number 📞", key='phone')
-        st.date_input("Start Date 📅", key='start_date')
-        st.text_input("Length of Program ⏳", key='length')
+        address = st.text_input("Address 🏠", key='address', value=st.session_state.form_data['address'])
+        phone = st.text_input("Phone Number 📞", key='phone', value=st.session_state.form_data['phone'])
+        start_date = st.date_input("Start Date 📅")
+        length = st.text_input("Length of Program ⏳", key='length', value=st.session_state.form_data['length'])
     
     st.subheader("Document Upload 📎")
     col3, col4 = st.columns(2)
     
     with col3:
-        st.file_uploader("Upload Passport 🛂", type=["pdf", "png", "jpg", "jpeg"], key='passport')
-        st.file_uploader("Upload Bank Statement 💰", type=["pdf", "png", "jpg", "jpeg"], key='bank_statement')
+        passport = st.file_uploader("Upload Passport 🛂", type=["pdf", "png", "jpg", "jpeg"])
+        bank_statement = st.file_uploader("Upload Bank Statement 💰", type=["pdf", "png", "jpg", "jpeg"])
     
     with col4:
-        st.file_uploader("Upload Affidavit Support Letter 📄", type=["pdf", "png", "jpg", "jpeg"], key='affidavit')
-        st.file_uploader("Upload Sponsor ID 🆔", type=["pdf", "png", "jpg", "jpeg"], key='sponsor_id')
+        affidavit = st.file_uploader("Upload Affidavit Support Letter 📄", type=["pdf", "png", "jpg", "jpeg"])
+        sponsor_id = st.file_uploader("Upload Sponsor ID 🆔", type=["pdf", "png", "jpg", "jpeg"])
     
     if st.button("Add Student ➕"):
-        if (st.session_state.first_name and st.session_state.last_name and 
-            st.session_state.address and st.session_state.email and st.session_state.phone):
-            
+        if first_name and last_name and address and email and phone:
             student = {
-                "name": f"{st.session_state.first_name} {st.session_state.last_name}",
-                "address": st.session_state.address,
-                "email": st.session_state.email,
-                "phone": st.session_state.phone,
-                "program": st.session_state.program,
-                "start_date": st.session_state.start_date,
-                "length": st.session_state.length,
+                "name": f"{first_name} {last_name}",
+                "address": address,
+                "email": email,
+                "phone": phone,
+                "program": program,
+                "start_date": start_date,
+                "length": length,
                 "documents": {
-                    "passport": st.session_state.passport,
-                    "bank_statement": st.session_state.bank_statement,
-                    "affidavit": st.session_state.affidavit,
-                    "sponsor_id": st.session_state.sponsor_id
+                    "passport": passport,
+                    "bank_statement": bank_statement,
+                    "affidavit": affidavit,
+                    "sponsor_id": sponsor_id
                 }
             }
-            
             if "students" not in st.session_state:
                 st.session_state.students = []
             st.session_state.students.append(student)
             st.success("Student added successfully! ✅")
             
             # Clear the form data
-            for field in form_fields:
-                if field != 'start_date':
-                    st.session_state[field] = ""
-            st.session_state.start_date = None
+            st.session_state.form_data = {key: '' for key in st.session_state.form_data}
             
-            # Clear file uploaders
-            for doc in ['passport', 'bank_statement', 'affidavit', 'sponsor_id']:
-                if doc in st.session_state:
-                    st.session_state[doc] = None
-            
+            # Rerun the app to clear the inputs
             st.rerun()
         else:
             st.warning("Please fill out all required fields. ⚠️")
@@ -340,16 +335,10 @@ def review_and_submit():
                     st.write(f"**Address:** 🏠 {student['address']}")
                     st.write(f"**Start Date:** 📅 {student['start_date']}")
                     st.write(f"**Length:** ⏳ {student['length']}")
-                
-                # Add delete button for each student
-                if st.button(f"Delete Student {i+1} 🗑️"):
-                    st.session_state.students.pop(i)
-                    st.success(f"Student {student['name']} has been removed. ✅")
-                    st.rerun()
         
         if st.button("Generate Email and PDFs 📨"):
-            if 'school' in st.session_state:
-                school = st.session_state.school
+            if 'selected_school' in st.session_state:
+                school = st.session_state['selected_school']
                 email_body = generate_email_body(st.session_state.students, school)
                 st.session_state["email_body"] = email_body
                 st.text_area("Generated Email Body 📧", email_body, height=200)

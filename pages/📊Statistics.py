@@ -272,45 +272,27 @@ def login():
 def new_application():
     st.header("New Student Application 📝")
 
-    # Load data from Google Sheets
-    spreadsheet_id = "your_spreadsheet_id"  # Replace with your spreadsheet ID
-    sheet_name = "ALL"
-    df = load_data(spreadsheet_id, sheet_name)
-    
     # Select student using dropdown
     student_name = st.selectbox("Select Student 👤", df['Student Name'])
     
     # Pre-fill form fields based on selected student
     student_data = df[df['Student Name'] == student_name].iloc[0]
 
-    # Initialize session state for form inputs if not already present
-    if 'form_data' not in st.session_state:
-        st.session_state.form_data = {
-            'school': '',
-            'first_name': student_data['First Name'],
-            'last_name': student_data['Last Name'],
-            'email': student_data['E-mail'],
-            'program': '',
-            'address': student_data['Address'],
-            'phone': student_data['Phone N°'],
-            'length': ''
-        }
-
     col1, col2 = st.columns(2)
     
     with col1:
         school = st.selectbox("Select School 🏫", list(school_emails.keys()), key='school')
-        st.session_state['selected_school'] = school  # Store the selected school in session state
-        first_name = st.text_input("First Name 👤", key='first_name', value=st.session_state.form_data['first_name'])
-        last_name = st.text_input("Last Name 👤", key='last_name', value=st.session_state.form_data['last_name'])
-        email = st.text_input("Email 📧", key='email', value=st.session_state.form_data['email'])
-        program = st.text_input("Program Choice 📚", key='program', value=st.session_state.form_data['program'])
+        st.session_state['selected_school'] = school
+        first_name = st.text_input("First Name 👤", value=student_data['First Name'])
+        last_name = st.text_input("Last Name 👤", value=student_data['Last Name'])
+        email = st.text_input("Email 📧", value=student_data['E-mail'])
+        program = st.text_input("Program Choice 📚", value=student_data.get('Program Choice', ''))
     
     with col2:
-        address = st.text_input("Address 🏠", key='address', value=st.session_state.form_data['address'])
-        phone = st.text_input("Phone Number 📞", key='phone', value=st.session_state.form_data['phone'])
+        address = st.text_input("Address 🏠", value=student_data['Address'])
+        phone = st.text_input("Phone Number 📞", value=student_data['Phone N°'])
         start_date = st.date_input("Start Date 📅")
-        length = st.text_input("Length of Program ⏳", key='length', value=st.session_state.form_data['length'])
+        length = st.text_input("Length of Program ⏳", value=student_data.get('Length of Program', ''))
     
     st.subheader("Document Upload 📎")
     col3, col4 = st.columns(2)
@@ -345,10 +327,7 @@ def new_application():
             st.session_state.students.append(student)
             st.success("Student added successfully! ✅")
             
-            # Clear the form data
-            st.session_state.form_data = {key: '' for key in st.session_state.form_data}
-            
-            # Rerun the app to clear the inputs
+            # Clear the form data (if needed)
             st.rerun()
         else:
             st.warning("Please fill out all required fields. ⚠️")

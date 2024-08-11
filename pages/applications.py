@@ -267,7 +267,7 @@ def new_application():
     
     with col1:
         # Set the school dropdown with a placeholder and clear selection after submission
-        school = st.selectbox("Select School 🏫", [""] + list(school_emails.keys()), key='school')
+        school = st.selectbox("Select School 🏫", [""] + list(school_emails.keys()), key='school', index=0)
         st.session_state.form_data['school'] = school
         first_name = st.text_input("First Name 👤", key='first_name', value=st.session_state.form_data['first_name'])
         last_name = st.text_input("Last Name 👤", key='last_name', value=st.session_state.form_data['last_name'])
@@ -277,7 +277,7 @@ def new_application():
     with col2:
         address = st.text_input("Address 🏠", key='address', value=st.session_state.form_data['address'])
         phone = st.text_input("Phone Number 📞", key='phone', value=st.session_state.form_data['phone'])
-        start_date = st.date_input("Start Date 📅")
+        start_date = st.date_input("Start Date 📅", value=None)
         length = st.text_input("Length of Program ⏳", key='length', value=st.session_state.form_data['length'])
     
     st.subheader("Document Upload 📎")
@@ -324,9 +324,6 @@ def new_application():
                 'phone': '',
                 'length': ''
             }
-            
-            # Clear the selection of the school dropdown
-            st.session_state.school = ''
             
             # Rerun the app to clear the inputs
             st.rerun()

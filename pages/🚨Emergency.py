@@ -189,8 +189,10 @@ st.markdown("Welcome to the modern and user-friendly Student Visa CRM Dashboard.
 def metric_card(label, value, icon):
     return f"""
     <div class="metric-card">
-        <div class="metric-value">{value}</div>
-        <div class="metric```python
+        <Continuing from where we left off:
+
+```python
+    <div class="metric-value">{value}</div>
     <div class="metric-label">{icon} {label}</div>
     </div>
     """
@@ -227,44 +229,44 @@ tabs = st.tabs([
 with tabs[0]:
     st.markdown('<div class="section-header">📅 School Payment Due Soon</div>', unsafe_allow_html=True)
     st.write("These students need to complete their school payment at least 50 days before their school entry date.")
-    st.dataframe(rule_1[['First Name', 'Last Name', 'DATE', 'School Payment Due', 'Stage', 'Agent']], use_container_width=True)
+    st.data_editor(rule_1[['First Name', 'Last Name', 'DATE', 'School Payment Due', 'Stage', 'Agent']], use_container_width=True)
 
 with tabs[1]:
     st.markdown('<div class="section-header">📝 DS-160 Step Due Soon</div>', unsafe_allow_html=True)
     st.write("These students need to complete the DS-160 step within 30 days before their embassy interview date.")
-    st.dataframe(rule_2[['First Name', 'Last Name', 'DATE', 'EMBASSY ITW. DATE', 'Stage', 'Agent']], use_container_width=True)
+    st.data_editor(rule_2[['First Name', 'Last Name', 'DATE', 'EMBASSY ITW. DATE', 'Stage', 'Agent']], use_container_width=True)
 
 with tabs[2]:
     st.markdown('<div class="section-header">🎤 Upcoming Embassy Interviews (Need Prep)</div>', unsafe_allow_html=True)
     st.write("These students have embassy interviews scheduled within the next 14 days and they are not prepared yet.")
-    st.dataframe(rule_3a[['First Name', 'Last Name', 'DATE', 'EMBASSY ITW. DATE', 'Stage', 'Agent']], use_container_width=True)
+    st.data_editor(rule_3a[['First Name', 'Last Name', 'DATE', 'EMBASSY ITW. DATE', 'Stage', 'Agent']], use_container_width=True)
 
 with tabs[3]:
     st.markdown('<div class="section-header">💳 Need SEVIS Payment</div>', unsafe_allow_html=True)
     st.write("These students have embassy interviews scheduled within the next 14 days and they did not pay the SEVIS.")
-    st.dataframe(rule_3b[['First Name', 'Last Name', 'DATE', 'EMBASSY ITW. DATE', 'Stage', 'Agent']], use_container_width=True)
+    st.data_editor(rule_3b[['First Name', 'Last Name', 'DATE', 'EMBASSY ITW. DATE', 'Stage', 'Agent']], use_container_width=True)
 
 with tabs[4]:
     st.markdown('<div class="section-header">📄 I-20 </div>', unsafe_allow_html=True)
     st.write("These students do not have a school entry date recorded one week after the Payment date. They need an I-20 and must mention their entry date in the database.")
-    st.dataframe(rule_4[['First Name', 'Last Name', 'DATE', 'Stage', 'Agent']], use_container_width=True)
+    st.data_editor(rule_4[['First Name', 'Last Name', 'DATE', 'Stage', 'Agent']], use_container_width=True)
 
 with tabs[5]:
     st.markdown('<div class="section-header">📆 ARAMEX</div>', unsafe_allow_html=True)
     st.write("These students do not have an embassy interview date recorded two weeks after their initial registration date. They need to schedule their interview and update the database.")
-    st.dataframe(rule_5[['First Name', 'Last Name', 'DATE', 'Stage', 'Agent']], use_container_width=True)
+    st.data_editor(rule_5[['First Name', 'Last Name', 'DATE', 'Stage', 'Agent']], use_container_width=True)
 
 with tabs[6]:
     st.markdown('<div class="section-header">🔍 Visa Result Needed</div>', unsafe_allow_html=True)
     st.write("These students have passed their embassy interview date and still do not have a recorded visa result. Please update their visa result.")
-    st.dataframe(rule_6[['First Name', 'Last Name', 'DATE', 'EMBASSY ITW. DATE', 'Stage', 'Agent']], use_container_width=True)
+    st.data_editor(rule_6[['First Name', 'Last Name', 'DATE', 'EMBASSY ITW. DATE', 'Stage', 'Agent']], use_container_width=True)
 
 with tabs[7]:
     st.markdown('<div class="section-header">👤 Unassigned Students</div>', unsafe_allow_html=True)
     st.write("These students are not assigned an agent.")
     
     if len(rule_7) > 0:
-        st.dataframe(rule_7[['First Name', 'Last Name', 'DATE', 'Stage', 'Agent']], use_container_width=True)
+        st.data_editor(rule_7[['First Name', 'Last Name', 'DATE', 'Stage', 'Agent']], use_container_width=True)
     else:
         st.write("No unassigned students found. This could mean all students are properly assigned, or there might be an issue with the data or filtering condition.")
         
@@ -272,7 +274,7 @@ with tabs[8]:  # This is the new tab for duplicate students
     st.markdown('<div class="section-header">🔄 Duplicate Students</div>', unsafe_allow_html=True)
     st.write("These students appear to be duplicates based on matching Full Name, Phone N°, or E-mail.")
     if len(duplicate_students) > 0:
-        st.dataframe(duplicate_students[['First Name', 'Last Name', 'Phone N°', 'E-mail', 'DATE', 'Stage', 'Agent']], use_container_width=True)
+        st.data_editor(duplicate_students[['First Name', 'Last Name', 'Phone N°', 'E-mail', 'DATE', 'Stage', 'Agent']], use_container_width=True)
     else:
         st.write("No duplicate students found.")
 

@@ -245,7 +245,7 @@ with tabs[3]:
     st.dataframe(rule_3b[['First Name', 'Last Name', 'DATE', 'EMBASSY ITW. DATE', 'Stage', 'Agent']], use_container_width=True)
 
 with tabs[4]:
-    st.markdown('<div class="section-header">📄 I-20 </div>', unsafe_allow_html=True
+    st.markdown('<div class="section-header">📄 I-20 </div>', unsafe_allow_html=True)
     st.write("These students do not have a school entry date recorded one week after the Payment date. They need an I-20 and must mention their entry date in the database.")
     st.dataframe(rule_4[['First Name', 'Last Name', 'DATE', 'Stage', 'Agent']], use_container_width=True)
 

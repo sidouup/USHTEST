@@ -7,13 +7,11 @@ import gspread
 # Set page config at the very beginning
 st.set_page_config(layout="wide", page_title="Student Visa CRM Dashboard")
 
-
 # Use Streamlit secrets for service account info
 SERVICE_ACCOUNT_INFO = st.secrets["gcp_service_account"]
 
 # Define the scopes
 SCOPES = ['https://www.googleapis.com/auth/drive', 'https://www.googleapis.com/auth/spreadsheets']
-
 
 # Authenticate and build the Google Sheets service
 @st.cache_resource
@@ -30,7 +28,7 @@ def load_data(spreadsheet_id, sheet_name):
     return df
 
 # Load data
-spreadsheet_id = "1NkW2a4_eOlDGeVxY9PZk-lEI36PvAv9XoO4ZIwl-Sew"
+spreadsheet_id = "1os1G3ri4xMmJdQSNsVSNx6VJttyM8JsPNbmH0DCFUiI"
 sheet_name = "ALL"
 data = load_data(spreadsheet_id, sheet_name)
 
@@ -43,7 +41,7 @@ data['EMBASSY ITW. DATE'] = pd.to_datetime(data['EMBASSY ITW. DATE'], format=dat
 # Get today's date
 today = datetime.now()
 
-# Apply rules (as in your original code)
+# Apply rules
 # Rule 1: School payment 50 days before school entry, exclude students with Visa Denied
 data['School Payment Due'] = data['School Entry Date'] - timedelta(days=50)
 rule_1 = data[(data['School Paid'] != 'Yes') & (data['School Payment Due'] > today) & (data['Visa Result'] != 'Visa Denied')].sort_values(by='DATE').reset_index(drop=True)
@@ -66,7 +64,7 @@ rule_5 = data[(data['DATE'] <= today - timedelta(days=14)) & (data['EMBASSY ITW.
 # New Rule: EMBASSY ITW. DATE is passed today and Visa Result is empty
 rule_6 = data[(data['EMBASSY ITW. DATE'] < today) & (data['Visa Result'].isna())].sort_values(by='EMBASSY ITW. DATE').reset_index(drop=True)
 
-
+# Rule 7: Unassigned students
 rule_7 = data[
     (
         (data['Agent'].isna()) | 
@@ -94,7 +92,7 @@ def find_duplicates(df):
 
 duplicate_students = find_duplicates(data)
 
-
+# Apply custom CSS for improved layout and theming
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
@@ -192,7 +190,8 @@ def metric_card(label, value, icon):
     return f"""
     <div class="metric-card">
         <div class="metric-value">{value}</div>
-        <div class="metric-label">{icon} {label}</div>
+        <div class="metric```python
+    <div class="metric-label">{icon} {label}</div>
     </div>
     """
 
@@ -246,7 +245,7 @@ with tabs[3]:
     st.dataframe(rule_3b[['First Name', 'Last Name', 'DATE', 'EMBASSY ITW. DATE', 'Stage', 'Agent']], use_container_width=True)
 
 with tabs[4]:
-    st.markdown('<div class="section-header">📄 I-20 </div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header">📄 I-20 </div>', unsafe_allow_html=True
     st.write("These students do not have a school entry date recorded one week after the Payment date. They need an I-20 and must mention their entry date in the database.")
     st.dataframe(rule_4[['First Name', 'Last Name', 'DATE', 'Stage', 'Agent']], use_container_width=True)
 
@@ -262,7 +261,7 @@ with tabs[6]:
 
 with tabs[7]:
     st.markdown('<div class="section-header">👤 Unassigned Students</div>', unsafe_allow_html=True)
-    st.write("These students are not assigned an agent .")
+    st.write("These students are not assigned an agent.")
     
     if len(rule_7) > 0:
         st.dataframe(rule_7[['First Name', 'Last Name', 'DATE', 'Stage', 'Agent']], use_container_width=True)
@@ -279,5 +278,4 @@ with tabs[8]:  # This is the new tab for duplicate students
 
 # Add a footer
 st.markdown("---")
-st.markdown("© 2023 Student Visa CRM Dashboard. All rights reserved.")
-
+st.markdown("© 2024 Student Visa CRM Dashboard. All rights reserved.")

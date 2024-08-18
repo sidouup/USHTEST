@@ -44,14 +44,6 @@ st.markdown("""
     .stProgress > div > div > div > div {
         background-color: #4CAF50;
     }
-    .correct {
-        color: green;
-        font-weight: bold;
-    }
-    .incorrect {
-        color: red;
-        font-weight: bold;
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -60,32 +52,27 @@ questions = [
     {
         "question": "Which of the following are programming languages?",
         "options": ["Python", "Java", "HTML", "CSS"],
-        "correct_answers": ["Python", "Java"],
-        "multiple": True
+        "correct_answers": ["Python", "Java"]
     },
     {
         "question": "What is the capital of France?",
         "options": ["Berlin", "Madrid", "Paris", "Rome"],
-        "correct_answers": ["Paris"],
-        "multiple": False
+        "correct_answers": ["Paris"]
     },
     {
         "question": "Which of these are planets in our solar system?",
         "options": ["Earth", "Mars", "Pluto", "Sun"],
-        "correct_answers": ["Earth", "Mars"],
-        "multiple": True
+        "correct_answers": ["Earth", "Mars"]
     },
     {
         "question": "Which of these is a prime number?",
         "options": ["2", "4", "6", "8"],
-        "correct_answers": ["2"],
-        "multiple": False
+        "correct_answers": ["2"]
     },
     {
         "question": "What are the colors in the French flag?",
         "options": ["Blue", "White", "Red", "Green"],
-        "correct_answers": ["Blue", "White", "Red"],
-        "multiple": True
+        "correct_answers": ["Blue", "White", "Red"]
     },
 ]
 
@@ -188,7 +175,9 @@ def run_quiz():
     
     st.header(q["question"])
     
-    if q["multiple"]:
+    is_multiple = len(q["correct_answers"]) > 1
+    
+    if is_multiple:
         selected_options = st.multiselect("Select all that apply:", q["options"])
     else:
         selected_option = st.radio("Select one option:", q["options"])
@@ -224,11 +213,11 @@ def display_result(q, selected_options):
     for option in q["options"]:
         if option in q["correct_answers"]:
             if option in selected_options:
-                st.markdown(f'<p class="correct">✅ {option}</p>', unsafe_allow_html=True)
+                st.success(f"✅ {option}")
             else:
-                st.markdown(f'<p class="correct">⭕ {option} (Correct answer you missed)</p>', unsafe_allow_html=True)
+                st.warning(f"⭕ {option} (Correct answer you missed)")
         elif option in selected_options:
-            st.markdown(f'<p class="incorrect">❌ {option}</p>', unsafe_allow_html=True)
+            st.error(f"❌ {option}")
         else:
             st.text(option)
     
@@ -266,11 +255,11 @@ def show_results():
             for option in q["options"]:
                 if option in user_answer:
                     if option in q["correct_answers"]:
-                        st.markdown(f'<p class="correct">✅ {option}</p>', unsafe_allow_html=True)
+                        st.success(f"✅ {option}")
                     else:
-                        st.markdown(f'<p class="incorrect">❌ {option}</p>', unsafe_allow_html=True)
+                        st.error(f"❌ {option}")
                 elif option in q["correct_answers"]:
-                    st.markdown(f'<p class="correct">⭕ {option} (Correct answer you missed)</p>', unsafe_allow_html=True)
+                    st.warning(f"⭕ {option} (Correct answer you missed)")
             st.write(f"Correct answer(s): {', '.join(q['correct_answers'])}")
     
     if st.button("Retake Quiz", key="retake_quiz_button"):

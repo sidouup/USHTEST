@@ -44,6 +44,14 @@ st.markdown("""
     .stProgress > div > div > div > div {
         background-color: #4CAF50;
     }
+    .correct {
+        color: green;
+        font-weight: bold;
+    }
+    .incorrect {
+        color: red;
+        font-weight: bold;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -52,27 +60,32 @@ questions = [
     {
         "question": "Which of the following are programming languages?",
         "options": ["Python", "Java", "HTML", "CSS"],
-        "correct_answers": ["Python", "Java"]
+        "correct_answers": ["Python", "Java"],
+        "multiple": True
     },
     {
         "question": "What is the capital of France?",
         "options": ["Berlin", "Madrid", "Paris", "Rome"],
-        "correct_answers": ["Paris"]
+        "correct_answers": ["Paris"],
+        "multiple": False
     },
     {
         "question": "Which of these are planets in our solar system?",
         "options": ["Earth", "Mars", "Pluto", "Sun"],
-        "correct_answers": ["Earth", "Mars"]
+        "correct_answers": ["Earth", "Mars"],
+        "multiple": True
     },
     {
-        "question": "Which of these are prime numbers?",
-        "options": ["2", "3", "4", "6"],
-        "correct_answers": ["2", "3"]
+        "question": "Which of these is a prime number?",
+        "options": ["2", "4", "6", "8"],
+        "correct_answers": ["2"],
+        "multiple": False
     },
     {
         "question": "What are the colors in the French flag?",
         "options": ["Blue", "White", "Red", "Green"],
-        "correct_answers": ["Blue", "White", "Red"]
+        "correct_answers": ["Blue", "White", "Red"],
+        "multiple": True
     },
 ]
 
@@ -100,6 +113,8 @@ def initialize_session_state():
         st.session_state.selected_agent = None
     if 'logged_in' not in st.session_state:
         st.session_state.logged_in = False
+    if 'show_result' not in st.session_state:
+        st.session_state.show_result = False
 
 def reset_quiz_state():
     st.session_state.current_question = 0
@@ -112,6 +127,7 @@ def reset_quiz_state():
     st.session_state.user_answers = []
     st.session_state.logged_in = False
     st.session_state.selected_agent = None
+    st.session_state.show_result = False
 
 def login():
     st.title("Agent Login 🔐")
@@ -146,7 +162,7 @@ def welcome_and_start():
     
     - 5 questions on different subjects
     - 20 seconds per question
-    - Multiple choice and multiple answer questions
+    - Single and multiple-choice questions
     """)
     
     if st.button("Start Quiz", key="start_quiz_button"):
@@ -172,41 +188,57 @@ def run_quiz():
     
     st.header(q["question"])
     
-    st.session_state.selected_answers = []
-    for option in q["options"]:
-        if st.checkbox(option, key=f"{st.session_state.current_question}_{option}"):
-            st.session_state.selected_answers.append(option)
+    if q["multiple"]:
+        selected_options = st.multiselect("Select all that apply:", q["options"])
+    else:
+        selected_option = st.radio("Select one option:", q["options"])
+        selected_options = [selected_option] if selected_option else []
     
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("Submit", key="submit_button"):
-            check_answer(q)
-    with col2:
-        if st.button("Skip", key="skip_button"):
-            next_question()
+    if st.button("Submit", key="submit_button"):
+        st.session_state.show_result = True
+        check_answer(q, selected_options)
+    
+    if st.session_state.show_result:
+        display_result(q, selected_options)
     
     # Visual timer
     progress_bar = st.progress(0)
     timer_text = st.empty()
 
-    while st.session_state.timer > 0:
+    while st.session_state.timer > 0 and not st.session_state.show_result:
         progress_bar.progress(1 - (st.session_state.timer / 20))
         timer_text.text(f"Time Remaining: {st.session_state.timer} seconds")
         time.sleep(1)
         st.session_state.timer -= 1
         if st.session_state.timer <= 0:
-            check_answer(q)
+            st.session_state.show_result = True
+            check_answer(q, selected_options)
         st.rerun()
 
-def check_answer(q):
-    st.session_state.user_answers.append(st.session_state.selected_answers)
-    if set(st.session_state.selected_answers) == set(q["correct_answers"]):
+def check_answer(q, selected_options):
+    st.session_state.user_answers.append(selected_options)
+    if set(selected_options) == set(q["correct_answers"]):
         st.session_state.score += 1
-    next_question()
+
+def display_result(q, selected_options):
+    for option in q["options"]:
+        if option in q["correct_answers"]:
+            if option in selected_options:
+                st.markdown(f'<p class="correct">✅ {option}</p>', unsafe_allow_html=True)
+            else:
+                st.markdown(f'<p class="correct">⭕ {option} (Correct answer you missed)</p>', unsafe_allow_html=True)
+        elif option in selected_options:
+            st.markdown(f'<p class="incorrect">❌ {option}</p>', unsafe_allow_html=True)
+        else:
+            st.text(option)
+    
+    if st.button("Next Question", key="next_question_button"):
+        next_question()
 
 def next_question():
     st.session_state.current_question += 1
     st.session_state.timer = 20
+    st.session_state.show_result = False
     if st.session_state.current_question >= len(st.session_state.questions):
         st.session_state.quiz_completed = True
         st.session_state.quiz_started = False
@@ -234,11 +266,11 @@ def show_results():
             for option in q["options"]:
                 if option in user_answer:
                     if option in q["correct_answers"]:
-                        st.markdown(f"✅ <span style='color:green'>{option}</span>", unsafe_allow_html=True)
+                        st.markdown(f'<p class="correct">✅ {option}</p>', unsafe_allow_html=True)
                     else:
-                        st.markdown(f"❌ <span style='color:red'>{option}</span>", unsafe_allow_html=True)
+                        st.markdown(f'<p class="incorrect">❌ {option}</p>', unsafe_allow_html=True)
                 elif option in q["correct_answers"]:
-                    st.markdown(f"⭕ <span style='color:orange'>{option}</span> (Correct answer you missed)", unsafe_allow_html=True)
+                    st.markdown(f'<p class="correct">⭕ {option} (Correct answer you missed)</p>', unsafe_allow_html=True)
             st.write(f"Correct answer(s): {', '.join(q['correct_answers'])}")
     
     if st.button("Retake Quiz", key="retake_quiz_button"):

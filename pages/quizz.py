@@ -145,7 +145,7 @@ def next_question():
     st.session_state.timer = 20
     if st.session_state.current_question >= len(st.session_state.questions):
         st.session_state.quiz_started = False
-    st.experimental_rerun()
+    st.rerun()
 
 def show_results():
     st.header("Quiz Completed! 🎉", divider="rainbow")
@@ -174,7 +174,7 @@ def show_results():
         st.session_state.timer = 20
         st.session_state.selected_answers = []
         st.session_state.questions = random.sample(questions, len(questions))
-        st.experimental_rerun()
+        st.rerun()
 
 def main():
     st.set_page_config(page_title="Modern Quiz App", page_icon="🧠", layout="centered")

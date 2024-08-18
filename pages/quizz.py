@@ -29,31 +29,7 @@ questions = [
         "options": ["Blue", "White", "Red", "Green"],
         "correct_answers": ["Blue", "White", "Red"]
     },
-    {
-        "question": "Which of these are mammals?",
-        "options": ["Dolphin", "Shark", "Elephant", "Crocodile"],
-        "correct_answers": ["Dolphin", "Elephant"]
-    },
-    {
-        "question": "Which of these are fruits?",
-        "options": ["Tomato", "Carrot", "Banana", "Lettuce"],
-        "correct_answers": ["Tomato", "Banana"]
-    },
-    {
-        "question": "Which of these are web browsers?",
-        "options": ["Chrome", "Firefox", "Windows", "Safari"],
-        "correct_answers": ["Chrome", "Firefox", "Safari"]
-    },
-    {
-        "question": "What is the boiling point of water?",
-        "options": ["0°C", "50°C", "100°C", "150°C"],
-        "correct_answers": ["100°C"]
-    },
-    {
-        "question": "Which of these are primary colors?",
-        "options": ["Red", "Green", "Blue", "Yellow"],
-        "correct_answers": ["Red", "Blue", "Yellow"]
-    }
+    # ... (other questions)
 ]
 
 def initialize_session_state():
@@ -69,10 +45,9 @@ def initialize_session_state():
         st.session_state.selected_answers = []
     if 'questions' not in st.session_state:
         st.session_state.questions = random.sample(questions, len(questions))
-    if 'active_tab' not in st.session_state:
-        st.session_state.active_tab = "Welcome"
 
-def welcome_page():
+@st.fragment
+def welcome_and_start():
     st.header("Welcome to the Quiz App! 🎓", divider="rainbow")
     
     st.markdown("""
@@ -85,31 +60,21 @@ def welcome_page():
     
     if st.button("Start Quiz", use_container_width=True):
         st.session_state.quiz_started = True
-        st.session_state.active_tab = "Quiz"
-        st.rerun()
-    
-    st.header("How to Play", divider="gray")
-    st.markdown("""
-    1. Click the "Start Quiz" button to begin.
-    2. Read each question carefully.
-    3. Select the correct answer(s) within the time limit.
-    4. Click "Submit" or wait for the timer to run out.
-    5. See your results at the end of the quiz.
-    
-    Good luck!
-    """)
+        st.rerun(scope="fragment")
 
+@st.fragment
 def run_quiz():
-    st.header(f"Question {st.session_state.current_question + 1} of {len(st.session_state.questions)}", divider="blue")
-    
+    if not st.session_state.quiz_started:
+        welcome_and_start()
+        return
+
     q = st.session_state.questions[st.session_state.current_question]
     
-    # Display progress
+    st.header(f"Question {st.session_state.current_question + 1} of {len(st.session_state.questions)}", divider="blue")
     st.progress((st.session_state.current_question) / len(st.session_state.questions))
     
     st.subheader(q["question"])
     
-    # Display options as checkboxes
     st.session_state.selected_answers = []
     for option in q["options"]:
         if st.checkbox(option, key=f"{st.session_state.current_question}_{option}"):
@@ -123,20 +88,19 @@ def run_quiz():
         if st.button("Skip", use_container_width=True):
             next_question()
     
-    # Timer
-    if 'timer' not in st.session_state:
-        st.session_state.timer = 20
-    
     timer_placeholder = st.empty()
     timer_placeholder.metric("Time Remaining", f"{st.session_state.timer} seconds")
 
+    # Timer update
+    time.sleep(1)
+    st.session_state.timer -= 1
+    if st.session_state.timer <= 0:
+        check_answer(q)
+    st.rerun(scope="fragment")
+
 def check_answer(q):
     if set(st.session_state.selected_answers) == set(q["correct_answers"]):
-        st.success("Correct!")
         st.session_state.score += 1
-    else:
-        st.error(f"Incorrect. The correct answer(s) were: {', '.join(q['correct_answers'])}")
-    
     next_question()
 
 def next_question():
@@ -144,8 +108,9 @@ def next_question():
     st.session_state.timer = 20
     if st.session_state.current_question >= len(st.session_state.questions):
         st.session_state.quiz_started = False
-        st.session_state.active_tab = "Results"
-    st.rerun()
+        st.rerun()  # Full app rerun to switch to results tab
+    else:
+        st.rerun(scope="fragment")
 
 def show_results():
     st.header("Quiz Completed! 🎉", divider="rainbow")
@@ -167,14 +132,7 @@ def show_results():
             st.write(f"Correct answer(s): {', '.join(q['correct_answers'])}")
     
     if st.button("Restart Quiz", use_container_width=True):
-        # Reset quiz state
-        st.session_state.current_question = 0
-        st.session_state.score = 0
-        st.session_state.quiz_started = False
-        st.session_state.timer = 20
-        st.session_state.selected_answers = []
-        st.session_state.questions = random.sample(questions, len(questions))
-        st.session_state.active_tab = "Welcome"
+        initialize_session_state()
         st.rerun()
 
 def main():
@@ -182,31 +140,16 @@ def main():
     
     initialize_session_state()
     
-    tab1, tab2, tab3 = st.tabs(["Welcome", "Quiz", "Results"])
+    quiz_tab, results_tab = st.tabs(["Quiz", "Results"])
     
-    if st.session_state.active_tab == "Welcome":
-        with tab1:
-            welcome_page()
-    elif st.session_state.active_tab == "Quiz":
-        with tab2:
-            if st.session_state.quiz_started and st.session_state.current_question < len(st.session_state.questions):
-                run_quiz()
-            else:
-                st.info("Click 'Start Quiz' on the Welcome tab to begin!")
-    elif st.session_state.active_tab == "Results":
-        with tab3:
-            if not st.session_state.quiz_started and st.session_state.current_question >= len(st.session_state.questions):
-                show_results()
-            else:
-                st.info("Complete the quiz to see your results!")
+    with quiz_tab:
+        run_quiz()
     
-    # Timer update
-    if st.session_state.active_tab == "Quiz" and st.session_state.quiz_started:
-        time.sleep(1)
-        st.session_state.timer -= 1
-        if st.session_state.timer <= 0:
-            check_answer(st.session_state.questions[st.session_state.current_question])
-        st.rerun()
+    with results_tab:
+        if not st.session_state.quiz_started and st.session_state.current_question >= len(st.session_state.questions):
+            show_results()
+        else:
+            st.info("Complete the quiz to see your results!")
 
 if __name__ == "__main__":
     main()

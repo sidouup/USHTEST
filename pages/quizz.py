@@ -1,6 +1,9 @@
 import streamlit as st
 import random
 import time
+from streamlit_extras.switch_page_button import switch_page
+from streamlit_extras.colored_header import colored_header
+from streamlit_extras.add_vertical_space import add_vertical_space
 
 # Sample questions and answers
 questions = [
@@ -17,7 +20,7 @@ questions = [
     {
         "question": "Which of these are planets in our solar system?",
         "options": ["Earth", "Mars", "Pluto", "Sun"],
-        "correct_answers": ["Earth", "Mars", "Pluto"]
+        "correct_answers": ["Earth", "Mars"]
     },
     {
         "question": "Which of these are prime numbers?",
@@ -56,50 +59,113 @@ questions = [
     }
 ]
 
-# Shuffle the questions
-random.shuffle(questions)
+def initialize_session_state():
+    if 'current_question' not in st.session_state:
+        st.session_state.current_question = 0
+    if 'score' not in st.session_state:
+        st.session_state.score = 0
+    if 'quiz_started' not in st.session_state:
+        st.session_state.quiz_started = False
+    if 'timer' not in st.session_state:
+        st.session_state.timer = 20
+    if 'selected_answers' not in st.session_state:
+        st.session_state.selected_answers = []
+
+def reset_quiz():
+    st.session_state.current_question = 0
+    st.session_state.score = 0
+    st.session_state.quiz_started = False
+    st.session_state.timer = 20
+    st.session_state.selected_answers = []
+    random.shuffle(questions)
+
+def start_page():
+    st.title("Welcome to the Quiz App!")
+    colored_header(label="Test Your Knowledge", description="Are you ready to challenge yourself?", color_name="blue-70")
+    add_vertical_space(2)
+    if st.button("Start Quiz", use_container_width=True):
+        st.session_state.quiz_started = True
 
 def run_quiz():
-    score = 0
+    q = questions[st.session_state.current_question]
+    
+    # Display progress
+    st.progress((st.session_state.current_question) / len(questions))
+    
+    colored_header(label=f"Question {st.session_state.current_question + 1} of {len(questions)}", description=q["question"], color_name="blue-70")
+    
+    # Display options as checkboxes
+    st.session_state.selected_answers = []
+    for option in q["options"]:
+        if st.checkbox(option, key=option):
+            st.session_state.selected_answers.append(option)
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Submit", use_container_width=True):
+            check_answer(q)
+    with col2:
+        if st.button("Skip", use_container_width=True):
+            next_question()
+    
+    # Timer
+    if 'timer' not in st.session_state:
+        st.session_state.timer = 20
+    
+    timer_placeholder = st.empty()
+    
+    while st.session_state.timer > 0:
+        timer_placeholder.metric("Time Remaining", f"{st.session_state.timer} seconds")
+        time.sleep(1)
+        st.session_state.timer -= 1
+        if st.session_state.timer == 0:
+            check_answer(q)
+        st.experimental_rerun()
 
-    for i, q in enumerate(questions[:10]):
-        st.header(f"Question {i+1}")
-        st.write(q["question"])
-
-        selected_option = st.radio("Select the correct answer:", q["options"], key=f"q{i}")
-
-        confirm_button = st.button("Confirm", key=f"confirm_{i}")
-
-        timer = 20  # 20 seconds for each question
-        timer_placeholder = st.empty()
-        progress_bar = st.progress(0)
-
-        while timer > 0:
-            progress_bar.progress((20 - timer) / 20)
-            time.sleep(1)
-            timer -= 1
-            timer_placeholder.write(f"Time left: {timer} seconds")
-            if confirm_button:
-                break
-
-        if confirm_button or timer == 0:
-            if selected_option in q["correct_answers"]:
-                score += 2  # Add 2 points for correct answers
-                st.success(f"Correct! The answer is {selected_option}.")
-            else:
-                st.error(f"Incorrect! The correct answers are {', '.join(q['correct_answers'])}.")
-
-            time.sleep(2)  # Pause to show feedback before moving to the next question
-
-        st.write("---")
-
-    st.header("Quiz Completed!")
-    st.write(f"Your final score is {score} out of 20.")
-    if score >= 15:
-        st.success("Well done!")
+def check_answer(q):
+    if set(st.session_state.selected_answers) == set(q["correct_answers"]):
+        st.success("Correct!")
+        st.session_state.score += 1
     else:
-        st.error("Better luck next time!")
+        st.error(f"Incorrect. The correct answer(s) were: {', '.join(q['correct_answers'])}")
+    
+    next_question()
+
+def next_question():
+    st.session_state.current_question += 1
+    st.session_state.timer = 20
+    if st.session_state.current_question >= len(questions):
+        show_results()
+    else:
+        st.experimental_rerun()
+
+def show_results():
+    st.title("Quiz Completed!")
+    st.write(f"Your final score is {st.session_state.score} out of {len(questions)}.")
+    
+    percentage = (st.session_state.score / len(questions)) * 100
+    if percentage >= 80:
+        st.success(f"Excellent! You scored {percentage:.2f}%")
+    elif percentage >= 60:
+        st.info(f"Good job! You scored {percentage:.2f}%")
+    else:
+        st.warning(f"You scored {percentage:.2f}%. Keep practicing!")
+    
+    if st.button("Restart Quiz", use_container_width=True):
+        reset_quiz()
+        st.experimental_rerun()
+
+def main():
+    st.set_page_config(page_title="Modern Quiz App", page_icon="🧠", layout="centered")
+    
+    initialize_session_state()
+    
+    if not st.session_state.quiz_started:
+        start_page()
+    elif st.session_state.current_question < len(questions):
+        run_quiz()
+    else:
+        show_results()
 
 if __name__ == "__main__":
-    st.title("Quiz App")
-    run_quiz()
+    main()

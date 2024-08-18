@@ -149,7 +149,7 @@ def welcome_and_start():
     
     - 5 questions on different subjects
     - 20 seconds per question
-    - Single and multiple-choice questions
+    - Multiple-choice questions
     """)
     
     if st.button("Start Quiz", key="start_quiz_button"):
@@ -175,33 +175,24 @@ def run_quiz():
     
     st.header(q["question"])
     
-    is_multiple = len(q["correct_answers"]) > 1
-    
-    if is_multiple:
-        selected_options = st.multiselect("Select all that apply:", q["options"])
-    else:
-        selected_option = st.radio("Select one option:", q["options"])
-        selected_options = [selected_option] if selected_option else []
-    
-    if st.button("Submit", key="submit_button"):
-        st.session_state.show_result = True
-        check_answer(q, selected_options)
-    
-    if st.session_state.show_result:
-        display_result(q, selected_options)
+    selected_options = []
+    for option in q["options"]:
+        if st.checkbox(option, key=f"{st.session_state.current_question}_{option}"):
+            selected_options.append(option)
     
     # Visual timer
     progress_bar = st.progress(0)
     timer_text = st.empty()
 
-    while st.session_state.timer > 0 and not st.session_state.show_result:
-        progress_bar.progress(1 - (st.session_state.timer / 20))
-        timer_text.text(f"Time Remaining: {st.session_state.timer} seconds")
+    for i in range(20, 0, -1):
+        progress_bar.progress(1 - (i / 20))
+        timer_text.text(f"Time Remaining: {i} seconds")
         time.sleep(1)
-        st.session_state.timer -= 1
-        if st.session_state.timer <= 0:
-            st.session_state.show_result = True
+        if i == 1:  # When timer reaches 1 second
             check_answer(q, selected_options)
+            display_result(q, selected_options)
+            time.sleep(3)  # Display result for 3 seconds
+            next_question()
         st.rerun()
 
 def check_answer(q, selected_options):
@@ -220,9 +211,6 @@ def display_result(q, selected_options):
             st.error(f"❌ {option}")
         else:
             st.text(option)
-    
-    if st.button("Next Question", key="next_question_button"):
-        next_question()
 
 def next_question():
     st.session_state.current_question += 1

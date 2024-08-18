@@ -2,7 +2,6 @@ import streamlit as st
 import random
 import time
 
-
 # Sample questions and answers
 questions = [
     {
@@ -71,11 +70,7 @@ def initialize_session_state():
     if 'questions' not in st.session_state:
         st.session_state.questions = random.sample(questions, len(questions))
 
-def main():
-    st.set_page_config(page_title="Modern Quiz App", page_icon="🧠", layout="centered")
-    
-    initialize_session_state()
-    
+def welcome_page():
     st.header("Welcome to the Quiz App! 🎓", divider="rainbow")
     
     st.markdown("""
@@ -87,7 +82,8 @@ def main():
     """)
     
     if st.button("Start Quiz", use_container_width=True):
-        st.switch_page("quiz")
+        st.session_state.quiz_started = True
+        st.experimental_rerun()
     
     st.header("How to Play", divider="gray")
     st.markdown("""
@@ -99,14 +95,6 @@ def main():
     
     Good luck!
     """)
-
-if __name__ == "__main__":
-    main()
-
-# pages/quiz.py
-import streamlit as st
-import time
-
 
 def run_quiz():
     st.header(f"Question {st.session_state.current_question + 1} of {len(st.session_state.questions)}", divider="blue")
@@ -156,24 +144,8 @@ def next_question():
     st.session_state.current_question += 1
     st.session_state.timer = 20
     if st.session_state.current_question >= len(st.session_state.questions):
-        st.switch_page("results")
-    else:
-        st.experimental_rerun()
-
-def main():
-    st.set_page_config(page_title="Quiz in Progress", page_icon="⏳", layout="centered")
-    
-    if 'questions' not in st.session_state:
-        st.switch_page("main")
-    
-    run_quiz()
-
-if __name__ == "__main__":
-    main()
-
-# pages/results.py
-import streamlit as st
-
+        st.session_state.quiz_started = False
+    st.experimental_rerun()
 
 def show_results():
     st.header("Quiz Completed! 🎉", divider="rainbow")
@@ -201,17 +173,30 @@ def show_results():
         st.session_state.quiz_started = False
         st.session_state.timer = 20
         st.session_state.selected_answers = []
-        st.session_state.questions = []
-        st.switch_page("main")
+        st.session_state.questions = random.sample(questions, len(questions))
+        st.experimental_rerun()
 
 def main():
-    st.set_page_config(page_title="Quiz Results", page_icon="📊", layout="centered")
+    st.set_page_config(page_title="Modern Quiz App", page_icon="🧠", layout="centered")
     
-    if 'questions' not in st.session_state:
-        st.switch_page("main")
+    initialize_session_state()
     
-    show_results()
+    tab1, tab2, tab3 = st.tabs(["Welcome", "Quiz", "Results"])
+    
+    with tab1:
+        welcome_page()
+    
+    with tab2:
+        if st.session_state.quiz_started and st.session_state.current_question < len(st.session_state.questions):
+            run_quiz()
+        else:
+            st.info("Click 'Start Quiz' on the Welcome tab to begin!")
+    
+    with tab3:
+        if not st.session_state.quiz_started and st.session_state.current_question >= len(st.session_state.questions):
+            show_results()
+        else:
+            st.info("Complete the quiz to see your results!")
 
 if __name__ == "__main__":
     main()
-

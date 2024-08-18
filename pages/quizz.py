@@ -5,7 +5,7 @@ from email.message import EmailMessage
 import smtplib
 import ssl
 
-# Custom CSS for a more appealing look
+# Custom CSS (same as before)
 st.set_page_config(page_title="Enhanced Quiz App", page_icon="🧠", layout="wide")
 
 st.markdown("""
@@ -47,7 +47,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Sample questions and answers
+# Sample questions and answers (same as before)
 questions = [
     {
         "question": "Which of the following are programming languages?",
@@ -138,29 +138,12 @@ def login():
                 st.session_state.selected_agent = agent
                 st.success(f"Login successful for {agent}! 🎉")
                 st.info("Quiz results will be sent to: sidouminto@gmail.com")
+                st.session_state.quiz_started = True  # Automatically start the quiz after login
+                st.rerun()
             except Exception as e:
                 st.error(f"Login failed ❌: {str(e)}")
 
-def welcome_and_start():
-    st.title(f"Welcome, Agent {st.session_state.selected_agent}! 🎓")
-    
-    st.markdown("""
-    ### Test your knowledge on various topics with our interactive quiz!
-    
-    - 5 questions on different subjects
-    - 20 seconds per question
-    - Multiple-choice questions
-    """)
-    
-    if st.button("Start Quiz", key="start_quiz_button"):
-        st.session_state.quiz_started = True
-        st.rerun()
-
 def run_quiz():
-    if not st.session_state.quiz_started:
-        welcome_and_start()
-        return
-
     if st.session_state.current_question >= len(st.session_state.questions):
         st.session_state.quiz_completed = True
         st.session_state.quiz_started = False
@@ -193,6 +176,7 @@ def run_quiz():
             display_result(q, selected_options)
             time.sleep(3)  # Display result for 3 seconds
             next_question()
+            break
         st.rerun()
 
 def check_answer(q, selected_options):
@@ -290,9 +274,7 @@ def main():
     
     if not st.session_state.logged_in:
         login()
-    elif not st.session_state.quiz_started and not st.session_state.quiz_completed:
-        welcome_and_start()
-    elif st.session_state.quiz_started:
+    elif st.session_state.quiz_started and not st.session_state.quiz_completed:
         run_quiz()
     elif st.session_state.quiz_completed:
         show_results()

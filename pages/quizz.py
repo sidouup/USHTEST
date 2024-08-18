@@ -68,29 +68,55 @@ def initialize_session_state():
         st.session_state.timer = 20
     if 'selected_answers' not in st.session_state:
         st.session_state.selected_answers = []
+    if 'questions' not in st.session_state:
+        st.session_state.questions = random.sample(questions, len(questions))
 
-def reset_quiz():
-    st.session_state.current_question = 0
-    st.session_state.score = 0
-    st.session_state.quiz_started = False
-    st.session_state.timer = 20
-    st.session_state.selected_answers = []
-    random.shuffle(questions)
-
-def start_page():
-    st.title("Welcome to the Quiz App!")
-    colored_header(label="Test Your Knowledge", description="Are you ready to challenge yourself?", color_name="blue-70")
-    add_vertical_space(2)
+def main():
+    st.set_page_config(page_title="Modern Quiz App", page_icon="🧠", layout="centered")
+    
+    initialize_session_state()
+    
+    st.header("Welcome to the Quiz App! 🎓", divider="rainbow")
+    
+    st.markdown("""
+    Test your knowledge on various topics with our interactive quiz!
+    
+    - 10 questions on different subjects
+    - 20 seconds per question
+    - Multiple choice and multiple answer questions
+    """)
+    
     if st.button("Start Quiz", use_container_width=True):
-        st.session_state.quiz_started = True
+        switch_page("quiz")
+    
+    st.header("How to Play", divider="gray")
+    st.markdown("""
+    1. Click the "Start Quiz" button to begin.
+    2. Read each question carefully.
+    3. Select the correct answer(s) within the time limit.
+    4. Click "Submit" or wait for the timer to run out.
+    5. See your results at the end of the quiz.
+    
+    Good luck!
+    """)
+
+if __name__ == "__main__":
+    main()
+
+# pages/quiz.py
+import streamlit as st
+import time
+from streamlit_extras.switch_page_button import switch_page
 
 def run_quiz():
-    q = questions[st.session_state.current_question]
+    st.header(f"Question {st.session_state.current_question + 1} of {len(st.session_state.questions)}", divider="blue")
+    
+    q = st.session_state.questions[st.session_state.current_question]
     
     # Display progress
-    st.progress((st.session_state.current_question) / len(questions))
+    st.progress((st.session_state.current_question) / len(st.session_state.questions))
     
-    colored_header(label=f"Question {st.session_state.current_question + 1} of {len(questions)}", description=q["question"], color_name="blue-70")
+    st.subheader(q["question"])
     
     # Display options as checkboxes
     st.session_state.selected_answers = []
@@ -107,9 +133,6 @@ def run_quiz():
             next_question()
     
     # Timer
-    if 'timer' not in st.session_state:
-        st.session_state.timer = 20
-    
     timer_placeholder = st.empty()
     
     while st.session_state.timer > 0:
@@ -132,16 +155,32 @@ def check_answer(q):
 def next_question():
     st.session_state.current_question += 1
     st.session_state.timer = 20
-    if st.session_state.current_question >= len(questions):
-        show_results()
+    if st.session_state.current_question >= len(st.session_state.questions):
+        switch_page("results")
     else:
         st.experimental_rerun()
 
-def show_results():
-    st.title("Quiz Completed!")
-    st.write(f"Your final score is {st.session_state.score} out of {len(questions)}.")
+def main():
+    st.set_page_config(page_title="Quiz in Progress", page_icon="⏳", layout="centered")
     
-    percentage = (st.session_state.score / len(questions)) * 100
+    if 'questions' not in st.session_state:
+        switch_page("main")
+    
+    run_quiz()
+
+if __name__ == "__main__":
+    main()
+
+# pages/results.py
+import streamlit as st
+from streamlit_extras.switch_page_button import switch_page
+
+def show_results():
+    st.header("Quiz Completed! 🎉", divider="rainbow")
+    
+    st.subheader(f"Your final score is {st.session_state.score} out of {len(st.session_state.questions)}.")
+    
+    percentage = (st.session_state.score / len(st.session_state.questions)) * 100
     if percentage >= 80:
         st.success(f"Excellent! You scored {percentage:.2f}%")
     elif percentage >= 60:
@@ -149,21 +188,30 @@ def show_results():
     else:
         st.warning(f"You scored {percentage:.2f}%. Keep practicing!")
     
+    st.header("Performance Breakdown", divider="gray")
+    for i, q in enumerate(st.session_state.questions):
+        with st.expander(f"Question {i+1}"):
+            st.write(q["question"])
+            st.write(f"Correct answer(s): {', '.join(q['correct_answers'])}")
+    
     if st.button("Restart Quiz", use_container_width=True):
-        reset_quiz()
-        st.experimental_rerun()
+        # Reset quiz state
+        st.session_state.current_question = 0
+        st.session_state.score = 0
+        st.session_state.quiz_started = False
+        st.session_state.timer = 20
+        st.session_state.selected_answers = []
+        st.session_state.questions = []
+        switch_page("main")
 
 def main():
-    st.set_page_config(page_title="Modern Quiz App", page_icon="🧠", layout="centered")
+    st.set_page_config(page_title="Quiz Results", page_icon="📊", layout="centered")
     
-    initialize_session_state()
+    if 'questions' not in st.session_state:
+        switch_page("main")
     
-    if not st.session_state.quiz_started:
-        start_page()
-    elif st.session_state.current_question < len(questions):
-        run_quiz()
-    else:
-        show_results()
+    show_results()
 
 if __name__ == "__main__":
     main()
+

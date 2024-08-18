@@ -166,20 +166,31 @@ def run_quiz():
     
     st.header(q["question"])
     
-    selected_options = []
-    for option in q["options"]:
-        if st.checkbox(option, key=f"{st.session_state.current_question}_{option}", disabled=st.session_state.answer_submitted):
-            selected_options.append(option)
-    
-    # Submit button
-    if st.button("Submit", key="submit_button", disabled=st.session_state.answer_submitted):
-        st.session_state.answer_submitted = True
-        check_answer(q, selected_options)
-        display_result(q, selected_options)
+    if not st.session_state.answer_submitted:
+        selected_options = []
+        for option in q["options"]:
+            if st.checkbox(option, key=f"{st.session_state.current_question}_{option}"):
+                selected_options.append(option)
+        
+        # Submit button
+        if st.button("Submit", key="submit_button"):
+            st.session_state.answer_submitted = True
+            st.session_state.selected_answers = selected_options
+            st.rerun()
+    else:
+        # Display selected answers (disabled checkboxes)
+        for option in q["options"]:
+            st.checkbox(option, value=option in st.session_state.selected_answers, disabled=True, key=f"{st.session_state.current_question}_{option}_disabled")
+        
+        # Display results and explanation
+        check_answer(q, st.session_state.selected_answers)
+        display_result(q, st.session_state.selected_answers)
         st.write("Explanation: " + q["explanation"])
+        
+        # Next Question button
         if st.button("Next Question", key="next_question_button"):
             next_question()
-        return
+            return
 
     # Visual timer (only if answer not submitted)
     if not st.session_state.answer_submitted:
@@ -206,15 +217,12 @@ def run_quiz():
 
         if remaining_time == 0:
             st.session_state.answer_submitted = True
-            check_answer(q, selected_options)
-            display_result(q, selected_options)
-            st.write("Explanation: " + q["explanation"])
-            if st.button("Next Question", key="next_question_button_timeout"):
-                next_question()
-            return
+            st.session_state.selected_answers = selected_options
+            st.rerun()
 
         time.sleep(0.1)  # Small delay to prevent excessive updates
         st.rerun()
+
 
 def check_answer(q, selected_options):
     st.session_state.user_answers.append(selected_options)

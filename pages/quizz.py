@@ -66,29 +66,30 @@ def run_quiz():
         st.header(f"Question {i+1}")
         st.write(q["question"])
 
-        selected_options = st.multiselect("Select the correct answers:", q["options"])
+        selected_option = st.radio("Select the correct answer:", q["options"], key=f"q{i}")
 
-        if st.button("Submit", key=i):
-            if set(selected_options) == set(q["correct_answers"]):
-                score += 2  # Add 2 points for correct answers
-                st.success("Correct!")
-            else:
-                st.error("Incorrect!")
-                st.write(f"Correct answers: {', '.join(q['correct_answers'])}")
+        confirm_button = st.button("Confirm", key=f"confirm_{i}")
 
-            time.sleep(1)  # Pause to show feedback
-
-        # Timer
-        if st.session_state.get(f"timer_{i}") is None:
-            st.session_state[f"timer_{i}"] = 20
-        
+        timer = 20  # 20 seconds for each question
         timer_placeholder = st.empty()
-        while st.session_state[f"timer_{i}"] > 0:
-            timer_placeholder.write(f"Time left: {st.session_state['timer_' + str(i)]} seconds")
+        progress_bar = st.progress(0)
+
+        while timer > 0:
+            progress_bar.progress((20 - timer) / 20)
             time.sleep(1)
-            st.session_state[f"timer_{i}"] -= 1
-        else:
-            timer_placeholder.write("Time is up!")
+            timer -= 1
+            timer_placeholder.write(f"Time left: {timer} seconds")
+            if confirm_button:
+                break
+
+        if confirm_button or timer == 0:
+            if selected_option in q["correct_answers"]:
+                score += 2  # Add 2 points for correct answers
+                st.success(f"Correct! The answer is {selected_option}.")
+            else:
+                st.error(f"Incorrect! The correct answers are {', '.join(q['correct_answers'])}.")
+
+            time.sleep(2)  # Pause to show feedback before moving to the next question
 
         st.write("---")
 

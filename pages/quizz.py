@@ -32,6 +32,40 @@ questions = [
     # ... (other questions)
 ]
 
+import streamlit as st
+import random
+import time
+
+# Sample questions and answers
+questions = [
+    {
+        "question": "Which of the following are programming languages?",
+        "options": ["Python", "Java", "HTML", "CSS"],
+        "correct_answers": ["Python", "Java"]
+    },
+    {
+        "question": "What is the capital of France?",
+        "options": ["Berlin", "Madrid", "Paris", "Rome"],
+        "correct_answers": ["Paris"]
+    },
+    {
+        "question": "Which of these are planets in our solar system?",
+        "options": ["Earth", "Mars", "Pluto", "Sun"],
+        "correct_answers": ["Earth", "Mars"]
+    },
+    {
+        "question": "Which of these are prime numbers?",
+        "options": ["2", "3", "4", "6"],
+        "correct_answers": ["2", "3"]
+    },
+    {
+        "question": "What are the colors in the French flag?",
+        "options": ["Blue", "White", "Red", "Green"],
+        "correct_answers": ["Blue", "White", "Red"]
+    },
+    # ... (other questions)
+]
+
 def initialize_session_state():
     if 'current_question' not in st.session_state:
         st.session_state.current_question = 0
@@ -46,7 +80,10 @@ def initialize_session_state():
     if 'questions' not in st.session_state:
         st.session_state.questions = random.sample(questions, len(questions))
 
-@st.fragment
+@st.cache_resource
+def get_timer():
+    return st.empty()
+
 def welcome_and_start():
     st.header("Welcome to the Quiz App! 🎓", divider="rainbow")
     
@@ -60,9 +97,9 @@ def welcome_and_start():
     
     if st.button("Start Quiz", use_container_width=True):
         st.session_state.quiz_started = True
-        st.rerun(scope="fragment")
+        st.session_state.timer = 20
+        st.rerun()
 
-@st.fragment
 def run_quiz():
     if not st.session_state.quiz_started:
         welcome_and_start()
@@ -88,15 +125,16 @@ def run_quiz():
         if st.button("Skip", use_container_width=True):
             next_question()
     
-    timer_placeholder = st.empty()
+    timer_placeholder = get_timer()
     timer_placeholder.metric("Time Remaining", f"{st.session_state.timer} seconds")
 
     # Timer update
-    time.sleep(1)
-    st.session_state.timer -= 1
-    if st.session_state.timer <= 0:
-        check_answer(q)
-    st.rerun(scope="fragment")
+    if st.session_state.timer > 0:
+        time.sleep(1)
+        st.session_state.timer -= 1
+        if st.session_state.timer <= 0:
+            check_answer(q)
+        st.rerun()
 
 def check_answer(q):
     if set(st.session_state.selected_answers) == set(q["correct_answers"]):
@@ -108,9 +146,7 @@ def next_question():
     st.session_state.timer = 20
     if st.session_state.current_question >= len(st.session_state.questions):
         st.session_state.quiz_started = False
-        st.rerun()  # Full app rerun to switch to results tab
-    else:
-        st.rerun(scope="fragment")
+    st.rerun()
 
 def show_results():
     st.header("Quiz Completed! 🎉", divider="rainbow")
@@ -153,3 +189,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

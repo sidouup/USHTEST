@@ -73,6 +73,8 @@ def initialize_session_state():
         st.session_state.score = 0
     if 'quiz_started' not in st.session_state:
         st.session_state.quiz_started = False
+    if 'quiz_completed' not in st.session_state:
+        st.session_state.quiz_completed = False
     if 'timer' not in st.session_state:
         st.session_state.timer = 20
     if 'selected_answers' not in st.session_state:
@@ -97,12 +99,21 @@ def welcome_and_start():
     
     if st.button("Start Quiz", use_container_width=True):
         st.session_state.quiz_started = True
+        st.session_state.quiz_completed = False
+        st.session_state.current_question = 0
+        st.session_state.score = 0
         st.session_state.timer = 20
         st.rerun()
 
 def run_quiz():
     if not st.session_state.quiz_started:
         welcome_and_start()
+        return
+
+    if st.session_state.current_question >= len(st.session_state.questions):
+        st.session_state.quiz_completed = True
+        st.session_state.quiz_started = False
+        st.rerun()
         return
 
     q = st.session_state.questions[st.session_state.current_question]
@@ -145,6 +156,7 @@ def next_question():
     st.session_state.current_question += 1
     st.session_state.timer = 20
     if st.session_state.current_question >= len(st.session_state.questions):
+        st.session_state.quiz_completed = True
         st.session_state.quiz_started = False
     st.rerun()
 
@@ -179,10 +191,13 @@ def main():
     quiz_tab, results_tab = st.tabs(["Quiz", "Results"])
     
     with quiz_tab:
-        run_quiz()
+        if not st.session_state.quiz_completed:
+            run_quiz()
+        else:
+            st.info("Quiz completed! Check your results in the Results tab.")
     
     with results_tab:
-        if not st.session_state.quiz_started and st.session_state.current_question >= len(st.session_state.questions):
+        if st.session_state.quiz_completed:
             show_results()
         else:
             st.info("Complete the quiz to see your results!")

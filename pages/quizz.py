@@ -4,6 +4,7 @@ import time
 from email.message import EmailMessage
 import smtplib
 import ssl
+
 # Sample questions and answers
 questions = [
     {
@@ -31,9 +32,9 @@ questions = [
         "options": ["Blue", "White", "Red", "Green"],
         "correct_answers": ["Blue", "White", "Red"]
     },
-    # ... (other questions)
 ]
 
+# Agent list
 agents = ["Djazila", "Hamza", "Nessrine", "Nada", "Reda"]
 
 def initialize_session_state():
@@ -68,10 +69,6 @@ def reset_quiz_state():
     st.session_state.questions = random.sample(questions, len(questions))
     st.session_state.user_answers = []
 
-@st.cache_resource
-def get_timer():
-    return st.empty()
-
 def login():
     st.sidebar.title("Agent Login 🔐")
     
@@ -90,7 +87,8 @@ def login():
             st.session_state.email_address = email
             st.session_state.password = password
             st.session_state.selected_agent = agent
-            st.sidebar.success("Login successful! 🎉")
+            st.sidebar.success(f"Login successful for {agent}! 🎉")
+            st.sidebar.info(f"Quiz results will be sent to: {email}")
         except Exception as e:
             st.sidebar.error(f"Login failed ❌: {str(e)}")
 
@@ -118,6 +116,7 @@ def run_quiz():
     if st.session_state.current_question >= len(st.session_state.questions):
         st.session_state.quiz_completed = True
         st.session_state.quiz_started = False
+        send_email_results()  # Automatically send results
         st.rerun()
         return
 
@@ -141,11 +140,13 @@ def run_quiz():
         if st.button("Skip", use_container_width=True):
             next_question()
     
-    timer_placeholder = get_timer()
-    timer_placeholder.metric("Time Remaining", f"{st.session_state.timer} seconds")
+    # Visual timer
+    progress_bar = st.progress(0)
+    timer_text = st.empty()
 
-    # Timer update
-    if st.session_state.timer > 0:
+    while st.session_state.timer > 0:
+        progress_bar.progress(1 - (st.session_state.timer / 20))
+        timer_text.text(f"Time Remaining: {st.session_state.timer} seconds")
         time.sleep(1)
         st.session_state.timer -= 1
         if st.session_state.timer <= 0:
@@ -164,6 +165,7 @@ def next_question():
     if st.session_state.current_question >= len(st.session_state.questions):
         st.session_state.quiz_completed = True
         st.session_state.quiz_started = False
+        send_email_results()  # Automatically send results
     st.rerun()
 
 def show_results():
@@ -197,9 +199,6 @@ def show_results():
     if st.button("Retake Quiz", use_container_width=True):
         reset_quiz_state()
         st.rerun()
-    
-    if st.button("Send Results to Email", use_container_width=True):
-        send_email_results()
 
 def send_email_results():
     email_body = f"""
@@ -219,7 +218,7 @@ def send_email_results():
     try:
         msg = EmailMessage()
         msg['From'] = st.session_state.email_address
-        msg['To'] = "sidouminto@gmail.com"  # The email to send results to
+        msg['To'] = st.session_state.email_address  # Send to the agent's email address
         msg['Subject'] = f"Quiz Results for Agent {st.session_state.selected_agent}"
         msg.set_content(email_body)
 
@@ -228,7 +227,7 @@ def send_email_results():
             server.login(st.session_state.email_address, st.session_state.password)
             server.send_message(msg)
 
-        st.success("Results sent to email successfully!")
+        st.success(f"Results sent to {st.session_state.email_address} successfully!")
     except Exception as e:
         st.error(f"Failed to send email: {str(e)}")
 
@@ -237,25 +236,18 @@ def main():
     
     initialize_session_state()
     
-    login()
+    if not st.session_state.logged_in:
+        login()
     
     if st.session_state.logged_in:
-        quiz_tab, results_tab = st.tabs(["Quiz", "Results"])
-        
-        with quiz_tab:
-            if not st.session_state.quiz_completed:
-                run_quiz()
-            else:
-                welcome_and_start()
-        
-        with results_tab:
-            if st.session_state.quiz_completed:
-                show_results()
-            else:
-                st.info("Complete the quiz to see your results!")
+        if not st.session_state.quiz_started and not st.session_state.quiz_completed:
+            welcome_and_start()
+        elif st.session_state.quiz_started:
+            run_quiz()
+        elif st.session_state.quiz_completed:
+            show_results()
     else:
         st.warning("Please log in to start the quiz.")
 
 if __name__ == "__main__":
     main()
-

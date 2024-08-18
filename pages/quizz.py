@@ -5,6 +5,48 @@ from email.message import EmailMessage
 import smtplib
 import ssl
 
+# Custom CSS for a more appealing look
+st.set_page_config(page_title="Enhanced Quiz App", page_icon="🧠", layout="wide")
+
+st.markdown("""
+<style>
+    .stApp {
+        max-width: 800px;
+        margin: 0 auto;
+        font-family: 'Arial', sans-serif;
+    }
+    .stButton>button {
+        background-color: #4CAF50;
+        color: white;
+        padding: 10px 20px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+        margin: 4px 2px;
+        cursor: pointer;
+        border-radius: 12px;
+        border: none;
+        transition: all 0.3s;
+    }
+    .stButton>button:hover {
+        background-color: #45a049;
+    }
+    .stTextInput>div>div>input {
+        border-radius: 12px;
+    }
+    .stSelectbox>div>div>select {
+        border-radius: 12px;
+    }
+    h1, h2, h3 {
+        color: #333;
+    }
+    .stProgress > div > div > div > div {
+        background-color: #4CAF50;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 # Sample questions and answers
 questions = [
     {
@@ -68,43 +110,46 @@ def reset_quiz_state():
     st.session_state.selected_answers = []
     st.session_state.questions = random.sample(questions, len(questions))
     st.session_state.user_answers = []
+    st.session_state.logged_in = False
+    st.session_state.selected_agent = None
 
 def login():
-    st.sidebar.title("Agent Login 🔐")
+    st.title("Agent Login 🔐")
     
-    agent = st.sidebar.selectbox("Select Agent 👤", agents)
-    
-    if st.sidebar.button("Login 🚀"):
-        try:
-            email = st.secrets["Djazila_email"]  # All agents use the same email
-            password = st.secrets["Djazila_password"]  # All agents use the same password
-            
-            context = ssl.create_default_context()
-            with smtplib.SMTP_SSL("smtp.titan.email", 465, context=context) as server:
-                server.login(email, password)
-            
-            st.session_state.logged_in = True
-            st.session_state.email_address = email
-            st.session_state.password = password
-            st.session_state.selected_agent = agent
-            st.sidebar.success(f"Login successful for {agent}! 🎉")
-            st.sidebar.info(f"Quiz results will be sent to: {email}")
-        except Exception as e:
-            st.sidebar.error(f"Login failed ❌: {str(e)}")
+    col1, col2, col3 = st.columns([1,2,1])
+    with col2:
+        agent = st.selectbox("Select Agent 👤", agents)
+        
+        if st.button("Login 🚀", key="login_button"):
+            try:
+                email = st.secrets["Djazila_email"]  # All agents use the same email
+                password = st.secrets["Djazila_password"]  # All agents use the same password
+                
+                context = ssl.create_default_context()
+                with smtplib.SMTP_SSL("smtp.titan.email", 465, context=context) as server:
+                    server.login(email, password)
+                
+                st.session_state.logged_in = True
+                st.session_state.email_address = email
+                st.session_state.password = password
+                st.session_state.selected_agent = agent
+                st.success(f"Login successful for {agent}! 🎉")
+                st.info("Quiz results will be sent to: sidouminto@gmail.com")
+            except Exception as e:
+                st.error(f"Login failed ❌: {str(e)}")
 
 def welcome_and_start():
-    st.header(f"Welcome, Agent {st.session_state.selected_agent}! 🎓", divider="rainbow")
+    st.title(f"Welcome, Agent {st.session_state.selected_agent}! 🎓")
     
     st.markdown("""
-    Test your knowledge on various topics with our interactive quiz!
+    ### Test your knowledge on various topics with our interactive quiz!
     
-    - 10 questions on different subjects
+    - 5 questions on different subjects
     - 20 seconds per question
     - Multiple choice and multiple answer questions
     """)
     
-    if st.button("Start Quiz", use_container_width=True):
-        reset_quiz_state()
+    if st.button("Start Quiz", key="start_quiz_button"):
         st.session_state.quiz_started = True
         st.rerun()
 
@@ -122,10 +167,10 @@ def run_quiz():
 
     q = st.session_state.questions[st.session_state.current_question]
     
-    st.header(f"Question {st.session_state.current_question + 1} of {len(st.session_state.questions)}", divider="blue")
+    st.title(f"Question {st.session_state.current_question + 1} of {len(st.session_state.questions)}")
     st.progress((st.session_state.current_question) / len(st.session_state.questions))
     
-    st.subheader(q["question"])
+    st.header(q["question"])
     
     st.session_state.selected_answers = []
     for option in q["options"]:
@@ -134,10 +179,10 @@ def run_quiz():
     
     col1, col2 = st.columns(2)
     with col1:
-        if st.button("Submit", use_container_width=True):
+        if st.button("Submit", key="submit_button"):
             check_answer(q)
     with col2:
-        if st.button("Skip", use_container_width=True):
+        if st.button("Skip", key="skip_button"):
             next_question()
     
     # Visual timer
@@ -169,9 +214,9 @@ def next_question():
     st.rerun()
 
 def show_results():
-    st.header("Quiz Completed! 🎉", divider="rainbow")
+    st.title("Quiz Completed! 🎉")
     
-    st.subheader(f"Your final score is {st.session_state.score} out of {len(st.session_state.questions)}.")
+    st.header(f"Your final score is {st.session_state.score} out of {len(st.session_state.questions)}.")
     
     percentage = (st.session_state.score / len(st.session_state.questions)) * 100
     if percentage >= 80:
@@ -181,7 +226,7 @@ def show_results():
     else:
         st.warning(f"You scored {percentage:.2f}%. Keep practicing!")
     
-    st.header("Performance Breakdown", divider="gray")
+    st.subheader("Performance Breakdown")
     for i, (q, user_answer) in enumerate(zip(st.session_state.questions, st.session_state.user_answers)):
         with st.expander(f"Question {i+1}"):
             st.write(q["question"])
@@ -196,7 +241,7 @@ def show_results():
                     st.markdown(f"⭕ <span style='color:orange'>{option}</span> (Correct answer you missed)", unsafe_allow_html=True)
             st.write(f"Correct answer(s): {', '.join(q['correct_answers'])}")
     
-    if st.button("Retake Quiz", use_container_width=True):
+    if st.button("Retake Quiz", key="retake_quiz_button"):
         reset_quiz_state()
         st.rerun()
 
@@ -218,7 +263,7 @@ def send_email_results():
     try:
         msg = EmailMessage()
         msg['From'] = st.session_state.email_address
-        msg['To'] = st.session_state.email_address  # Send to the agent's email address
+        msg['To'] = "sidouminto@gmail.com"  # Always send to this email
         msg['Subject'] = f"Quiz Results for Agent {st.session_state.selected_agent}"
         msg.set_content(email_body)
 
@@ -227,27 +272,21 @@ def send_email_results():
             server.login(st.session_state.email_address, st.session_state.password)
             server.send_message(msg)
 
-        st.success(f"Results sent to {st.session_state.email_address} successfully!")
+        st.success(f"Results sent to sidouminto@gmail.com successfully!")
     except Exception as e:
         st.error(f"Failed to send email: {str(e)}")
 
 def main():
-    st.set_page_config(page_title="Enhanced Quiz App", page_icon="🧠", layout="centered")
-    
     initialize_session_state()
     
     if not st.session_state.logged_in:
         login()
-    
-    if st.session_state.logged_in:
-        if not st.session_state.quiz_started and not st.session_state.quiz_completed:
-            welcome_and_start()
-        elif st.session_state.quiz_started:
-            run_quiz()
-        elif st.session_state.quiz_completed:
-            show_results()
-    else:
-        st.warning("Please log in to start the quiz.")
+    elif not st.session_state.quiz_started and not st.session_state.quiz_completed:
+        welcome_and_start()
+    elif st.session_state.quiz_started:
+        run_quiz()
+    elif st.session_state.quiz_completed:
+        show_results()
 
 if __name__ == "__main__":
     main()

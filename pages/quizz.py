@@ -1,9 +1,7 @@
 import streamlit as st
 import random
 import time
-from streamlit_extras.switch_page_button import switch_page
-from streamlit_extras.colored_header import colored_header
-from streamlit_extras.add_vertical_space import add_vertical_space
+
 
 # Sample questions and answers
 questions = [

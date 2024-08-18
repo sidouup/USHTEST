@@ -177,7 +177,8 @@ def run_quiz():
     elapsed_time = int(time.time() - st.session_state.start_time)
     remaining_time = max(20 - elapsed_time, 0)
 
-    progress_bar = st.progress(elapsed_time / 20)
+    # Update progress bar to empty as time passes
+    progress_bar = st.progress(remaining_time / 20)
     st.write(f"Time Remaining: {remaining_time} seconds")
 
     if remaining_time == 0:
@@ -189,6 +190,7 @@ def run_quiz():
 
     time.sleep(0.1)  # Small delay to prevent excessive updates
     st.rerun()
+
 
 def check_answer(q, selected_options):
     st.session_state.user_answers.append(selected_options)

@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import random
 import time
 from email.message import EmailMessage
@@ -47,32 +48,37 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Sample questions and answers
+# Sample questions and answers with explanations
 questions = [
     {
         "question": "Which of the following are programming languages?",
         "options": ["Python", "Java", "HTML", "CSS"],
-        "correct_answers": ["Python", "Java"]
+        "correct_answers": ["Python", "Java"],
+        "explanation": "Python and Java are programming languages. HTML and CSS are used for web development."
     },
     {
         "question": "What is the capital of France?",
         "options": ["Berlin", "Madrid", "Paris", "Rome"],
-        "correct_answers": ["Paris"]
+        "correct_answers": ["Paris"],
+        "explanation": "The capital of France is Paris."
     },
     {
         "question": "Which of these are planets in our solar system?",
         "options": ["Earth", "Mars", "Pluto", "Sun"],
-        "correct_answers": ["Earth", "Mars"]
+        "correct_answers": ["Earth", "Mars"],
+        "explanation": "Earth and Mars are planets. The Sun is a star, and Pluto is now considered a dwarf planet."
     },
     {
         "question": "Which of these is a prime number?",
         "options": ["2", "4", "6", "8"],
-        "correct_answers": ["2"]
+        "correct_answers": ["2"],
+        "explanation": "2 is the only even prime number. The others are not prime numbers."
     },
     {
         "question": "What are the colors in the French flag?",
         "options": ["Blue", "White", "Red", "Green"],
-        "correct_answers": ["Blue", "White", "Red"]
+        "correct_answers": ["Blue", "White", "Red"],
+        "explanation": "The French flag consists of blue, white, and red colors."
     },
 ]
 
@@ -166,6 +172,7 @@ def run_quiz():
     if st.button("Submit", key="submit_button"):
         check_answer(q, selected_options)
         display_result(q, selected_options)
+        st.write("Explanation: " + q["explanation"])  # Display explanation after each question
         time.sleep(3)  # Display result for 3 seconds
         next_question()
         return
@@ -177,13 +184,25 @@ def run_quiz():
     elapsed_time = int(time.time() - st.session_state.start_time)
     remaining_time = max(20 - elapsed_time, 0)
 
-    # Update progress bar to empty as time passes
-    progress_bar = st.progress(remaining_time / 20)
-    st.write(f"Time Remaining: {remaining_time} seconds")
+    # Circular timer
+    components.html(f"""
+    <html>
+    <body>
+    <div style="display: flex; justify-content: center; align-items: center;">
+        <svg height="100" width="100">
+          <circle cx="50" cy="50" r="45" stroke="grey" stroke-width="5" fill="none" />
+          <circle cx="50" cy="50" r="45" stroke="green" stroke-width="5" fill="none" stroke-dasharray="282.743" stroke-dashoffset="{282.743 * (remaining_time / 20)}" transform="rotate(-90 50 50)" />
+          <text x="50%" y="50%" text-anchor="middle" stroke="black" stroke-width="1px" dy=".3em" font-size="20px">{remaining_time}</text>
+        </svg>
+    </div>
+    </body>
+    </html>
+    """, height=150)
 
     if remaining_time == 0:
         check_answer(q, selected_options)
         display_result(q, selected_options)
+        st.write("Explanation: " + q["explanation"])  # Display explanation after each question
         time.sleep(3)  # Display result for 3 seconds
         next_question()
         return
@@ -246,6 +265,7 @@ def show_results():
                 elif option in q["correct_answers"]:
                     st.warning(f"⭕ {option} (Correct answer you missed)")
             st.write(f"Correct answer(s): {', '.join(q['correct_answers'])}")
+            st.write(f"Explanation: {q['explanation']}")
     
     if st.button("Retake Quiz", key="retake_quiz_button"):
         reset_quiz_state()
@@ -265,6 +285,7 @@ def send_email_results():
         email_body += f"\nQuestion {i+1}: {q['question']}\n"
         email_body += f"Your answer(s): {', '.join(user_answer)}\n"
         email_body += f"Correct answer(s): {', '.join(q['correct_answers'])}\n"
+        email_body += f"Explanation: {q['explanation']}\n"
 
     try:
         msg = EmailMessage()

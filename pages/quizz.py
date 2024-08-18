@@ -106,6 +106,8 @@ def initialize_session_state():
         st.session_state.logged_in = False
     if 'show_result' not in st.session_state:
         st.session_state.show_result = False
+    if 'answer_submitted' not in st.session_state:
+        st.session_state.answer_submitted = False
 
 def reset_quiz_state():
     st.session_state.current_question = 0
@@ -118,6 +120,7 @@ def reset_quiz_state():
     st.session_state.logged_in = False
     st.session_state.selected_agent = None
     st.session_state.show_result = False
+    st.session_state.answer_submitted = False
     if 'start_time' in st.session_state:
         del st.session_state.start_time
 
@@ -165,53 +168,53 @@ def run_quiz():
     
     selected_options = []
     for option in q["options"]:
-        if st.checkbox(option, key=f"{st.session_state.current_question}_{option}"):
+        if st.checkbox(option, key=f"{st.session_state.current_question}_{option}", disabled=st.session_state.answer_submitted):
             selected_options.append(option)
     
     # Submit button
-    if st.button("Submit", key="submit_button"):
+    if st.button("Submit", key="submit_button", disabled=st.session_state.answer_submitted):
+        st.session_state.answer_submitted = True
         check_answer(q, selected_options)
         display_result(q, selected_options)
-        st.write("Explanation: " + q["explanation"])  # Display explanation after each question
-        time.sleep(3)  # Display result for 3 seconds
-        next_question()
+        st.write("Explanation: " + q["explanation"])
+        if st.button("Next Question", key="next_question_button"):
+            next_question()
         return
 
-    # Visual timer
-    if 'start_time' not in st.session_state:
-        st.session_state.start_time = time.time()
+    # Visual timer (only if answer not submitted)
+    if not st.session_state.answer_submitted:
+        if 'start_time' not in st.session_state:
+            st.session_state.start_time = time.time()
 
-    elapsed_time = int(time.time() - st.session_state.start_time)
-    remaining_time = max(20 - elapsed_time, 0)
+        elapsed_time = int(time.time() - st.session_state.start_time)
+        remaining_time = max(20 - elapsed_time, 0)
 
         # Circular timer
-    components.html(f"""
-    <html>
-    <body>
-    <div style="display: flex; justify-content: center; align-items: center;">
-        <svg height="100" width="100">
-            <circle cx="50" cy="50" r="45" stroke="grey" stroke-width="5" fill="none" />
-            <circle cx="50" cy="50" r="45" stroke="green" stroke-width="5" fill="none" 
-                    stroke-dasharray="282.743" stroke-dashoffset="{{282.743 * ({remaining_time} / 20)}}" 
-                    transform="rotate(-90 50 50)" />
-            <text x="50%" y="50%" text-anchor="middle" stroke="black" stroke-width="1px" 
-                  dy=".3em" font-size="20px">{remaining_time}</text>
-        </svg>
-    </div>
-    </body>
-    </html>
-    """, height=150)
-    if remaining_time == 0:
-        check_answer(q, selected_options)
-        display_result(q, selected_options)
-        st.write("Explanation: " + q["explanation"])  # Display explanation after each question
-        time.sleep(3)  # Display result for 3 seconds
-        next_question()
-        return
+        components.html(f"""
+        <html>
+        <body>
+        <div style="display: flex; justify-content: center; align-items: center;">
+            <svg height="100" width="100">
+              <circle cx="50" cy="50" r="45" stroke="grey" stroke-width="5" fill="none" />
+              <circle cx="50" cy="50" r="45" stroke="green" stroke-width="5" fill="none" stroke-dasharray="282.743" stroke-dashoffset="{{282.743 * ({remaining_time} / 20)}}" transform="rotate(-90 50 50)" />
+              <text x="50%" y="50%" text-anchor="middle" stroke="black" stroke-width="1px" dy=".3em" font-size="20px">{remaining_time}</text>
+            </svg>
+        </div>
+        </body>
+        </html>
+        """, height=150)
 
-    time.sleep(0.1)  # Small delay to prevent excessive updates
-    st.rerun()
+        if remaining_time == 0:
+            st.session_state.answer_submitted = True
+            check_answer(q, selected_options)
+            display_result(q, selected_options)
+            st.write("Explanation: " + q["explanation"])
+            if st.button("Next Question", key="next_question_button_timeout"):
+                next_question()
+            return
 
+        time.sleep(0.1)  # Small delay to prevent excessive updates
+        st.rerun()
 
 def check_answer(q, selected_options):
     st.session_state.user_answers.append(selected_options)
@@ -234,6 +237,7 @@ def next_question():
     st.session_state.current_question += 1
     if 'start_time' in st.session_state:
         del st.session_state.start_time
+    st.session_state.answer_submitted = False
     if st.session_state.current_question >= len(st.session_state.questions):
         st.session_state.quiz_completed = True
         st.session_state.quiz_started = False

@@ -1,7 +1,9 @@
 import streamlit as st
 import random
 import time
-
+from email.message import EmailMessage
+import smtplib
+import ssl
 # Sample questions and answers
 questions = [
     {

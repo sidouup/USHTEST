@@ -43,6 +43,23 @@ agents = {
     "Reda": st.secrets["Reda_email"]
 }
 
+import streamlit as st
+import random
+import time
+from email.message import EmailMessage
+import smtplib
+import ssl
+
+# Sample questions and answers (same as before)
+questions = [
+    # ... (previous questions)
+]
+
+# Agent email mapping using Streamlit secrets (same as before)
+agents = {
+    # ... (previous agent mappings)
+}
+
 def initialize_session_state():
     if 'current_question' not in st.session_state:
         st.session_state.current_question = 0
@@ -64,6 +81,16 @@ def initialize_session_state():
         st.session_state.selected_agent = None
     if 'logged_in' not in st.session_state:
         st.session_state.logged_in = False
+
+def reset_quiz_state():
+    st.session_state.current_question = 0
+    st.session_state.score = 0
+    st.session_state.quiz_started = False
+    st.session_state.quiz_completed = False
+    st.session_state.timer = 20
+    st.session_state.selected_answers = []
+    st.session_state.questions = random.sample(questions, len(questions))
+    st.session_state.user_answers = []
 
 @st.cache_resource
 def get_timer():
@@ -88,13 +115,6 @@ def login():
         except Exception as e:
             st.sidebar.error(f"Login failed ❌: {str(e)}")
 
-def select_agent():
-    st.header("Select Your Agent", divider="rainbow")
-    agent = st.selectbox("Choose your agent:", list(agents.keys()))
-    if st.button("Confirm Agent Selection"):
-        st.session_state.selected_agent = agent
-        st.rerun()
-
 def welcome_and_start():
     st.header(f"Welcome, Agent {st.session_state.selected_agent}! 🎓", divider="rainbow")
     
@@ -107,12 +127,8 @@ def welcome_and_start():
     """)
     
     if st.button("Start Quiz", use_container_width=True):
+        reset_quiz_state()
         st.session_state.quiz_started = True
-        st.session_state.quiz_completed = False
-        st.session_state.current_question = 0
-        st.session_state.score = 0
-        st.session_state.timer = 20
-        st.session_state.user_answers = []
         st.rerun()
 
 def run_quiz():
@@ -200,7 +216,7 @@ def show_results():
             st.write(f"Correct answer(s): {', '.join(q['correct_answers'])}")
     
     if st.button("Retake Quiz", use_container_width=True):
-        initialize_session_state()
+        reset_quiz_state()
         st.rerun()
     
     if st.button("Send Results to Email", use_container_width=True):
@@ -251,7 +267,7 @@ def main():
             if not st.session_state.quiz_completed:
                 run_quiz()
             else:
-                st.info("Quiz completed! Check your results in the Results tab.")
+                welcome_and_start()
         
         with results_tab:
             if st.session_state.quiz_completed:
@@ -263,3 +279,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

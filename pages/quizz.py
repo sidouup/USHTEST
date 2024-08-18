@@ -83,7 +83,7 @@ def welcome_page():
     
     if st.button("Start Quiz", use_container_width=True):
         st.session_state.quiz_started = True
-        st.experimental_rerun()
+        st.rerun()
     
     st.header("How to Play", divider="gray")
     st.markdown("""
@@ -129,7 +129,7 @@ def run_quiz():
         st.session_state.timer -= 1
         if st.session_state.timer == 0:
             check_answer(q)
-        st.experimental_rerun()
+        st.rerun()
 
 def check_answer(q):
     if set(st.session_state.selected_answers) == set(q["correct_answers"]):

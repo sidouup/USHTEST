@@ -5,7 +5,7 @@ from email.message import EmailMessage
 import smtplib
 import ssl
 
-# Custom CSS (same as before)
+# Custom CSS for a more appealing look
 st.set_page_config(page_title="Enhanced Quiz App", page_icon="🧠", layout="wide")
 
 st.markdown("""
@@ -47,7 +47,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Sample questions and answers (same as before)
+# Sample questions and answers
 questions = [
     {
         "question": "Which of the following are programming languages?",
@@ -88,8 +88,6 @@ def initialize_session_state():
         st.session_state.quiz_started = False
     if 'quiz_completed' not in st.session_state:
         st.session_state.quiz_completed = False
-    if 'timer' not in st.session_state:
-        st.session_state.timer = 20
     if 'selected_answers' not in st.session_state:
         st.session_state.selected_answers = []
     if 'questions' not in st.session_state:
@@ -108,13 +106,14 @@ def reset_quiz_state():
     st.session_state.score = 0
     st.session_state.quiz_started = False
     st.session_state.quiz_completed = False
-    st.session_state.timer = 20
     st.session_state.selected_answers = []
     st.session_state.questions = random.sample(questions, len(questions))
     st.session_state.user_answers = []
     st.session_state.logged_in = False
     st.session_state.selected_agent = None
     st.session_state.show_result = False
+    if 'start_time' in st.session_state:
+        del st.session_state.start_time
 
 def login():
     st.title("Agent Login 🔐")
@@ -163,21 +162,33 @@ def run_quiz():
         if st.checkbox(option, key=f"{st.session_state.current_question}_{option}"):
             selected_options.append(option)
     
-    # Visual timer
-    progress_bar = st.progress(0)
-    timer_text = st.empty()
+    # Submit button
+    if st.button("Submit", key="submit_button"):
+        check_answer(q, selected_options)
+        display_result(q, selected_options)
+        time.sleep(3)  # Display result for 3 seconds
+        next_question()
+        return
 
-    for i in range(20, 0, -1):
-        progress_bar.progress(1 - (i / 20))
-        timer_text.text(f"Time Remaining: {i} seconds")
-        time.sleep(1)
-        if i == 1:  # When timer reaches 1 second
-            check_answer(q, selected_options)
-            display_result(q, selected_options)
-            time.sleep(3)  # Display result for 3 seconds
-            next_question()
-            break
-        st.rerun()
+    # Visual timer
+    if 'start_time' not in st.session_state:
+        st.session_state.start_time = time.time()
+
+    elapsed_time = int(time.time() - st.session_state.start_time)
+    remaining_time = max(20 - elapsed_time, 0)
+
+    progress_bar = st.progress(elapsed_time / 20)
+    st.write(f"Time Remaining: {remaining_time} seconds")
+
+    if remaining_time == 0:
+        check_answer(q, selected_options)
+        display_result(q, selected_options)
+        time.sleep(3)  # Display result for 3 seconds
+        next_question()
+        return
+
+    time.sleep(0.1)  # Small delay to prevent excessive updates
+    st.rerun()
 
 def check_answer(q, selected_options):
     st.session_state.user_answers.append(selected_options)
@@ -198,8 +209,8 @@ def display_result(q, selected_options):
 
 def next_question():
     st.session_state.current_question += 1
-    st.session_state.timer = 20
-    st.session_state.show_result = False
+    if 'start_time' in st.session_state:
+        del st.session_state.start_time
     if st.session_state.current_question >= len(st.session_state.questions):
         st.session_state.quiz_completed = True
         st.session_state.quiz_started = False

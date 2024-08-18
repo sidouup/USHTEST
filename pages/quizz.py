@@ -184,21 +184,23 @@ def run_quiz():
     elapsed_time = int(time.time() - st.session_state.start_time)
     remaining_time = max(20 - elapsed_time, 0)
 
-    # Circular timer
+        # Circular timer
     components.html(f"""
     <html>
     <body>
     <div style="display: flex; justify-content: center; align-items: center;">
         <svg height="100" width="100">
-          <circle cx="50" cy="50" r="45" stroke="grey" stroke-width="5" fill="none" />
-          <circle cx="50" cy="50" r="45" stroke="green" stroke-width="5" fill="none" stroke-dasharray="282.743" stroke-dashoffset="{282.743 * (remaining_time / 20)}" transform="rotate(-90 50 50)" />
-          <text x="50%" y="50%" text-anchor="middle" stroke="black" stroke-width="1px" dy=".3em" font-size="20px">{remaining_time}</text>
+            <circle cx="50" cy="50" r="45" stroke="grey" stroke-width="5" fill="none" />
+            <circle cx="50" cy="50" r="45" stroke="green" stroke-width="5" fill="none" 
+                    stroke-dasharray="282.743" stroke-dashoffset="{{282.743 * ({remaining_time} / 20)}}" 
+                    transform="rotate(-90 50 50)" />
+            <text x="50%" y="50%" text-anchor="middle" stroke="black" stroke-width="1px" 
+                  dy=".3em" font-size="20px">{remaining_time}</text>
         </svg>
     </div>
     </body>
     </html>
     """, height=150)
-
     if remaining_time == 0:
         check_answer(q, selected_options)
         display_result(q, selected_options)

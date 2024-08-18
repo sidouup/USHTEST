@@ -86,7 +86,7 @@ def welcome_page():
     if st.button("Start Quiz", use_container_width=True):
         st.session_state.quiz_started = True
         st.session_state.active_tab = "Quiz"
-        st.experimental_rerun()
+        st.rerun()
     
     st.header("How to Play", divider="gray")
     st.markdown("""
@@ -145,7 +145,7 @@ def next_question():
     if st.session_state.current_question >= len(st.session_state.questions):
         st.session_state.quiz_started = False
         st.session_state.active_tab = "Results"
-    st.experimental_rerun()
+    st.rerun()
 
 def show_results():
     st.header("Quiz Completed! 🎉", divider="rainbow")
@@ -175,7 +175,7 @@ def show_results():
         st.session_state.selected_answers = []
         st.session_state.questions = random.sample(questions, len(questions))
         st.session_state.active_tab = "Welcome"
-        st.experimental_rerun()
+        st.rerun()
 
 def main():
     st.set_page_config(page_title="Modern Quiz App", page_icon="🧠", layout="centered")
@@ -206,7 +206,7 @@ def main():
         st.session_state.timer -= 1
         if st.session_state.timer <= 0:
             check_answer(st.session_state.questions[st.session_state.current_question])
-        st.experimental_rerun()
+        st.rerun()
 
 if __name__ == "__main__":
     main()

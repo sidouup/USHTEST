@@ -34,31 +34,7 @@ questions = [
     # ... (other questions)
 ]
 
-# Agent email mapping using Streamlit secrets
-agents = {
-    "Djazila": st.secrets["Djazila_email"],
-    "Hamza": st.secrets["Hamza_email"],
-    "Nessrine": st.secrets["Nessrine_email"],
-    "Nada": st.secrets["Nada_email"],
-    "Reda": st.secrets["Reda_email"]
-}
-
-import streamlit as st
-import random
-import time
-from email.message import EmailMessage
-import smtplib
-import ssl
-
-# Sample questions and answers (same as before)
-questions = [
-    # ... (previous questions)
-]
-
-# Agent email mapping using Streamlit secrets (same as before)
-agents = {
-    # ... (previous agent mappings)
-}
+agents = ["Djazila", "Hamza", "Nessrine", "Nada", "Reda"]
 
 def initialize_session_state():
     if 'current_question' not in st.session_state:
@@ -98,17 +74,20 @@ def get_timer():
 
 def login():
     st.sidebar.title("Agent Login 🔐")
-    agent = st.sidebar.selectbox("Select Agent 👤", list(agents.keys()))
-    email_address = agents[agent]
-    password = st.secrets[f"{agent}_password"]
+    
+    agent = st.sidebar.selectbox("Select Agent 👤", agents)
     
     if st.sidebar.button("Login 🚀"):
         try:
+            email = st.secrets["Djazila_email"]  # All agents use the same email
+            password = st.secrets["Djazila_password"]  # All agents use the same password
+            
             context = ssl.create_default_context()
             with smtplib.SMTP_SSL("smtp.titan.email", 465, context=context) as server:
-                server.login(email_address, password)
+                server.login(email, password)
+            
             st.session_state.logged_in = True
-            st.session_state.email_address = email_address
+            st.session_state.email_address = email
             st.session_state.password = password
             st.session_state.selected_agent = agent
             st.sidebar.success("Login successful! 🎉")

@@ -87,7 +87,7 @@ def main():
     """)
     
     if st.button("Start Quiz", use_container_width=True):
-        switch_page("quiz")
+        st.switch_page("quiz")
     
     st.header("How to Play", divider="gray")
     st.markdown("""
@@ -106,7 +106,7 @@ if __name__ == "__main__":
 # pages/quiz.py
 import streamlit as st
 import time
-from streamlit_extras.switch_page_button import switch_page
+
 
 def run_quiz():
     st.header(f"Question {st.session_state.current_question + 1} of {len(st.session_state.questions)}", divider="blue")
@@ -156,7 +156,7 @@ def next_question():
     st.session_state.current_question += 1
     st.session_state.timer = 20
     if st.session_state.current_question >= len(st.session_state.questions):
-        switch_page("results")
+        st.switch_page("results")
     else:
         st.experimental_rerun()
 
@@ -164,7 +164,7 @@ def main():
     st.set_page_config(page_title="Quiz in Progress", page_icon="⏳", layout="centered")
     
     if 'questions' not in st.session_state:
-        switch_page("main")
+        st.switch_page("main")
     
     run_quiz()
 
@@ -173,7 +173,7 @@ if __name__ == "__main__":
 
 # pages/results.py
 import streamlit as st
-from streamlit_extras.switch_page_button import switch_page
+
 
 def show_results():
     st.header("Quiz Completed! 🎉", divider="rainbow")
@@ -202,13 +202,13 @@ def show_results():
         st.session_state.timer = 20
         st.session_state.selected_answers = []
         st.session_state.questions = []
-        switch_page("main")
+        st.switch_page("main")
 
 def main():
     st.set_page_config(page_title="Quiz Results", page_icon="📊", layout="centered")
     
     if 'questions' not in st.session_state:
-        switch_page("main")
+        st.switch_page("main")
     
     show_results()
 

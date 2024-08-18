@@ -84,7 +84,7 @@ def run_quiz():
         
         timer_placeholder = st.empty()
         while st.session_state[f"timer_{i}"] > 0:
-            timer_placeholder.write(f"Time left: {st.session_state[f"timer_{i}"]} seconds")
+            timer_placeholder.write(f"Time left: {st.session_state['timer_' + str(i)]} seconds")
             time.sleep(1)
             st.session_state[f"timer_{i}"] -= 1
         else:

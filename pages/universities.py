@@ -8,6 +8,8 @@ def clean_data(df):
     
     # Clean Tuition: split into Price and Currency
     def split_tuition(tuition):
+        if pd.isna(tuition):
+            return pd.Series([None, None])
         tuition_cleaned = re.sub(r'[^\d]', '', tuition.split('/')[0])
         currency = re.findall(r'[^\d\s]', tuition.split('/')[0])[0] if len(re.findall(r'[^\d\s]', tuition.split('/')[0])) > 0 else ""
         return pd.Series([int(tuition_cleaned) if tuition_cleaned else None, currency])
@@ -16,8 +18,10 @@ def clean_data(df):
     
     # Clean Application Fee: split into Price and Currency
     def split_app_fee(fee):
-        fee_cleaned = re.sub(r'[^\d]', '', fee)
-        currency = re.findall(r'[^\d\s]', fee)[0] if len(re.findall(r'[^\d\s]', fee)) > 0 else ""
+        if pd.isna(fee):
+            return pd.Series([None, None])
+        fee_cleaned = re.sub(r'[^\d]', '', str(fee))
+        currency = re.findall(r'[^\d\s]', str(fee))[0] if len(re.findall(r'[^\d\s]', str(fee))) > 0 else ""
         return pd.Series([int(fee_cleaned) if fee_cleaned else None, currency])
 
     df[['Application Fee Price', 'Application Fee Currency']] = df['Application fee'].apply(split_app_fee)

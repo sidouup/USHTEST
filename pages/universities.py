@@ -21,11 +21,14 @@ def load_data(spreadsheet_id, sheet_name):
     client = get_google_sheet_client()
     sheet = client.open_by_key(spreadsheet_id).worksheet(sheet_name)
     data = sheet.get_all_records()
-    df = pd.DataFrame(data)
     
     # Clean Tuition Price and Application Fee Price columns
+    df = pd.DataFrame(data)
     df['Tuition Price'] = pd.to_numeric(df['Tuition Price'], errors='coerce')
     df['Application Fee Price'] = pd.to_numeric(df['Application Fee Price'], errors='coerce')
+    
+    # Adjust the Speciality column by removing the level part
+    df['Adjusted Speciality'] = df['Speciality'].apply(lambda x: '-'.join(x.split('-')[1:]).strip() if '-' in x else x)
     
     return df
 
@@ -50,9 +53,9 @@ def main():
 
     if search_term:
         university_matches = fuzzy_search(search_term, df['University Name'].str.lower())
-        speciality_matches = fuzzy_search(search_term, df['Speciality'].str.lower())
+        speciality_matches = fuzzy_search(search_term, df['Adjusted Speciality'].str.lower())
         filtered_df = df[df['University Name'].str.lower().isin(university_matches) |
-                         df['Speciality'].str.lower().isin(speciality_matches)]
+                         df['Adjusted Speciality'].str.lower().isin(speciality_matches)]
     else:
         filtered_df = df.copy()
 
@@ -77,9 +80,9 @@ def main():
     if level:
         filtered_df = filtered_df[filtered_df['Level'].isin(level)]
 
-    speciality = st.sidebar.multiselect("Speciality", options=filtered_df['Speciality'].unique())
+    speciality = st.sidebar.multiselect("Speciality", options=filtered_df['Adjusted Speciality'].unique())
     if speciality:
-        filtered_df = filtered_df[filtered_df['Speciality'].isin(speciality)]
+        filtered_df = filtered_df[filtered_df['Adjusted Speciality'].isin(speciality)]
 
     duration = st.sidebar.multiselect("Duration", options=filtered_df['Duration'].unique())
     if duration:

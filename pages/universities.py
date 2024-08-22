@@ -22,6 +22,11 @@ def load_data(spreadsheet_id, sheet_name):
     sheet = client.open_by_key(spreadsheet_id).worksheet(sheet_name)
     data = sheet.get_all_records()
     df = pd.DataFrame(data)
+    
+    # Clean Tuition Price and Application Fee Price columns
+    df['Tuition Price'] = pd.to_numeric(df['Tuition Price'], errors='coerce')
+    df['Application Fee Price'] = pd.to_numeric(df['Application Fee Price'], errors='coerce')
+    
     return df
 
 # Function to implement fuzzy matching

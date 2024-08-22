@@ -1,68 +1,68 @@
 import streamlit as st
-import gspread
 import pandas as pd
-from google.oauth2.service_account import Credentials
 import re
 
-# Use your service account info from Streamlit secrets
-SERVICE_ACCOUNT_INFO = st.secrets["gcp_service_account"]
-
-# Define the scopes
-SCOPES = ['https://www.googleapis.com/auth/drive', 'https://www.googleapis.com/auth/spreadsheets']
-
-# Authenticate and build the Google Sheets service
-@st.cache_resource
-def get_google_sheet_client():
-    creds = Credentials.from_service_account_info(SERVICE_ACCOUNT_INFO, scopes=SCOPES)
-    return gspread.authorize(creds)
-
-# Function to load data from Google Sheets
-def load_data(spreadsheet_id, sheet_name):
-    client = get_google_sheet_client()
-    sheet = client.open_by_key(spreadsheet_id).worksheet(sheet_name)
-    data = sheet.get_all_records()
-    df = pd.DataFrame(data)
+def clean_data(df):
+    # Split Location into State/Province and Country
+    df[['State/Province', 'Country']] = df['Location'].str.split(', ', expand=True)
     
-    # Extract the country code from the Location column
-    df['Country'] = df['Location'].apply(lambda x: x.split(", ")[-1])
-    
-    # Clean the Tuition column by removing non-numeric characters and converting to integer
-    # Handle cases where the value is empty or invalid
-    def clean_tuition(tuition):
+    # Clean Tuition: split into Price and Currency
+    def split_tuition(tuition):
         tuition_cleaned = re.sub(r'[^\d]', '', tuition.split('/')[0])
-        return int(tuition_cleaned) if tuition_cleaned else None
+        currency = re.findall(r'[^\d\s]', tuition.split('/')[0])[0] if len(re.findall(r'[^\d\s]', tuition.split('/')[0])) > 0 else ""
+        return pd.Series([int(tuition_cleaned) if tuition_cleaned else None, currency])
 
-    df['Tuition'] = df['Tuition'].apply(clean_tuition)
+    df[['Tuition Price', 'Tuition Currency']] = df['Tuition'].apply(split_tuition)
+    
+    # Clean Application Fee: split into Price and Currency
+    def split_app_fee(fee):
+        fee_cleaned = re.sub(r'[^\d]', '', fee)
+        currency = re.findall(r'[^\d\s]', fee)[0] if len(re.findall(r'[^\d\s]', fee)) > 0 else ""
+        return pd.Series([int(fee_cleaned) if fee_cleaned else None, currency])
+
+    df[['Application Fee Price', 'Application Fee Currency']] = df['Application fee'].apply(split_app_fee)
+    
+    # Classify University Name into Institution Type
+    def classify_institution(name):
+        if "university" in name.lower():
+            return "University"
+        elif "college" in name.lower():
+            return "College"
+        else:
+            return "Other"
+
+    df['Institution Type'] = df['University Name'].apply(classify_institution)
+    
+    # Drop the original Location, Tuition, and Application fee columns
+    df.drop(columns=['Location', 'Tuition', 'Application fee'], inplace=True)
     
     return df
 
-# Example usage in your Streamlit app
 def main():
-    st.title("University Search Tool")
+    st.title("Data Cleaning and Organization App")
 
-    # Replace with your Google Sheet ID and sheet name
-    SPREADSHEET_ID = "1LsYe-R3uUUN1L00drh-_-KADsU04vTBr5soIGOf33o0"
-    SHEET_NAME = "Universities"
+    # Upload the file
+    uploaded_file = st.file_uploader("Choose your Excel file", type=["xlsx"])
 
-    # Load the data
-    df = load_data(SPREADSHEET_ID, SHEET_NAME)
+    if uploaded_file is not None:
+        # Read the uploaded file
+        df = pd.read_excel(uploaded_file)
 
-    # Filter by country
-    country = st.sidebar.selectbox("Select Country", options=df['Country'].unique())
-    
-    # Filter by city
-    city = st.sidebar.selectbox("Select City", options=df[df['Country'] == country]['City'].unique())
-    
-    # Filter by max tuition
-    max_tuition = st.sidebar.slider("Max Tuition", min_value=int(df['Tuition'].min()), max_value=int(df['Tuition'].max()))
+        # Clean the data
+        cleaned_df = clean_data(df)
 
-    # Filter the DataFrame
-    filtered_df = df[(df['Country'] == country) & 
-                     (df['City'] == city) & 
-                     (df['Tuition'] <= max_tuition)]
-    
-    # Display the filtered data
-    st.dataframe(filtered_df)
+        # Display the cleaned data
+        st.write("Cleaned Data:")
+        st.dataframe(cleaned_df)
+
+        # Save the cleaned data to a new CSV file
+        csv = cleaned_df.to_csv(index=False)
+        st.download_button(
+            label="Download Cleaned Data as CSV",
+            data=csv,
+            file_name='cleaned_universities_data.csv',
+            mime='text/csv',
+        )
 
 if __name__ == "__main__":
     main()

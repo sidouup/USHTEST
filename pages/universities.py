@@ -27,7 +27,12 @@ def load_data(spreadsheet_id, sheet_name):
     df['Country'] = df['Location'].apply(lambda x: x.split(", ")[-1])
     
     # Clean the Tuition column by removing non-numeric characters and converting to integer
-    df['Tuition'] = df['Tuition'].apply(lambda x: int(re.sub(r'[^\d]', '', x.split('/')[0])))
+    # Handle cases where the value is empty or invalid
+    def clean_tuition(tuition):
+        tuition_cleaned = re.sub(r'[^\d]', '', tuition.split('/')[0])
+        return int(tuition_cleaned) if tuition_cleaned else None
+
+    df['Tuition'] = df['Tuition'].apply(clean_tuition)
     
     return df
 

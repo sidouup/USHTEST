@@ -32,6 +32,8 @@ def clean_data(df):
             return "University"
         elif "college" in name.lower():
             return "College"
+        elif "institute" in name.lower():
+            return "Institute"
         else:
             return "Other"
 

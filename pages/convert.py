@@ -1,12 +1,17 @@
 import streamlit as st
 import pandas as pd
 from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.messages import HumanMessage
 
 # Retrieve the API key from Streamlit secrets
 api_key = st.secrets["API_KEY_gemini"]
 
 # Initialize the Google Gemini model with the updated model version and API key
-llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=api_key)
+try:
+    llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=api_key)
+except Exception as e:
+    st.error(f"Failed to initialize Google Gemini model: {e}")
+    st.stop()
 
 # Define the list of big majors
 big_majors = [
@@ -25,11 +30,19 @@ big_majors = [
 
 def classify_specialty(specialty):
     prompt = [
-        ("system", "Classify the following specialty into one of the predefined majors:"),
-        ("human", specialty)
+        HumanMessage(
+            content=[
+                {"type": "text", "text": "Classify the following specialty into one of the predefined majors:"},
+                {"type": "text", "text": specialty}
+            ]
+        )
     ]
-    response = llm.invoke(prompt)
-    return response.content.strip()
+    try:
+        response = llm.invoke(prompt)
+        return response.content.strip()
+    except Exception as e:
+        st.error(f"Failed to classify specialty '{specialty}': {e}")
+        return "Error"
 
 # Streamlit App
 st.title("Specialty Classification App")

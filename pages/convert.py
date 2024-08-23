@@ -30,14 +30,14 @@ big_majors = [
     "Human Resources Management", "Anthropology", "Industrial Engineering",
     "Aerospace Engineering", "Journalism", "Fine Arts", "Culinary Arts", "Computer Engineering",
     "Pharmacy", "Cybersecurity", "Music", "Public Relations", "Software Engineering",
-    "Data Science", "Linguistics", "Theater Arts", "Biochemistry", "Urban Planning"
+    "Data Science", "Linguistics", "Theater Arts", "Biochemistry", "Urban Planning", "Artificial Intelligence"
 ]
 
 def classify_specialty(specialty):
     prompt = [
         HumanMessage(
             content=[
-                {"type": "text", "text": "Classify the following specialty into one of the predefined majors:"},
+                {"type": "text", "text": "Classify the following specialty into one of the predefined majors.answer only by the major name dont give any explanation or any thing else . give back as an output only the major selected . if it does not fit on any of the majors give back (Other) . /n majors :"},
                 {"type": "text", "text": specialty}
             ]
         )

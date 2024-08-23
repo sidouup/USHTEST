@@ -80,7 +80,7 @@ def main():
         border-radius: 10px;
         padding: 15px;
         margin-bottom: 20px;
-        height: 450px;  /* Fixed height for all cards */
+        height: 480px;  /* Increased height */
         display: flex;
         flex-direction: column;
         transition: all 0.3s ease;
@@ -94,8 +94,8 @@ def main():
     .university-header {
         display: flex;
         align-items: center;
-        margin-bottom: 10px;
-        height: 60px;  /* Fixed height for header */
+        margin-bottom: 15px;
+        height: 60px;
     }
     
     .university-logo {
@@ -110,22 +110,17 @@ def main():
         font-weight: bold;
         color: #333333;
         flex-grow: 1;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
     }
     
     .speciality-name {
         font-size: 14px;
-        margin-bottom: 10px;
+        margin-bottom: 15px;
         color: #555555;
-        height: 60px;  /* Fixed height for speciality */
+        height: 80px;  /* Increased height */
         overflow: hidden;
         text-overflow: ellipsis;
         display: -webkit-box;
-        -webkit-line-clamp: 3;
+        -webkit-line-clamp: 4;  /* Increased to 4 lines */
         -webkit-box-orient: vertical;
     }
     
@@ -145,7 +140,7 @@ def main():
     }
     
     .create-application-btn {
-        background-color: #007bff;
+        background-color: #1e88e5;  /* Updated blue color */
         color: white;
         padding: 10px 15px;
         border-radius: 5px;
@@ -158,12 +153,12 @@ def main():
     }
     
     .create-application-btn:hover {
-        background-color: #0056b3;
+        background-color: #1565c0;  /* Darker blue on hover */
     }
     
     .prime-tags {
         margin-bottom: 10px;
-        height: 25px;  /* Fixed height for tags */
+        height: 25px;
         overflow: hidden;
     }
     
@@ -179,7 +174,7 @@ def main():
     }
     
     .stButton > button {
-        background-color: #007bff;
+        background-color: #1e88e5;  /* Updated blue color */
         color: white;
         border: none;
         border-radius: 5px;
@@ -189,7 +184,7 @@ def main():
     }
     
     .stButton > button:hover {
-        background-color: #0056b3;
+        background-color: #1565c0;  /* Darker blue on hover */
     }
     
     .pagination {
@@ -274,57 +269,57 @@ def main():
         end_idx = start_idx + items_per_page
 
         # Display results
-        st.subheader(f"Showing {len(filtered_df)} results")
-        
-        # Create four columns for displaying university cards
-        for i in range(0, min(items_per_page, len(filtered_df) - start_idx), 4):
-            cols = st.columns(4)
-            for j in range(4):
-                if i + j < len(filtered_df[start_idx:end_idx]):
-                    row = filtered_df.iloc[start_idx + i + j]
-                    with cols[j]:
-                        prime_tags = [row[f'prime {k}'] for k in range(2, 6) if pd.notna(row[f'prime {k}'])]
-                        prime_tags_html = ''.join([f'<span class="prime-tag">{tag}</span>' for tag in prime_tags])
-                        
-                        st.markdown(f'''
-                        <div class="university-card">
-                            <div class="university-header">
-                                <img src="{row['Picture']}" class="university-logo" alt="{row['University Name']} logo">
-                                <div class="university-name">{row['University Name']}</div>
-                            </div>
-                            <div class="speciality-name">{row['Speciality']}</div>
-                            <div class="prime-tags">{prime_tags_html}</div>
-                            <div class="info-container">
-                                <div>
-                                    <div class="info-row">
-                                        <span>Location:</span>
-                                        <span>{row['City']}, {row['Country']}</span>
-                                    </div>
-                                    <div class="info-row">
-                                        <span>Tuition:</span>
-                                        <span>${row['Tuition Price']:,.0f} {row['Tuition Currency']}/Year</span>
-                                    </div>
-                                    <div class="info-row">
-                                        <span>Application fee:</span>
-                                        <span>${row['Application Fee Price']:,.0f} {row['Application Fee Currency']}</span>
-                                    </div>
-                                    <div class="info-row">
-                                        <span>Duration:</span>
-                                        <span>{row['Duration']}</span>
-                                    </div>
-                                    <div class="info-row">
-                                        <span>Level:</span>
-                                        <span>{row['Level']}</span>
-                                    </div>
-                                    <div class="info-row">
-                                        <span>Field:</span>
-                                        <span>{row['Field']}</span>
-                                    </div>
-                                </div>
-                                <a href="{row['Link']}" class="create-application-btn" target="_blank">Apply Now</a>
-                            </div>
+    st.subheader(f"Showing {len(filtered_df)} results")
+    
+    # Create four columns for displaying university cards
+    for i in range(0, min(items_per_page, len(filtered_df) - start_idx), 4):
+        cols = st.columns(4)
+        for j in range(4):
+            if i + j < len(filtered_df[start_idx:end_idx]):
+                row = filtered_df.iloc[start_idx + i + j]
+                with cols[j]:
+                    prime_tags = [row[f'prime {k}'] for k in range(2, 6) if pd.notna(row[f'prime {k}'])]
+                    prime_tags_html = ''.join([f'<span class="prime-tag">{tag}</span>' for tag in prime_tags])
+                    
+                    st.markdown(f'''
+                    <div class="university-card">
+                        <div class="university-header">
+                            <img src="{row['Picture']}" class="university-logo" alt="{row['University Name']} logo">
+                            <div class="university-name">{row['University Name']}</div>
                         </div>
-                        ''', unsafe_allow_html=True)
+                        <div class="speciality-name">{row['Speciality']}</div>
+                        <div class="prime-tags">{prime_tags_html}</div>
+                        <div class="info-container">
+                            <div>
+                                <div class="info-row">
+                                    <span>Location:</span>
+                                    <span>{row['City']}, {row['Country']}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span>Tuition:</span>
+                                    <span>${row['Tuition Price']:,.0f} {row['Tuition Currency']}/Year</span>
+                                </div>
+                                <div class="info-row">
+                                    <span>Application fee:</span>
+                                    <span>${row['Application Fee Price']:,.0f} {row['Application Fee Currency']}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span>Duration:</span>
+                                    <span>{row['Duration']}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span>Level:</span>
+                                    <span>{row['Level']}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span>Field:</span>
+                                    <span>{row['Field']}</span>
+                                </div>
+                            </div>
+                            <a href="{row['Link']}" class="create-application-btn" target="_blank">Apply Now</a>
+                        </div>
+                    </div>
+                    ''', unsafe_allow_html=True)
 
         # Pagination controls
         col1, col2, col3 = st.columns([1,2,1])

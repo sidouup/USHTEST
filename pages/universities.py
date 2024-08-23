@@ -296,6 +296,51 @@ def main():
             (filtered_df['prime 5'].isin(prime))
         ]
     search_term = st.text_input("Search for Universities or Specialities")
+@st.dialog("More Filters")
+def show_more_filters(filtered_df):
+    institution_type = st.multiselect("Institution Type", options=filtered_df['Institution Type'].unique())
+    country = st.multiselect("Country", options=filtered_df['Country'].unique())
+    state = st.multiselect("State/Province", options=filtered_df['State/Province'].unique())
+    city = st.multiselect("City", options=filtered_df['City'].unique())
+    level = st.multiselect("Level", options=filtered_df['Level'].unique())
+    fields = st.multiselect("Field", options=filtered_df['Field'].unique())
+    majors = st.multiselect("Major", options=filtered_df['Major'].unique())
+    duration = st.multiselect("Duration", options=filtered_df['Duration'].unique())
+    tuition_min = st.number_input("Minimum Tuition Price", value=int(filtered_df['Tuition Price'].min()), step=100)
+    tuition_max = st.number_input("Maximum Tuition Price", value=int(filtered_df['Tuition Price'].max()), step=100)
+    application_fee_min = st.number_input("Minimum Application Fee", value=int(filtered_df['Application Fee Price'].min()), step=10)
+    application_fee_max = st.number_input("Maximum Application Fee", value=int(filtered_df['Application Fee Price'].max()), step=10)
+    prime = st.multiselect("Prime Benefits", options=['Incentivized', 'High Job Demand', 'Instant Offer', 'Popular'])
+
+    if st.button("Apply Filters"):
+        # Apply filters based on user selection in the dialog
+        if institution_type:
+            filtered_df = filtered_df[filtered_df['Institution Type'].isin(institution_type)]
+        if country:
+            filtered_df = filtered_df[filtered_df['Country'].isin(country)]
+        if state:
+            filtered_df = filtered_df[filtered_df['State/Province'].isin(state)]
+        if city:
+            filtered_df = filtered_df[filtered_df['City'].isin(city)]
+        if level:
+            filtered_df = filtered_df[filtered_df['Level'].isin(level)]
+        if fields:
+            filtered_df = filtered_df[filtered_df['Field'].isin(fields)]
+        if majors:
+            filtered_df = filtered_df[filtered_df['Major'].isin(majors)]
+        if duration:
+            filtered_df = filtered_df[filtered_df['Duration'].isin(duration)]
+        filtered_df = filtered_df[(filtered_df['Tuition Price'] >= tuition_min) & (filtered_df['Tuition Price'] <= tuition_max)]
+        filtered_df = filtered_df[(filtered_df['Application Fee Price'] >= application_fee_min) & (filtered_df['Application Fee Price'] <= application_fee_max)]
+        if prime:
+            filtered_df = filtered_df[
+                (filtered_df['prime 2'].isin(prime)) |
+                (filtered_df['prime 3'].isin(prime)) |
+                (filtered_df['prime 4'].isin(prime)) |
+                (filtered_df['prime 5'].isin(prime))
+            ]
+        st.session_state.filtered_df = filtered_df  # Store filtered results in session state
+        st.rerun()  # Close the dialog and update the app
 
     if apply_filters or search_term:
         if search_term:

@@ -34,14 +34,17 @@ big_majors = [
 ]
 
 def classify_specialty(specialty):
-    prompt = [
-        HumanMessage(
-            content=[
-                {"type": "text", "text": "Classify the following specialty into one of the predefined majors.answer only by the major name dont give any explanation or any thing else . give back as an output only the major selected . if it does not fit on any of the majors give back (Other) . /n majors :"},
-                {"type": "text", "text": specialty}
-            ]
-        )
-    ]
+    # Construct the full prompt text including the list of majors
+    majors_list = ", ".join(big_majors)  # Convert the list of majors into a comma-separated string
+    prompt_text = (
+        f"Classify the following specialty into one of the predefined majors. "
+        f"Answer only with the major name; don't give any explanation or anything else. "
+        f"If it does not fit into any of the majors, give back 'Other'. "
+        f"\nMajors: {majors_list}\nSpecialty: {specialty}"
+    )
+    
+    prompt = [HumanMessage(content=prompt_text)]
+    
     try:
         response = llm.invoke(prompt)
         return response.content.strip()

@@ -347,5 +347,5 @@ def main():
                     st.session_state.current_page += 1
                     st.rerun()
     
-    if __name__ == "__main__":
-        main()
+if __name__ == "__main__":
+    main()

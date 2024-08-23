@@ -78,9 +78,14 @@ def main():
     if level:
         filtered_df = filtered_df[filtered_df['Level'].isin(level)]
 
-    speciality = st.multiselect("Speciality", options=filtered_df['Adjusted Speciality'].unique())
-    if speciality:
-        filtered_df = filtered_df[filtered_df['Adjusted Speciality'].isin(speciality)]
+    # Add filters for Fields and Majors
+    fields = st.multiselect("Field", options=filtered_df['Field'].unique())
+    if fields:
+        filtered_df = filtered_df[filtered_df['Field'].isin(fields)]
+    
+    majors = st.multiselect("Major", options=filtered_df['Adjusted Speciality'].unique())
+    if majors:
+        filtered_df = filtered_df[filtered_df['Adjusted Speciality'].isin(majors)]
 
     duration = st.multiselect("Duration", options=filtered_df['Duration'].unique())
     if duration:

@@ -83,8 +83,8 @@ def classify_specialty(specialty, max_retries=3):
     prompt_text = (
         "Classify the following specialty into one of the predefined fields and suggest a specific major within it. "
         "Answer in the format: Field - Major. "
-        "If it does not fit into any of the fields, return 'Unclassified - {specialty}'.\n"
-        "but try to fit them all into one of the majors . try to use unclassify as the last resort"
+        "If it does not fit into any of the fields, return 'Unclassified - {specialty}'. "
+        "Try to fit them all into one of the majors, using 'Unclassified' only as a last resort.\n"
         f"Specialty: {specialty}\n"
         "Fields and Majors:\n"
     )
@@ -138,7 +138,7 @@ if uploaded_file:
         progress_bar = st.progress(0)
         status_text = st.empty()
         num_rows = len(df)
-        checkpoint_interval = num_rows // 10
+        checkpoint_interval = max(1, num_rows // 10)
         checkpoint_file = "checkpoint.csv"
 
         # Check if a checkpoint file exists to resume progress
@@ -176,4 +176,23 @@ if uploaded_file:
                     st.download_button(
                         label=f"Download CSV after {i + 1} rows",
                         data=partial_csv,
-                        file_name=f'partial_classified_specialities_{i + 1
+                        file_name=f'partial_classified_specialities_{i + 1}.csv',
+                        mime='text/csv'
+                    )
+
+        st.write("Classification Results:")
+        st.dataframe(df)
+
+        # Final download button
+        # Final download button for the full dataset
+        csv = df.to_csv(index=False)
+        st.download_button(
+            label="Download Final Results as CSV",
+            data=csv,
+            file_name='classified_specialities.csv',
+            mime='text/csv'
+        )
+
+        # Clear the checkpoint after successful completion
+        if os.path.exists(checkpoint_file):
+            os.remove(checkpoint_file)

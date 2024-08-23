@@ -92,9 +92,8 @@ fields_and_majors = {
 def reclassify_specialty(specialty, max_retries=3):
     # Construct the full prompt text including the list of fields and majors
     prompt_text = (
-        "Classify the following specialty into one of the predefined fields and suggest a specific major within it. "
+        "Classify the following specialty into one of the predefined fields"
         "Answer in the format: Field - Major. "
-        "Try to fit them all into one of the majors, using 'Unclassified' only as a last resort.\n"
         f"Specialty: {specialty}\n"
         "Fields and Majors:\n"
     )

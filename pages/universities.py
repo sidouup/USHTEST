@@ -83,9 +83,9 @@ def main():
     if fields:
         filtered_df = filtered_df[filtered_df['Field'].isin(fields)]
     
-    majors = st.multiselect("Major", options=filtered_df['Adjusted Speciality'].unique())
+    majors = st.multiselect("Major", options=filtered_df['Major'].unique())
     if majors:
-        filtered_df = filtered_df[filtered_df['Adjusted Speciality'].isin(majors)]
+        filtered_df = filtered_df[filtered_df['Major'].isin(majors)]
 
     duration = st.multiselect("Duration", options=filtered_df['Duration'].unique())
     if duration:

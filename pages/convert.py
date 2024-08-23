@@ -6,7 +6,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import os  # Import os for file handling
 
 # Retrieve the API key from Streamlit secrets
-api_key = st.secrets.get("API_KEY_gemini")
+api_key = st.secrets.get("api_key")
 if not api_key:
     st.error("API_KEY_gemini not found in Streamlit secrets. Please add it.")
     st.stop()

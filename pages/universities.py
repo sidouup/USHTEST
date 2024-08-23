@@ -50,7 +50,7 @@ def main():
         border-radius: 5px;
         padding: 10px;
         margin-bottom: 15px;
-        height: 100%;
+        height: 300px;  /* Set a fixed height */
         display: flex;
         flex-direction: column;
     }
@@ -63,14 +63,24 @@ def main():
         width: 60px;
         height: 60px;
         margin-right: 10px;
+        object-fit: contain;
     }
     .university-name {
         font-size: 16px;
         font-weight: bold;
+        flex-grow: 1;
     }
     .speciality-name {
         font-size: 14px;
         margin-bottom: 5px;
+        height: 40px;  /* Set a fixed height */
+        overflow: hidden;
+    }
+    .info-container {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
     }
     .info-row {
         display: flex;
@@ -81,13 +91,16 @@ def main():
     .create-application-btn {
         background-color: #1E90FF;
         color: white;
-        padding: 3px 6px;
+        padding: 5px 10px;
         border-radius: 3px;
         text-align: center;
         text-decoration: none;
-        display: inline-block;
+        display: block;
         font-size: 12px;
-        margin-top: auto;
+        margin-top: 10px;
+    }
+    .prime-tags {
+        margin-bottom: 5px;
     }
     .prime-tag {
         background-color: #FFD700;
@@ -108,7 +121,6 @@ def main():
     }
     </style>
     """, unsafe_allow_html=True)
-
     # Replace with your Google Sheet ID and sheet name
     SPREADSHEET_ID = "1gCxnCOhQRHtVdVMSiLaReBRJbCUz1Wn6-KJRZshneuM"
     SHEET_NAME = "cleaned_universities_data"
@@ -192,24 +204,28 @@ def main():
                             <div class="university-name">{row['University Name']}</div>
                         </div>
                         <div class="speciality-name">{row['Speciality']}</div>
-                        {prime_tags_html}
-                        <div class="info-row">
-                            <span>Location</span>
-                            <span>{row['City']}, {row['Country']}</span>
+                        <div class="prime-tags">{prime_tags_html}</div>
+                        <div class="info-container">
+                            <div>
+                                <div class="info-row">
+                                    <span>Location</span>
+                                    <span>{row['City']}, {row['Country']}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span>Tuition fee</span>
+                                    <span>${row['Tuition Price']:,.0f} {row['Tuition Currency']} / Year</span>
+                                </div>
+                                <div class="info-row">
+                                    <span>Application fee</span>
+                                    <span>${row['Application Fee Price']:,.0f} {row['Application Fee Currency']}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span>Duration</span>
+                                    <span>{row['Duration']}</span>
+                                </div>
+                            </div>
+                            <a href="{row['Link']}" class="create-application-btn" target="_blank">Create application</a>
                         </div>
-                        <div class="info-row">
-                            <span>Tuition fee</span>
-                            <span>${row['Tuition Price']:,.0f} {row['Tuition Currency']} / Year</span>
-                        </div>
-                        <div class="info-row">
-                            <span>Application fee</span>
-                            <span>${row['Application Fee Price']:,.0f} {row['Application Fee Currency']}</span>
-                        </div>
-                        <div class="info-row">
-                            <span>Duration</span>
-                            <span>{row['Duration']}</span>
-                        </div>
-                        <a href="{row['Link']}" class="create-application-btn" target="_blank">Create application</a>
                     </div>
                     ''', unsafe_allow_html=True)
 

@@ -3,9 +3,13 @@ import pandas as pd
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import os  # Import os for file handling
 
-# Retrieve the API key from Streamlit secrets (replace with your actual API key)
-api_key = st.secrets["api_key"]
+# Retrieve the API key from Streamlit secrets
+api_key = st.secrets.get("API_KEY_gemini")
+if not api_key:
+    st.error("API_KEY_gemini not found in Streamlit secrets. Please add it.")
+    st.stop()
 
 # Initialize the Google Gemini model with the updated model version and API key
 try:
@@ -64,7 +68,7 @@ if uploaded_file:
         checkpoint_file = "checkpoint.csv"
 
         # Check if a checkpoint file exists to resume progress
-        if 'resumed_from_checkpoint' in st.session_state and st.session_state['resumed_from_checkpoint'] and st.file_exists(checkpoint_file):
+        if 'resumed_from_checkpoint' in st.session_state and st.session_state['resumed_from_checkpoint'] and os.path.exists(checkpoint_file):
             df_checkpoint = pd.read_csv(checkpoint_file)
             df.update(df_checkpoint)
             start_index = df_checkpoint.shape[0]
@@ -104,5 +108,5 @@ if uploaded_file:
         )
 
         # Clear the checkpoint after successful completion
-        if st.file_exists(checkpoint_file):
-            st.file_remove(checkpoint_file)
+        if os.path.exists(checkpoint_file):
+            os.remove(checkpoint_file)

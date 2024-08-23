@@ -3,6 +3,7 @@ import gspread
 import pandas as pd
 from google.oauth2.service_account import Credentials
 from difflib import get_close_matches
+import math
 
 # Use your service account info from Streamlit secrets
 SERVICE_ACCOUNT_INFO = st.secrets["gcp_service_account"]
@@ -47,50 +48,63 @@ def main():
     .university-card {
         border: 1px solid #e0e0e0;
         border-radius: 5px;
-        padding: 15px;
+        padding: 10px;
         margin-bottom: 15px;
+        height: 100%;
         display: flex;
+        flex-direction: column;
+    }
+    .university-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
     }
     .university-logo {
-        width: 80px;
-        height: 80px;
-        margin-right: 15px;
-    }
-    .university-info {
-        flex-grow: 1;
+        width: 60px;
+        height: 60px;
+        margin-right: 10px;
     }
     .university-name {
-        font-size: 18px;
+        font-size: 16px;
         font-weight: bold;
-        margin-bottom: 5px;
     }
     .speciality-name {
-        font-size: 16px;
-        margin-bottom: 10px;
+        font-size: 14px;
+        margin-bottom: 5px;
     }
     .info-row {
         display: flex;
         justify-content: space-between;
-        margin-bottom: 5px;
+        margin-bottom: 3px;
+        font-size: 12px;
     }
     .create-application-btn {
         background-color: #1E90FF;
         color: white;
-        padding: 5px 10px;
-        border-radius: 5px;
+        padding: 3px 6px;
+        border-radius: 3px;
         text-align: center;
         text-decoration: none;
         display: inline-block;
-        font-size: 14px;
-        margin-top: 10px;
+        font-size: 12px;
+        margin-top: auto;
     }
     .prime-tag {
         background-color: #FFD700;
         color: black;
-        padding: 2px 5px;
-        border-radius: 3px;
-        font-size: 12px;
-        margin-right: 5px;
+        padding: 1px 3px;
+        border-radius: 2px;
+        font-size: 10px;
+        margin-right: 3px;
+        display: inline-block;
+    }
+    .pagination {
+        display: flex;
+        justify-content: center;
+        margin-top: 20px;
+    }
+    .pagination-btn {
+        margin: 0 10px;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -148,44 +162,71 @@ def main():
     else:
         filtered_df = df
 
+    # Pagination
+    items_per_page = 32
+    total_pages = math.ceil(len(filtered_df) / items_per_page)
+    
+    if 'current_page' not in st.session_state:
+        st.session_state.current_page = 1
+
+    start_idx = (st.session_state.current_page - 1) * items_per_page
+    end_idx = start_idx + items_per_page
+
     # Display results
     st.subheader(f"Showing {len(filtered_df)} results")
     
-    # Create two columns for displaying university cards
-    col1, col2 = st.columns(2)
+    # Create four columns for displaying university cards
+    for i in range(0, min(items_per_page, len(filtered_df) - start_idx), 4):
+        cols = st.columns(4)
+        for j in range(4):
+            if i + j < len(filtered_df[start_idx:end_idx]):
+                row = filtered_df.iloc[start_idx + i + j]
+                with cols[j]:
+                    prime_tags = [row[f'prime {k}'] for k in range(2, 6) if pd.notna(row[f'prime {k}'])]
+                    prime_tags_html = ''.join([f'<span class="prime-tag">{tag}</span>' for tag in prime_tags])
+                    
+                    st.markdown(f"""
+                    <div class="university-card">
+                        <div class="university-header">
+                            <img src="{row['Picture']}" class="university-logo" alt="{row['University Name']} logo">
+                            <div class="university-name">{row['University Name']}</div>
+                        </div>
+                        <div class="speciality-name">{row['Speciality']}</div>
+                        {prime_tags_html}
+                        <div class="info-row">
+                            <span>Location</span>
+                            <span>{row['City']}, {row['Country']}</span>
+                        </div>
+                        <div class="info-row">
+                            <span>Tuition fee</span>
+                            <span>${row['Tuition Price']:,.0f} {row['Tuition Currency']} / Year</span>
+                        </div>
+                        <div class="info-row">
+                            <span>Application fee</span>
+                            <span>${row['Application Fee Price']:,.0f} {row['Application Fee Currency']}</span>
+                        </div>
+                        <div class="info-row">
+                            <span>Duration</span>
+                            <span>{row['Duration']}</span>
+                        </div>
+                        <a href="{row['Link']}" class="create-application-btn" target="_blank">Create application</a>
+                    </div>
+                    ''', unsafe_allow_html=True)
+
+    # Pagination controls
+    st.markdown('<div class="pagination">', unsafe_allow_html=True)
+    if st.session_state.current_page > 1:
+        if st.button("Previous", key="prev_button"):
+            st.session_state.current_page -= 1
+            st.experimental_rerun()
     
-    for index, row in filtered_df.iterrows():
-        with col1 if index % 2 == 0 else col2:
-            prime_tags = [row[f'prime {i}'] for i in range(2, 6) if pd.notna(row[f'prime {i}'])]
-            prime_tags_html = ''.join([f'<span class="prime-tag">{tag}</span>' for tag in prime_tags])
-            
-            st.markdown(f"""
-            <div class="university-card">
-                <img src="{row['Picture']}" class="university-logo" alt="{row['University Name']} logo">
-                <div class="university-info">
-                    <div class="university-name">{row['University Name']}</div>
-                    <div class="speciality-name">{row['Speciality']}</div>
-                    {prime_tags_html}
-                    <div class="info-row">
-                        <span>Location</span>
-                        <span>{row['City']}, {row['Country']}</span>
-                    </div>
-                    <div class="info-row">
-                        <span>Tuition fee</span>
-                        <span>${row['Tuition Price']:,.0f} {row['Tuition Currency']} / Year</span>
-                    </div>
-                    <div class="info-row">
-                        <span>Application fee</span>
-                        <span>${row['Application Fee Price']:,.0f} {row['Application Fee Currency']}</span>
-                    </div>
-                    <div class="info-row">
-                        <span>Duration</span>
-                        <span>{row['Duration']}</span>
-                    </div>
-                    <a href="{row['Link']}" class="create-application-btn" target="_blank">Create application</a>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+    st.markdown(f'<span>Page {st.session_state.current_page} of {total_pages}</span>', unsafe_allow_html=True)
+    
+    if st.session_state.current_page < total_pages:
+        if st.button("Next", key="next_button"):
+            st.session_state.current_page += 1
+            st.experimental_rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()

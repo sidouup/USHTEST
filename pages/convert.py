@@ -162,9 +162,9 @@ if uploaded_file:
                     df.at[i, 'Field'] = field
                     df.at[i, 'Major'] = major
 
-                    # Update progress bar and status text
-                    num_processed = len(df[df['Field'] != "Unclassified"])
-                    progress_percentage = num_processed / num_unclassified
+                    # Calculate the progress percentage
+                    num_processed = num_unclassified - df[df['Field'] == "Unclassified"].shape[0]
+                    progress_percentage = num_processed / num_unclassified if num_unclassified > 0 else 1
                     progress_bar.progress(progress_percentage)
                     status_text.text(f"Reclassifying row {i + 1}/{num_unclassified}")  # Show the current row number being processed
 
@@ -196,7 +196,6 @@ if uploaded_file:
         total_majors = df['Major'].nunique() - (1 if "Unclassified" in df['Major'].unique() else 0)  # Exclude 'Unclassified'
 
         st.write(f"Total classified entries: {total_classified}")
-        st.write(f"Total unclassified entries: {total_unclassified}")
         st.write(f"Total unclassified entries: {total_unclassified}")
         st.write(f"Total number of unique fields (excluding 'Unclassified'): {total_fields}")
         st.write(f"Total number of unique majors (excluding 'Unclassified'): {total_majors}")

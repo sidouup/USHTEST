@@ -78,7 +78,7 @@ def main():
         border-radius: 10px;
         padding: 15px;
         margin-bottom: 20px;
-        height: 100%;  /* Allow height to adjust based on content */
+        min-height: 500px;  /* Fixed height for consistent card size */
         display: flex;
         flex-direction: column;
         justify-content: space-between;
@@ -108,20 +108,21 @@ def main():
         font-weight: bold;
         color: #333333;
         flex-grow: 1;
-        text-align: center; /* Center-align the text */
+        text-align: center;
     }
     
     .speciality-name {
         font-size: 1rem;
         margin-bottom: 15px;
         color: #555555;
-        height: auto;  /* Allow dynamic height */
+        height: auto;
         overflow: hidden;
         text-overflow: ellipsis;
         display: -webkit-box;
         -webkit-line-clamp: 4;
         -webkit-box-orient: vertical;
-        text-align: center; /* Center-align the text */
+        text-align: center;
+        text-decoration: underline;  /* Underline specialty names */
     }
     
     .info-container {
@@ -129,7 +130,7 @@ def main():
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-        font-size: 0.9rem; /* Slightly smaller text for info rows */
+        font-size: 0.9rem;
     }
     
     .info-row {
@@ -151,7 +152,6 @@ def main():
         font-size: 1rem;
         margin-top: 10px;
         transition: background-color 0.3s ease;
-        text-align: center;
     }
     
     .create-application-btn:hover {
@@ -161,8 +161,8 @@ def main():
     .prime-tags {
         margin-bottom: 10px;
         display: flex;
-        flex-wrap: wrap; /* Allow tags to wrap in smaller spaces */
-        justify-content: center; /* Center-align the tags */
+        flex-wrap: wrap;
+        justify-content: center;
     }
     
     .prime-tag {
@@ -203,9 +203,9 @@ def main():
     }
     
     h1, h2, h3 {
-        text-align: center; /* Center-align headings */
+        text-align: center;
         font-weight: bold;
-        text-decoration: underline; /* Underline headings */
+        text-decoration: underline;
     }
     </style>
     """, unsafe_allow_html=True)

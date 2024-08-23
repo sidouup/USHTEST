@@ -115,11 +115,10 @@ def main():
         font-size: 1rem;
         margin-bottom: 15px;
         color: #555555;
-        height: auto;
         overflow: hidden;
         text-overflow: ellipsis;
         display: -webkit-box;
-        -webkit-line-clamp: 4;
+        -webkit-line-clamp: 2; /* Limit to two lines */
         -webkit-box-orient: vertical;
         text-align: center;
         text-decoration: underline;  /* Underline specialty names */
@@ -139,6 +138,10 @@ def main():
         margin-bottom: 5px;
         font-size: 0.85rem;
         color: #666666;
+    }
+    
+    .info-row span:first-child {
+        font-weight: bold; /* Make labels bold */
     }
     
     .create-application-btn {
@@ -163,6 +166,8 @@ def main():
         display: flex;
         flex-wrap: wrap;
         justify-content: center;
+        height: 30px; /* Fixed height for consistency */
+        align-items: center; /* Vertically align tags */
     }
     
     .prime-tag {

@@ -4,7 +4,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage
 
 # Retrieve the API key from Streamlit secrets
-api_key = st.secrets["API_KEY_gemini"]
+api_key = "AIzaSyClAmS1EZoPISDpdGJ4_Wti60TwNAqOLFQ"
 
 # Initialize the Google Gemini model with the updated model version and API key
 try:

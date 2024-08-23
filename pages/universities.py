@@ -36,15 +36,7 @@ def fuzzy_search(term, options):
     matches = get_close_matches(term.lower(), options, n=5, cutoff=0.3)
     return matches
 
-def main():
-import streamlit as st
-import gspread
-import pandas as pd
-from google.oauth2.service_account import Credentials
-from difflib import get_close_matches
-import math
 
-# ... (keep the existing functions and setup code) ...
 
 def main():
     st.set_page_config(layout="wide", page_title="University Search Tool")

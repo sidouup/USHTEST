@@ -231,15 +231,18 @@ def main():
     # Load the data
     df = load_data(SPREADSHEET_ID, SHEET_NAME)
 
-    # Create navigation pages
-    page_names = ["Search", "About"]  # Add more pages if needed
+    # Create navigation pages - CORRECTED
+    search_page = st.Page("Search") 
+    about_page = st.Page("About") 
+    page_names = [search_page, about_page]  # List of st.Page objects
+
     st.navigation(page_names)
 
     # Page content
-    if st.session_state.page == page_names[0]:
-        search_page(df)
-    elif st.session_state.page == page_names[1]:  # "About" page
-        about_page()
+    if st.session_state.page == search_page: 
+        search_page_content(df)  # Call the function to display content for the search page
+    elif st.session_state.page == about_page: 
+        about_page_content()  # Call the function to display content for the about page
 
 def search_page(df):
     # Sidebar for filters

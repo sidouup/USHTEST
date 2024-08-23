@@ -151,7 +151,8 @@ def main():
     
     .create-application-btn {
         background-color: #1e88e5;
-        color: white;
+        color: white;  /* Set text color to white */
+        font-weight: bold;  /* Set text to bold */
         padding: 10px 15px;
         border-radius: 5px;
         text-align: center;

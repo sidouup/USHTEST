@@ -56,6 +56,12 @@ def main():
     
     .sidebar .sidebar-content {
         background-color: #f8f9fa;
+        padding: 10px;
+    }
+    
+    [data-testid="stSidebar"] {
+        min-width: 200px !important;
+        max-width: 200px !important;
     }
     
     .stSelectbox, .stMultiSelect, .stSlider {
@@ -72,7 +78,7 @@ def main():
         border-radius: 10px;
         padding: 15px;
         margin-bottom: 20px;
-        height: 300px;
+        height: 400px;  /* Increased height */
         display: flex;
         flex-direction: column;
         transition: all 0.3s ease;
@@ -90,23 +96,21 @@ def main():
     }
     
     .university-logo {
-        width: 50px;
-        height: 50px;
+        width: 60px;
+        height: 60px;
         margin-right: 10px;
         object-fit: contain;
     }
     
     .university-name {
-        font-size: 16px;
+        font-size: 18px;
         font-weight: bold;
         color: #333333;
     }
     
     .speciality-name {
-        font-size: 14px;
-        margin-bottom: 5px;
-        height: 40px;
-        overflow: hidden;
+        font-size: 16px;
+        margin-bottom: 10px;
         color: #555555;
     }
     
@@ -120,21 +124,21 @@ def main():
     .info-row {
         display: flex;
         justify-content: space-between;
-        margin-bottom: 3px;
-        font-size: 12px;
+        margin-bottom: 5px;
+        font-size: 14px;
         color: #666666;
     }
     
     .create-application-btn {
         background-color: #007bff;
         color: white;
-        padding: 8px 12px;
+        padding: 10px 15px;
         border-radius: 5px;
         text-align: center;
         text-decoration: none;
         display: block;
-        font-size: 14px;
-        margin-top: 10px;
+        font-size: 16px;
+        margin-top: 15px;
         transition: background-color 0.3s ease;
     }
     
@@ -143,16 +147,16 @@ def main():
     }
     
     .prime-tags {
-        margin-bottom: 5px;
+        margin-bottom: 10px;
     }
     
     .prime-tag {
         background-color: #ffd700;
         color: #333333;
-        padding: 2px 6px;
+        padding: 3px 8px;
         border-radius: 3px;
-        font-size: 10px;
-        margin-right: 3px;
+        font-size: 12px;
+        margin-right: 5px;
         display: inline-block;
     }
     
@@ -192,123 +196,136 @@ def main():
     df = load_data(SPREADSHEET_ID, SHEET_NAME)
 
     # Sidebar for filters
-    with st.sidebar:
-        st.title("Filters")
+    sidebar_col, main_col = st.columns([1, 5])
+
+    # Sidebar for filters
+    with sidebar_col:
+        st.sidebar.title("Filters")
         
-        location = st.selectbox("Location", ["All"] + sorted(df['Country'].unique().tolist()))
-        program_level = st.selectbox("Program level", ["All"] + sorted(df['Level'].unique().tolist()))
-        field_of_study = st.selectbox("Field of study", ["All"] + sorted(df['Field'].unique().tolist()))
+        location = st.sidebar.selectbox("Location", ["All"] + sorted(df['Country'].unique().tolist()))
+        program_level = st.sidebar.selectbox("Program level", ["All"] + sorted(df['Level'].unique().tolist()))
+        field_of_study = st.sidebar.selectbox("Field of study", ["All"] + sorted(df['Field'].unique().tolist()))
         
-        tuition_min, tuition_max = st.slider(
+        tuition_min, tuition_max = st.sidebar.slider(
             "Tuition fee range",
             min_value=int(df['Tuition Price'].min()),
             max_value=int(df['Tuition Price'].max()),
             value=(int(df['Tuition Price'].min()), int(df['Tuition Price'].max()))
         )
         
-        apply_filters = st.button("Apply filters")
+        apply_filters = st.sidebar.button("Apply filters")
 
     # Main content area
-    st.title("University Search Tool")
+    with main_col:
+        st.title("University Search Tool")
 
-    # Search bar
-    search_term = st.text_input("Search for Universities or Specialities")
+        # Search bar
+        search_term = st.text_input("Search for Universities or Specialities")
 
-    # Apply filters
-    if apply_filters or search_term:
-        filtered_df = df.copy()
-        
-        if search_term:
-            university_matches = fuzzy_search(search_term, filtered_df['University Name'].str.lower())
-            speciality_matches = fuzzy_search(search_term, filtered_df['Adjusted Speciality'].str.lower())
-            filtered_df = filtered_df[filtered_df['University Name'].str.lower().isin(university_matches) |
-                                      filtered_df['Adjusted Speciality'].str.lower().isin(speciality_matches)]
-        
-        if location != "All":
-            filtered_df = filtered_df[filtered_df['Country'] == location]
-        
-        if program_level != "All":
-            filtered_df = filtered_df[filtered_df['Level'] == program_level]
-        
-        if field_of_study != "All":
-            filtered_df = filtered_df[filtered_df['Field'] == field_of_study]
-        
-        filtered_df = filtered_df[(filtered_df['Tuition Price'] >= tuition_min) & (filtered_df['Tuition Price'] <= tuition_max)]
-    else:
-        filtered_df = df
+        # Apply filters
+        if apply_filters or search_term:
+            filtered_df = df.copy()
+            
+            if search_term:
+                university_matches = fuzzy_search(search_term, filtered_df['University Name'].str.lower())
+                speciality_matches = fuzzy_search(search_term, filtered_df['Adjusted Speciality'].str.lower())
+                filtered_df = filtered_df[filtered_df['University Name'].str.lower().isin(university_matches) |
+                                          filtered_df['Adjusted Speciality'].str.lower().isin(speciality_matches)]
+            
+            if location != "All":
+                filtered_df = filtered_df[filtered_df['Country'] == location]
+            
+            if program_level != "All":
+                filtered_df = filtered_df[filtered_df['Level'] == program_level]
+            
+            if field_of_study != "All":
+                filtered_df = filtered_df[filtered_df['Field'] == field_of_study]
+            
+            filtered_df = filtered_df[(filtered_df['Tuition Price'] >= tuition_min) & (filtered_df['Tuition Price'] <= tuition_max)]
+        else:
+            filtered_df = df
 
-    # Pagination
-    items_per_page = 32
-    total_pages = math.ceil(len(filtered_df) / items_per_page)
-    
-    if 'current_page' not in st.session_state:
-        st.session_state.current_page = 1
+        # Pagination
+        items_per_page = 12  # Reduced number of items per page
+        total_pages = math.ceil(len(filtered_df) / items_per_page)
+        
+        if 'current_page' not in st.session_state:
+            st.session_state.current_page = 1
 
-    start_idx = (st.session_state.current_page - 1) * items_per_page
-    end_idx = start_idx + items_per_page
+        start_idx = (st.session_state.current_page - 1) * items_per_page
+        end_idx = start_idx + items_per_page
 
-    # Display results
-    st.subheader(f"Showing {len(filtered_df)} results")
-    
-    # Create four columns for displaying university cards
-    for i in range(0, min(items_per_page, len(filtered_df) - start_idx), 4):
-        cols = st.columns(4)
-        for j in range(4):
-            if i + j < len(filtered_df[start_idx:end_idx]):
-                row = filtered_df.iloc[start_idx + i + j]
-                with cols[j]:
-                    prime_tags = [row[f'prime {k}'] for k in range(2, 6) if pd.notna(row[f'prime {k}'])]
-                    prime_tags_html = ''.join([f'<span class="prime-tag">{tag}</span>' for tag in prime_tags])
-                    
-                    st.markdown(f'''
-                    <div class="university-card">
-                        <div class="university-header">
-                            <img src="{row['Picture']}" class="university-logo" alt="{row['University Name']} logo">
-                            <div class="university-name">{row['University Name']}</div>
-                        </div>
-                        <div class="speciality-name">{row['Speciality']}</div>
-                        <div class="prime-tags">{prime_tags_html}</div>
-                        <div class="info-container">
-                            <div>
-                                <div class="info-row">
-                                    <span>Location</span>
-                                    <span>{row['City']}, {row['Country']}</span>
-                                </div>
-                                <div class="info-row">
-                                    <span>Tuition fee</span>
-                                    <span>${row['Tuition Price']:,.0f} {row['Tuition Currency']} / Year</span>
-                                </div>
-                                <div class="info-row">
-                                    <span>Application fee</span>
-                                    <span>${row['Application Fee Price']:,.0f} {row['Application Fee Currency']}</span>
-                                </div>
-                                <div class="info-row">
-                                    <span>Duration</span>
-                                    <span>{row['Duration']}</span>
-                                </div>
+        # Display results
+        st.subheader(f"Showing {len(filtered_df)} results")
+        
+        # Create three columns for displaying university cards
+        for i in range(0, min(items_per_page, len(filtered_df) - start_idx), 3):
+            cols = st.columns(3)
+            for j in range(3):
+                if i + j < len(filtered_df[start_idx:end_idx]):
+                    row = filtered_df.iloc[start_idx + i + j]
+                    with cols[j]:
+                        prime_tags = [row[f'prime {k}'] for k in range(2, 6) if pd.notna(row[f'prime {k}'])]
+                        prime_tags_html = ''.join([f'<span class="prime-tag">{tag}</span>' for tag in prime_tags])
+                        
+                        st.markdown(f'''
+                        <div class="university-card">
+                            <div class="university-header">
+                                <img src="{row['Picture']}" class="university-logo" alt="{row['University Name']} logo">
+                                <div class="university-name">{row['University Name']}</div>
                             </div>
-                            <a href="{row['Link']}" class="create-application-btn" target="_blank">Apply Now</a>
+                            <div class="speciality-name">{row['Speciality']}</div>
+                            <div class="prime-tags">{prime_tags_html}</div>
+                            <div class="info-container">
+                                <div>
+                                    <div class="info-row">
+                                        <span>Location</span>
+                                        <span>{row['City']}, {row['Country']}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span>Tuition fee</span>
+                                        <span>${row['Tuition Price']:,.0f} {row['Tuition Currency']} / Year</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span>Application fee</span>
+                                        <span>${row['Application Fee Price']:,.0f} {row['Application Fee Currency']}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span>Duration</span>
+                                        <span>{row['Duration']}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span>Level</span>
+                                        <span>{row['Level']}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span>Field</span>
+                                        <span>{row['Field']}</span>
+                                    </div>
+                                </div>
+                                <a href="{row['Link']}" class="create-application-btn" target="_blank">Apply Now</a>
+                            </div>
                         </div>
-                    </div>
-                    ''', unsafe_allow_html=True)
+                        ''', unsafe_allow_html=True)
 
-    # Pagination controls
-    col1, col2, col3 = st.columns([1,2,1])
-    
-    with col1:
-        if st.session_state.current_page > 1:
-            if st.button("◀ Previous"):
-                st.session_state.current_page -= 1
-                st.rerun()
-    
-    with col2:
-        st.markdown(f'<div class="page-info">Page {st.session_state.current_page} of {total_pages}</div>', unsafe_allow_html=True)
-    
-    with col3:
-        if st.session_state.current_page < total_pages:
-            if st.button("Next ▶"):
-                st.session_state.current_page += 1
-                st.rerun()
+        # Pagination controls
+        col1, col2, col3 = st.columns([1,2,1])
+        
+        with col1:
+            if st.session_state.current_page > 1:
+                if st.button("◀ Previous"):
+                    st.session_state.current_page -= 1
+                    st.rerun()
+        
+        with col2:
+            st.markdown(f'<div class="page-info">Page {st.session_state.current_page} of {total_pages}</div>', unsafe_allow_html=True)
+        
+        with col3:
+            if st.session_state.current_page < total_pages:
+                if st.button("Next ▶"):
+                    st.session_state.current_page += 1
+                    st.rerun()
 
 if __name__ == "__main__":
     main()
+

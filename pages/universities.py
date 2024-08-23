@@ -37,7 +37,7 @@ def fuzzy_search(term, options):
     return matches
 
 def main():
-    st.set_page_config(layout="wide", page_title="Modern University Search Tool")
+    st.set_page_config(layout="wide", page_title="University Search Tool")
     
     # Custom CSS for styling
     st.markdown("""
@@ -156,27 +156,31 @@ def main():
         display: inline-block;
     }
     
-    .pagination {
-        display: flex;
-        justify-content: center;
-        margin-top: 20px;
-    }
-    
-    .pagination-btn {
-        margin: 0 10px;
-        padding: 5px 10px;
+    .stButton > button {
         background-color: #007bff;
         color: white;
         border: none;
         border-radius: 5px;
-        cursor: pointer;
+        padding: 5px 10px;
+        font-size: 14px;
         transition: background-color 0.3s ease;
     }
     
-    .pagination-btn:hover {
+    .stButton > button:hover {
         background-color: #0056b3;
     }
     
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 20px;
+    }
+    
+    .page-info {
+        margin: 0 10px;
+        font-size: 14px;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -189,26 +193,26 @@ def main():
 
     # Sidebar for filters
     with st.sidebar:
-        st.title("🎓 Filters")
+        st.title("Filters")
         
-        location = st.selectbox("🌎 Location", ["All"] + sorted(df['Country'].unique().tolist()))
-        program_level = st.selectbox("📚 Program level", ["All"] + sorted(df['Level'].unique().tolist()))
-        field_of_study = st.selectbox("🔬 Field of study", ["All"] + sorted(df['Field'].unique().tolist()))
+        location = st.selectbox("Location", ["All"] + sorted(df['Country'].unique().tolist()))
+        program_level = st.selectbox("Program level", ["All"] + sorted(df['Level'].unique().tolist()))
+        field_of_study = st.selectbox("Field of study", ["All"] + sorted(df['Field'].unique().tolist()))
         
         tuition_min, tuition_max = st.slider(
-            "💰 Tuition fee range",
+            "Tuition fee range",
             min_value=int(df['Tuition Price'].min()),
             max_value=int(df['Tuition Price'].max()),
             value=(int(df['Tuition Price'].min()), int(df['Tuition Price'].max()))
         )
         
-        apply_filters = st.button("🔍 Apply filters")
+        apply_filters = st.button("Apply filters")
 
     # Main content area
-    st.title("🏫 Modern University Search Tool")
+    st.title("University Search Tool")
 
     # Search bar
-    search_term = st.text_input("🔎 Search for Universities or Specialities")
+    search_term = st.text_input("Search for Universities or Specialities")
 
     # Apply filters
     if apply_filters or search_term:
@@ -289,19 +293,22 @@ def main():
                     ''', unsafe_allow_html=True)
 
     # Pagination controls
-    st.markdown('<div class="pagination">', unsafe_allow_html=True)
-    if st.session_state.current_page > 1:
-        if st.button("◀ Previous", key="prev_button", className="pagination-btn"):
-            st.session_state.current_page -= 1
-            st.rerun()
+    col1, col2, col3 = st.columns([1,2,1])
     
-    st.markdown(f'<span>Page {st.session_state.current_page} of {total_pages}</span>', unsafe_allow_html=True)
+    with col1:
+        if st.session_state.current_page > 1:
+            if st.button("◀ Previous"):
+                st.session_state.current_page -= 1
+                st.rerun()
     
-    if st.session_state.current_page < total_pages:
-        if st.button("Next ▶", key="next_button", className="pagination-btn"):
-            st.session_state.current_page += 1
-            st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
+    with col2:
+        st.markdown(f'<div class="page-info">Page {st.session_state.current_page} of {total_pages}</div>', unsafe_allow_html=True)
+    
+    with col3:
+        if st.session_state.current_page < total_pages:
+            if st.button("Next ▶"):
+                st.session_state.current_page += 1
+                st.rerun()
 
 if __name__ == "__main__":
     main()

@@ -36,8 +36,6 @@ def fuzzy_search(term, options):
     matches = get_close_matches(term.lower(), options, n=5, cutoff=0.3)
     return matches
 
-
-
 def main():
     st.set_page_config(layout="wide", page_title="University Search Tool")
     
@@ -80,9 +78,10 @@ def main():
         border-radius: 10px;
         padding: 15px;
         margin-bottom: 20px;
-        height: 480px;  /* Increased height */
+        height: 100%;  /* Allow height to adjust based on content */
         display: flex;
         flex-direction: column;
+        justify-content: space-between;
         transition: all 0.3s ease;
         box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     }
@@ -95,7 +94,6 @@ def main():
         display: flex;
         align-items: center;
         margin-bottom: 15px;
-        height: 60px;
     }
     
     .university-logo {
@@ -106,22 +104,24 @@ def main():
     }
     
     .university-name {
-        font-size: 16px;
+        font-size: 1.2rem;
         font-weight: bold;
         color: #333333;
         flex-grow: 1;
+        text-align: center; /* Center-align the text */
     }
     
     .speciality-name {
-        font-size: 14px;
+        font-size: 1rem;
         margin-bottom: 15px;
         color: #555555;
-        height: 80px;  /* Increased height */
+        height: auto;  /* Allow dynamic height */
         overflow: hidden;
         text-overflow: ellipsis;
         display: -webkit-box;
-        -webkit-line-clamp: 4;  /* Increased to 4 lines */
+        -webkit-line-clamp: 4;
         -webkit-box-orient: vertical;
+        text-align: center; /* Center-align the text */
     }
     
     .info-container {
@@ -129,37 +129,40 @@ def main():
         display: flex;
         flex-direction: column;
         justify-content: space-between;
+        font-size: 0.9rem; /* Slightly smaller text for info rows */
     }
     
     .info-row {
         display: flex;
         justify-content: space-between;
         margin-bottom: 5px;
-        font-size: 12px;
+        font-size: 0.85rem;
         color: #666666;
     }
     
     .create-application-btn {
-        background-color: #1e88e5;  /* Updated blue color */
+        background-color: #1e88e5;
         color: white;
         padding: 10px 15px;
         border-radius: 5px;
         text-align: center;
         text-decoration: none;
         display: block;
-        font-size: 14px;
+        font-size: 1rem;
         margin-top: 10px;
         transition: background-color 0.3s ease;
+        text-align: center;
     }
     
     .create-application-btn:hover {
-        background-color: #1565c0;  /* Darker blue on hover */
+        background-color: #1565c0;
     }
     
     .prime-tags {
         margin-bottom: 10px;
-        height: 25px;
-        overflow: hidden;
+        display: flex;
+        flex-wrap: wrap; /* Allow tags to wrap in smaller spaces */
+        justify-content: center; /* Center-align the tags */
     }
     
     .prime-tag {
@@ -167,24 +170,24 @@ def main():
         color: #333333;
         padding: 2px 6px;
         border-radius: 3px;
-        font-size: 10px;
+        font-size: 0.75rem;
         margin-right: 3px;
         margin-bottom: 3px;
         display: inline-block;
     }
     
     .stButton > button {
-        background-color: #1e88e5;  /* Updated blue color */
+        background-color: #1e88e5;
         color: white;
         border: none;
         border-radius: 5px;
         padding: 5px 10px;
-        font-size: 14px;
+        font-size: 1rem;
         transition: background-color 0.3s ease;
     }
     
     .stButton > button:hover {
-        background-color: #1565c0;  /* Darker blue on hover */
+        background-color: #1565c0;
     }
     
     .pagination {
@@ -196,7 +199,13 @@ def main():
     
     .page-info {
         margin: 0 10px;
-        font-size: 14px;
+        font-size: 1rem;
+    }
+    
+    h1, h2, h3 {
+        text-align: center; /* Center-align headings */
+        font-weight: bold;
+        text-decoration: underline; /* Underline headings */
     }
     </style>
     """, unsafe_allow_html=True)
@@ -321,7 +330,7 @@ def main():
                     </div>
                     ''', unsafe_allow_html=True)
 
-        # Pagination controls
+    # Pagination controls
     col1, col2, col3 = st.columns([1,2,1])
     
     with col1:
@@ -341,5 +350,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-

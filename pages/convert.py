@@ -2,9 +2,10 @@ import streamlit as st
 import pandas as pd
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Retrieve the API key from Streamlit secrets (replace with your actual API key)
-api_key = st.secrets["api_key"]
+api_key = st.secrets["API_KEY_gemini"]
 
 # Initialize the Google Gemini model with the updated model version and API key
 try:
@@ -55,7 +56,7 @@ if uploaded_file:
     if 'Adjusted Speciality' not in df.columns:
         st.error("The uploaded CSV must contain a column named 'Adjusted Speciality'.")
     else:
-        # Initialize progress bar
+        # Initialize progress bar and status text
         progress_bar = st.progress(0)
         status_text = st.empty()
         num_rows = len(df)
@@ -63,7 +64,7 @@ if uploaded_file:
         checkpoint_file = "checkpoint.csv"
 
         # Check if a checkpoint file exists to resume progress
-        if st.session_state.get('resumed_from_checkpoint', False) and st.file_exists(checkpoint_file):
+        if 'resumed_from_checkpoint' in st.session_state and st.session_state['resumed_from_checkpoint'] and st.file_exists(checkpoint_file):
             df_checkpoint = pd.read_csv(checkpoint_file)
             df.update(df_checkpoint)
             start_index = df_checkpoint.shape[0]
@@ -72,19 +73,24 @@ if uploaded_file:
             start_index = 0
             st.session_state['resumed_from_checkpoint'] = True
 
-        # Apply classification function with progress tracking
-        for i in range(start_index, num_rows):
-            df.at[i, 'Classified Major'] = classify_specialty(df.at[i, 'Adjusted Speciality'])
+        # Multitasking using ThreadPoolExecutor
+        with ThreadPoolExecutor(max_workers=5) as executor:  # Adjust max_workers based on your environment's capabilities
+            futures = {executor.submit(classify_specialty, df.at[i, 'Adjusted Speciality']): i for i in range(start_index, num_rows)}
 
-            # Update progress bar
-            if (i + 1) % checkpoint_interval == 0 or i == num_rows - 1:
-                progress_percentage = (i + 1) / num_rows
-                progress_bar.progress(progress_percentage)
-                status_text.text(f"Processing row {i + 1}/{num_rows}")
+            for future in as_completed(futures):
+                i = futures[future]
+                result = future.result()
+                df.at[i, 'Classified Major'] = result
 
-                # Save checkpoint every 10%
-                df.iloc[:i + 1].to_csv(checkpoint_file, index=False)
-        
+                # Update progress bar and status text
+                if (i + 1) % checkpoint_interval == 0 or i == num_rows - 1:
+                    progress_percentage = (i + 1) / num_rows
+                    progress_bar.progress(progress_percentage)
+                    status_text.text(f"Processing row {i + 1}/{num_rows}")
+
+                    # Save checkpoint every 10%
+                    df.iloc[:i + 1].to_csv(checkpoint_file, index=False)
+
         st.write("Classification Results:")
         st.dataframe(df)
 

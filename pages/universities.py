@@ -234,14 +234,14 @@ def main():
     if st.session_state.current_page > 1:
         if st.button("Previous", key="prev_button"):
             st.session_state.current_page -= 1
-            st.experimental_rerun()
+            st.rerun()
     
     st.markdown(f'<span>Page {st.session_state.current_page} of {total_pages}</span>', unsafe_allow_html=True)
     
     if st.session_state.current_page < total_pages:
         if st.button("Next", key="next_button"):
             st.session_state.current_page += 1
-            st.experimental_rerun()
+            st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
 if __name__ == "__main__":

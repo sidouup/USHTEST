@@ -225,26 +225,13 @@ def main():
     """, unsafe_allow_html=True)
 
     # Replace with your Google Sheet ID and sheet name
+    # Replace with your Google Sheet ID and sheet name
     SPREADSHEET_ID = "1gCxnCOhQRHtVdVMSiLaReBRJbCUz1Wn6-KJRZshneuM"
     SHEET_NAME = "cleaned_universities_data"
 
     # Load the data
     df = load_data(SPREADSHEET_ID, SHEET_NAME)
 
-    # Create navigation pages - CORRECTED
-    search_page = st.Page("Search") 
-    about_page = st.Page("About") 
-    page_names = [search_page, about_page]  # List of st.Page objects
-
-    st.navigation(page_names)
-
-    # Page content
-    if st.session_state.page == search_page: 
-        search_page_content(df)  # Call the function to display content for the search page
-    elif st.session_state.page == about_page: 
-        about_page_content()  # Call the function to display content for the about page
-
-def search_page(df):
     # Sidebar for filters
     sidebar_col, main_col = st.columns([1, 5])
 
@@ -264,7 +251,6 @@ def search_page(df):
         )
 
         apply_filters = st.sidebar.button("Apply filters")
-
 
     # Main content area
     st.title("University Search Tool")
@@ -363,18 +349,15 @@ def search_page(df):
         if st.session_state.current_page > 1:
             if st.button("◀ Previous"):
                 st.session_state.current_page -= 1
-                st.rerun()
+                st.experimental_rerun()  # Use experimental_rerun for now
     with col2:
         st.write(f"Page {st.session_state.current_page} of {total_pages}")
     with col3:
         if st.session_state.current_page < total_pages:
             if st.button("Next ▶"):
                 st.session_state.current_page += 1
-                st.rerun()
+                st.experimental_rerun()  # Use experimental_rerun for now
 
-def about_page():
-    st.title("About This Tool")
-    # Add your about page content here
 
 if __name__ == "__main__":
     main()

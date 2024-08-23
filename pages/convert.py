@@ -133,3 +133,4 @@ if uploaded_file:
         # Clear the checkpoint after successful completion
         if os.path.exists(checkpoint_file):
             os.remove(checkpoint_file)
+

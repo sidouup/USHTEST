@@ -197,3 +197,33 @@ if uploaded_file:
 
         st.write(f"Total classified entries: {total_classified}")
         st.write(f"Total unclassified entries: {total_unclassified}")
+        st.write(f"Total unclassified entries: {total_unclassified}")
+        st.write(f"Total number of unique fields (excluding 'Unclassified'): {total_fields}")
+        st.write(f"Total number of unique majors (excluding 'Unclassified'): {total_majors}")
+
+        # Display breakdown of classified fields and majors
+        classified_field_counts = df[df['Field'] != "Unclassified"]['Field'].value_counts().reset_index()
+        classified_field_counts.columns = ['Field', 'Count']
+        st.write("### Number of Specialties in Each Classified Field")
+        st.dataframe(classified_field_counts)
+
+        classified_major_counts = df[df['Field'] != "Unclassified"].groupby(['Field', 'Major']).size().reset_index(name='Count')
+        st.write("### Number of Specialties in Each Classified Major within Each Field")
+        st.dataframe(classified_major_counts)
+
+        # Display unclassified specialties if there are any
+        if total_unclassified > 0:
+            st.write("### Unclassified Specialties")
+            st.write("These specialties could not be classified even after reclassification attempts:")
+            st.dataframe(df[df['Field'] == "Unclassified"]['Adjusted Speciality'])
+
+        # Allow downloading of the final CSV with all classifications
+        final_csv = df.to_csv(index=False)
+        st.download_button(
+            label="Download Final Classified CSV",
+            data=final_csv,
+            file_name='final_classified_specialities.csv',
+            mime='text/csv'
+        )
+else:
+    st.info("Please upload a CSV file to proceed.")

@@ -228,6 +228,9 @@ def main():
     # Load the data
     df = load_data(SPREADSHEET_ID, SHEET_NAME)
 
+    # Initialize filtered_df with the full dataset to avoid UnboundLocalError
+    filtered_df = df.copy()
+
     # Main container for filters
     with st.container():
         col1, col2, col3, col4, col5 = st.columns(5)
@@ -247,32 +250,24 @@ def main():
         with col5:
             apply_filters = st.button("Apply filters")
 
-    # Main content area
-    st.title("University Search Tool")
-
-    # Search bar
-    search_term = st.text_input("Search for Universities or Specialities")
-
-    # Apply filters
+    # Apply search and filters to the dataset
     if apply_filters or search_term:
-        filtered_df = df.copy()
+        if search_term:
+            university_matches = fuzzy_search(search_term, filtered_df['University Name'].str.lower())
+            speciality_matches = fuzzy_search(search_term, filtered_df['Adjusted Speciality'].str.lower())
+            filtered_df = filtered_df[filtered_df['University Name'].str.lower().isin(university_matches) |
+                                                              filtered_df = filtered_df[filtered_df['Adjusted Speciality'].str.lower().isin(speciality_matches)]
+
+        if location != "All":
+            filtered_df = filtered_df[filtered_df['Country'] == location]
         
-    if search_term:
-        university_matches = fuzzy_search(search_term, filtered_df['University Name'].str.lower())
-        speciality_matches = fuzzy_search(search_term, filtered_df['Adjusted Speciality'].str.lower())
-        filtered_df = filtered_df[filtered_df['University Name'].str.lower().isin(university_matches) |
-                                  filtered_df['Adjusted Speciality'].str.lower().isin(speciality_matches)]
-    
-    if location != "All":
-        filtered_df = filtered_df[filtered_df['Country'] == location]
-    
-    if program_level != "All":
-        filtered_df = filtered_df[filtered_df['Level'] == program_level]
-    
-    if field_of_study != "All":
-        filtered_df = filtered_df[filtered_df['Field'] == field_of_study]
-    
-    filtered_df = filtered_df[(filtered_df['Tuition Price'] >= tuition_min) & (filtered_df['Tuition Price'] <= tuition_max)]
+        if program_level != "All":
+            filtered_df = filtered_df[filtered_df['Level'] == program_level]
+        
+        if field_of_study != "All":
+            filtered_df = filtered_df[filtered_df['Field'] == field_of_study]
+        
+        filtered_df = filtered_df[(filtered_df['Tuition Price'] >= tuition_min) & (filtered_df['Tuition Price'] <= tuition_max)]
 
     # Display results
     st.subheader(f"Showing {len(filtered_df)} results")

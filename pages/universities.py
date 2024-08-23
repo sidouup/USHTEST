@@ -49,13 +49,22 @@ def main():
         border-radius: 5px;
         padding: 15px;
         margin-bottom: 15px;
+        display: flex;
+    }
+    .university-logo {
+        width: 80px;
+        height: 80px;
+        margin-right: 15px;
+    }
+    .university-info {
+        flex-grow: 1;
     }
     .university-name {
         font-size: 18px;
         font-weight: bold;
-        margin-bottom: 10px;
+        margin-bottom: 5px;
     }
-    .degree-name {
+    .speciality-name {
         font-size: 16px;
         margin-bottom: 10px;
     }
@@ -74,6 +83,14 @@ def main():
         display: inline-block;
         font-size: 14px;
         margin-top: 10px;
+    }
+    .prime-tag {
+        background-color: #FFD700;
+        color: black;
+        padding: 2px 5px;
+        border-radius: 3px;
+        font-size: 12px;
+        margin-right: 5px;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -139,27 +156,34 @@ def main():
     
     for index, row in filtered_df.iterrows():
         with col1 if index % 2 == 0 else col2:
+            prime_tags = [row[f'prime {i}'] for i in range(2, 6) if pd.notna(row[f'prime {i}'])]
+            prime_tags_html = ''.join([f'<span class="prime-tag">{tag}</span>' for tag in prime_tags])
+            
             st.markdown(f"""
             <div class="university-card">
-                <div class="university-name">{row['University Name']}</div>
-                <div class="degree-name">{row['Degree Name']}</div>
-                <div class="info-row">
-                    <span>Location</span>
-                    <span>{row['City']}, {row['Country']}</span>
+                <img src="{row['Picture']}" class="university-logo" alt="{row['University Name']} logo">
+                <div class="university-info">
+                    <div class="university-name">{row['University Name']}</div>
+                    <div class="speciality-name">{row['Speciality']}</div>
+                    {prime_tags_html}
+                    <div class="info-row">
+                        <span>Location</span>
+                        <span>{row['City']}, {row['Country']}</span>
+                    </div>
+                    <div class="info-row">
+                        <span>Tuition fee</span>
+                        <span>${row['Tuition Price']:,.0f} {row['Tuition Currency']} / Year</span>
+                    </div>
+                    <div class="info-row">
+                        <span>Application fee</span>
+                        <span>${row['Application Fee Price']:,.0f} {row['Application Fee Currency']}</span>
+                    </div>
+                    <div class="info-row">
+                        <span>Duration</span>
+                        <span>{row['Duration']}</span>
+                    </div>
+                    <a href="{row['Link']}" class="create-application-btn" target="_blank">Create application</a>
                 </div>
-                <div class="info-row">
-                    <span>Gross tuition fee</span>
-                    <span>${row['Tuition Price']:,.0f} USD / Year</span>
-                </div>
-                <div class="info-row">
-                    <span>Application fee</span>
-                    <span>${row['Application Fee Price']:,.0f} USD</span>
-                </div>
-                <div class="info-row">
-                    <span>Duration</span>
-                    <span>{row['Duration']} months</span>
-                </div>
-                <a href="#" class="create-application-btn">Create application</a>
             </div>
             """, unsafe_allow_html=True)
 

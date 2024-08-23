@@ -37,9 +37,19 @@ def fuzzy_search(term, options):
     return matches
 
 def main():
+import streamlit as st
+import gspread
+import pandas as pd
+from google.oauth2.service_account import Credentials
+from difflib import get_close_matches
+import math
+
+# ... (keep the existing functions and setup code) ...
+
+def main():
     st.set_page_config(layout="wide", page_title="University Search Tool")
     
-    # Custom CSS for styling
+    # Updated Custom CSS for styling
     st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap');
@@ -78,7 +88,7 @@ def main():
         border-radius: 10px;
         padding: 15px;
         margin-bottom: 20px;
-        height: 400px;  /* Increased height */
+        height: 450px;  /* Fixed height for all cards */
         display: flex;
         flex-direction: column;
         transition: all 0.3s ease;
@@ -93,25 +103,38 @@ def main():
         display: flex;
         align-items: center;
         margin-bottom: 10px;
+        height: 60px;  /* Fixed height for header */
     }
     
     .university-logo {
-        width: 60px;
-        height: 60px;
+        width: 50px;
+        height: 50px;
         margin-right: 10px;
         object-fit: contain;
     }
     
     .university-name {
-        font-size: 18px;
+        font-size: 16px;
         font-weight: bold;
         color: #333333;
+        flex-grow: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
     }
     
     .speciality-name {
-        font-size: 16px;
+        font-size: 14px;
         margin-bottom: 10px;
         color: #555555;
+        height: 60px;  /* Fixed height for speciality */
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
     }
     
     .info-container {
@@ -125,7 +148,7 @@ def main():
         display: flex;
         justify-content: space-between;
         margin-bottom: 5px;
-        font-size: 14px;
+        font-size: 12px;
         color: #666666;
     }
     
@@ -137,8 +160,8 @@ def main():
         text-align: center;
         text-decoration: none;
         display: block;
-        font-size: 16px;
-        margin-top: 15px;
+        font-size: 14px;
+        margin-top: 10px;
         transition: background-color 0.3s ease;
     }
     
@@ -148,15 +171,18 @@ def main():
     
     .prime-tags {
         margin-bottom: 10px;
+        height: 25px;  /* Fixed height for tags */
+        overflow: hidden;
     }
     
     .prime-tag {
         background-color: #ffd700;
         color: #333333;
-        padding: 3px 8px;
+        padding: 2px 6px;
         border-radius: 3px;
-        font-size: 12px;
-        margin-right: 5px;
+        font-size: 10px;
+        margin-right: 3px;
+        margin-bottom: 3px;
         display: inline-block;
     }
     
@@ -246,7 +272,7 @@ def main():
             filtered_df = df
 
         # Pagination
-        items_per_page = 12  # Reduced number of items per page
+        items_per_page = 16  # Changed to 16 for 4x4 grid
         total_pages = math.ceil(len(filtered_df) / items_per_page)
         
         if 'current_page' not in st.session_state:
@@ -258,10 +284,10 @@ def main():
         # Display results
         st.subheader(f"Showing {len(filtered_df)} results")
         
-        # Create three columns for displaying university cards
-        for i in range(0, min(items_per_page, len(filtered_df) - start_idx), 3):
-            cols = st.columns(3)
-            for j in range(3):
+        # Create four columns for displaying university cards
+        for i in range(0, min(items_per_page, len(filtered_df) - start_idx), 4):
+            cols = st.columns(4)
+            for j in range(4):
                 if i + j < len(filtered_df[start_idx:end_idx]):
                     row = filtered_df.iloc[start_idx + i + j]
                     with cols[j]:
@@ -279,27 +305,27 @@ def main():
                             <div class="info-container">
                                 <div>
                                     <div class="info-row">
-                                        <span>Location</span>
+                                        <span>Location:</span>
                                         <span>{row['City']}, {row['Country']}</span>
                                     </div>
                                     <div class="info-row">
-                                        <span>Tuition fee</span>
-                                        <span>${row['Tuition Price']:,.0f} {row['Tuition Currency']} / Year</span>
+                                        <span>Tuition:</span>
+                                        <span>${row['Tuition Price']:,.0f} {row['Tuition Currency']}/Year</span>
                                     </div>
                                     <div class="info-row">
-                                        <span>Application fee</span>
+                                        <span>Application fee:</span>
                                         <span>${row['Application Fee Price']:,.0f} {row['Application Fee Currency']}</span>
                                     </div>
                                     <div class="info-row">
-                                        <span>Duration</span>
+                                        <span>Duration:</span>
                                         <span>{row['Duration']}</span>
                                     </div>
                                     <div class="info-row">
-                                        <span>Level</span>
+                                        <span>Level:</span>
                                         <span>{row['Level']}</span>
                                     </div>
                                     <div class="info-row">
-                                        <span>Field</span>
+                                        <span>Field:</span>
                                         <span>{row['Field']}</span>
                                     </div>
                                 </div>

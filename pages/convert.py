@@ -5,7 +5,7 @@ from langchain_core.messages import HumanMessage
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Retrieve the API key from Streamlit secrets (replace with your actual API key)
-api_key = st.secrets["API_KEY_gemini"]
+api_key = st.secrets["api_key"]
 
 # Initialize the Google Gemini model with the updated model version and API key
 try:

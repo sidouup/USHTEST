@@ -11,6 +11,7 @@ xlsxwriter
 openpyxl
 aiohttp
 streamlit_toggle
+langchain_google_genai
 streamlit-server-state
 streamlit-option-menu
 fpdf

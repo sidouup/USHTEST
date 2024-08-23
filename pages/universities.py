@@ -17,6 +17,7 @@ def get_google_sheet_client():
     return gspread.authorize(creds)
 
 # Function to load data from Google Sheets
+@st.cache_data
 def load_data(spreadsheet_id, sheet_name):
     client = get_google_sheet_client()
     sheet = client.open_by_key(spreadsheet_id).worksheet(sheet_name)
@@ -35,88 +36,137 @@ def fuzzy_search(term, options):
     return matches
 
 def main():
-    st.title("University Search Tool")
+    st.set_page_config(layout="wide")
+    
+    # Custom CSS for styling
+    st.markdown("""
+    <style>
+    .stSelectbox, .stMultiSelect {
+        margin-bottom: 10px;
+    }
+    .university-card {
+        border: 1px solid #e0e0e0;
+        border-radius: 5px;
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+    .university-name {
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+    .degree-name {
+        font-size: 16px;
+        margin-bottom: 10px;
+    }
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 5px;
+    }
+    .create-application-btn {
+        background-color: #1E90FF;
+        color: white;
+        padding: 5px 10px;
+        border-radius: 5px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 14px;
+        margin-top: 10px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
     # Replace with your Google Sheet ID and sheet name
-    SPREADSHEET_ID = "1gCxnCOhQRHtVdVMSiLaReBRJbCUz1Wn6-KJRZshneuM"  # Replace with your Google Sheet ID
+    SPREADSHEET_ID = "1gCxnCOhQRHtVdVMSiLaReBRJbCUz1Wn6-KJRZshneuM"
     SHEET_NAME = "cleaned_universities_data"
 
     # Load the data
     df = load_data(SPREADSHEET_ID, SHEET_NAME)
 
-    # Big search bar for University Name and Speciality with fuzzy matching
+    # Sidebar for filters
+    with st.sidebar:
+        st.title("Filters")
+        
+        location = st.selectbox("Location", ["All"] + sorted(df['Country'].unique().tolist()))
+        program_level = st.selectbox("Program level", ["All"] + sorted(df['Level'].unique().tolist()))
+        field_of_study = st.selectbox("Field of study", ["All"] + sorted(df['Field'].unique().tolist()))
+        
+        tuition_min, tuition_max = st.slider(
+            "Tuition fee range",
+            min_value=int(df['Tuition Price'].min()),
+            max_value=int(df['Tuition Price'].max()),
+            value=(int(df['Tuition Price'].min()), int(df['Tuition Price'].max()))
+        )
+        
+        intakes = st.multiselect("Intakes", df['Intake'].unique())
+        
+        apply_filters = st.button("Apply filters")
+
+    # Main content area
+    st.title("University Search Tool")
+
+    # Search bar
     search_term = st.text_input("Search for Universities or Specialities")
 
-    if search_term:
-        university_matches = fuzzy_search(search_term, df['University Name'].str.lower())
-        speciality_matches = fuzzy_search(search_term, df['Adjusted Speciality'].str.lower())
-        filtered_df = df[df['University Name'].str.lower().isin(university_matches) |
-                         df['Adjusted Speciality'].str.lower().isin(speciality_matches)]
-    else:
+    # Apply filters
+    if apply_filters or search_term:
         filtered_df = df.copy()
+        
+        if search_term:
+            university_matches = fuzzy_search(search_term, filtered_df['University Name'].str.lower())
+            speciality_matches = fuzzy_search(search_term, filtered_df['Adjusted Speciality'].str.lower())
+            filtered_df = filtered_df[filtered_df['University Name'].str.lower().isin(university_matches) |
+                                      filtered_df['Adjusted Speciality'].str.lower().isin(speciality_matches)]
+        
+        if location != "All":
+            filtered_df = filtered_df[filtered_df['Country'] == location]
+        
+        if program_level != "All":
+            filtered_df = filtered_df[filtered_df['Level'] == program_level]
+        
+        if field_of_study != "All":
+            filtered_df = filtered_df[filtered_df['Field'] == field_of_study]
+        
+        filtered_df = filtered_df[(filtered_df['Tuition Price'] >= tuition_min) & (filtered_df['Tuition Price'] <= tuition_max)]
+        
+        if intakes:
+            filtered_df = filtered_df[filtered_df['Intake'].isin(intakes)]
+    else:
+        filtered_df = df
 
-    # Filters - Now in the main interface, not the sidebar
-    st.write("Filters:")
+    # Display results
+    st.subheader(f"Showing {len(filtered_df)} results")
     
-    institution_type = st.multiselect("Institution Type", options=filtered_df['Institution Type'].unique())
-    if institution_type:
-        filtered_df = filtered_df[filtered_df['Institution Type'].isin(institution_type)]
-
-    country = st.multiselect("Country", options=filtered_df['Country'].unique())
-    if country:
-        filtered_df = filtered_df[filtered_df['Country'].isin(country)]
-
-    state = st.multiselect("State/Province", options=filtered_df['State/Province'].unique())
-    if state:
-        filtered_df = filtered_df[filtered_df['State/Province'].isin(state)]
-
-    city = st.multiselect("City", options=filtered_df['City'].unique())
-    if city:
-        filtered_df = filtered_df[filtered_df['City'].isin(city)]
-
-    level = st.multiselect("Level", options=filtered_df['Level'].unique())
-    if level:
-        filtered_df = filtered_df[filtered_df['Level'].isin(level)]
-
-    # Add filters for Fields and Majors
-    fields = st.multiselect("Field", options=filtered_df['Field'].unique())
-    if fields:
-        filtered_df = filtered_df[filtered_df['Field'].isin(fields)]
+    # Create two columns for displaying university cards
+    col1, col2 = st.columns(2)
     
-    majors = st.multiselect("Major", options=filtered_df['Major'].unique())
-    if majors:
-        filtered_df = filtered_df[filtered_df['Major'].isin(majors)]
-
-    duration = st.multiselect("Duration", options=filtered_df['Duration'].unique())
-    if duration:
-        filtered_df = filtered_df[filtered_df['Duration'].isin(duration)]
-
-    tuition_min, tuition_max = st.slider(
-        "Tuition Price Range",
-        min_value=int(filtered_df['Tuition Price'].min()),
-        max_value=int(filtered_df['Tuition Price'].max()),
-        value=(int(filtered_df['Tuition Price'].min()), int(filtered_df['Tuition Price'].max()))
-    )
-    filtered_df = filtered_df[(filtered_df['Tuition Price'] >= tuition_min) & (filtered_df['Tuition Price'] <= tuition_max)]
-
-    application_fee_min, application_fee_max = st.slider(
-        "Application Fee Range",
-        min_value=int(filtered_df['Application Fee Price'].min()),
-        max_value=int(filtered_df['Application Fee Price'].max()),
-        value=(int(filtered_df['Application Fee Price'].min()), int(filtered_df['Application Fee Price'].max()))
-    )
-    filtered_df = filtered_df[(filtered_df['Application Fee Price'] >= application_fee_min) & (filtered_df['Application Fee Price'] <= application_fee_max)]
-
-    prime = st.multiselect("Prime Benefits", options=['Incentivized', 'High Job Demand', 'Instant Offer', 'Popular'])
-    for prime_benefit in prime:
-        filtered_df = filtered_df[(filtered_df['prime 2'] == prime_benefit) |
-                                  (filtered_df['prime 3'] == prime_benefit) |
-                                  (filtered_df['prime 4'] == prime_benefit) |
-                                  (filtered_df['prime 5'] == prime_benefit)]
-
-    # Display the filtered data
-    st.write("Filtered Results:")
-    st.dataframe(filtered_df)
+    for index, row in filtered_df.iterrows():
+        with col1 if index % 2 == 0 else col2:
+            st.markdown(f"""
+            <div class="university-card">
+                <div class="university-name">{row['University Name']}</div>
+                <div class="degree-name">{row['Degree Name']}</div>
+                <div class="info-row">
+                    <span>Location</span>
+                    <span>{row['City']}, {row['Country']}</span>
+                </div>
+                <div class="info-row">
+                    <span>Gross tuition fee</span>
+                    <span>${row['Tuition Price']:,.0f} USD / Year</span>
+                </div>
+                <div class="info-row">
+                    <span>Application fee</span>
+                    <span>${row['Application Fee Price']:,.0f} USD</span>
+                </div>
+                <div class="info-row">
+                    <span>Duration</span>
+                    <span>{row['Duration']} months</span>
+                </div>
+                <a href="#" class="create-application-btn">Create application</a>
+            </div>
+            """, unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()

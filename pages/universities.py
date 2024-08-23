@@ -250,100 +250,102 @@ def main():
         with col5:
             apply_filters = st.button("Apply filters")
 
-    if search_term:
-        university_matches = fuzzy_search(search_term, filtered_df['University Name'].str.lower())
-        speciality_matches = fuzzy_search(search_term, filtered_df['Adjusted Speciality'].str.lower())
-        filtered_df = filtered_df[filtered_df['University Name'].str.lower().isin(university_matches) |
-                                  filtered_df['Adjusted Speciality'].str.lower().isin(speciality_matches)]
-
-    if location != "All":
-        filtered_df = filtered_df[filtered_df['Country'] == location]
-
-    if program_level != "All":
-        filtered_df = filtered_df[filtered_df['Level'] == program_level]
-
-    if field_of_study != "All":
-        filtered_df = filtered_df[filtered_df['Field'] == field_of_study]
-
-    filtered_df = filtered_df[(filtered_df['Tuition Price'] >= tuition_min) & (filtered_df['Tuition Price'] <= tuition_max)]
-
-    # Display results
-    st.subheader(f"Showing {len(filtered_df)} results")
-
-    # Pagination
-    items_per_page = 16  # Changed to 16 for a 4x4 grid
-    total_pages = math.ceil(len(filtered_df) / items_per_page)
-
-    if 'current_page' not in st.session_state:
-        st.session_state.current_page = 1
-
-    start_idx = (st.session_state.current_page - 1) * items_per_page
-    end_idx = start_idx + items_per_page
-
-    # Display university cards with a consistent layout
-    for i in range(0, min(items_per_page, len(filtered_df) - start_idx), 4):
-        cols = st.columns(4)  # Create a grid layout with four columns
-        for j in range(4):
-            if i + j < len(filtered_df[start_idx:end_idx]):
-                row = filtered_df.iloc[start_idx + i + j]
-                with cols[j]:
-                    prime_tags = [row[f'prime {k}'] for k in range(2, 6) if pd.notna(row[f'prime {k}'])]
-                    prime_tags_html = ''.join([f'<span class="prime-tag">{tag}</span>' for tag in prime_tags])
-
-                    st.markdown(f'''
-                    <div class="university-card">
-                        <div class="university-header">
-                            <img src="{row['Picture']}" class="university-logo" alt="{row['University Name']} logo">
-                            <div class="university-name">{row['University Name']}</div>
-                        </div>
-                        <div class="speciality-name">{row['Speciality']}</div>
-                        <div class="prime-tags">{prime_tags_html}</div>
-                        <div class="info-container">
-                            <div>
-                                <div class="info-row">
-                                    <span>Location:</span>
-                                    <span>{row['City']}, {row['Country']}</span>
-                                </div>
-                                <div class="info-row">
-                                    <span>Tuition:</span>
-                                    <span>${row['Tuition Price']:,.0f} {row['Tuition Currency']}/Year</span>
-                                </div>
-                                <div class="info-row">
-                                    <span>Application fee:</span>
-                                    <span>${row['Application Fee Price']:,.0f} {row['Application Fee Currency']}</span>
-                                </div>
-                                <div class="info-row">
-                                    <span>Duration:</span>
-                                    <span>{row['Duration']}</span>
-                                </div>
-                                <div class="info-row">
-                                    <span>Level:</span>
-                                    <span>{row['Level']}</span>
-                                </div>
-                                <div class="info-row">
-                                    <span>Field:</span>
-                                    <span>{row['Field']}</span>
-                                </div>
-                            </div>
-                            <a href="{row['Link']}" class="create-application-btn" target="_blank">Apply Now</a>
-                        </div>
-                    </div>
-                    ''', unsafe_allow_html=True)
-
-    # Pagination controls
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col1:
-        if st.session_state.current_page > 1:
-            if st.button("◀ Previous", key="prev_button"):
-                st.session_state.current_page -= 1
-                st.rerun()
-    with col2:
-        st.markdown(f'<div class="page-info">Page {st.session_state.current_page} of {total_pages}</div>', unsafe_allow_html=True)
-    with col3:
-        if st.session_state.current_page < total_pages:
-            if st.button("Next ▶", key="next_button"):
-                st.session_state.current_page += 1
-                st.rerun()
+    if apply_filters or search_term:
+        if search_term:
+            university_matches = fuzzy_search(search_term, filtered_df['University Name'].str.lower())
+            speciality_matches = fuzzy_search(search_term, filtered_df['Adjusted Speciality'].str.lower())
+            filtered_df = filtered_df[filtered_df['University Name'].str.lower().isin(university_matches) |
+                                      filtered_df['Adjusted Speciality'].str.lower().isin(speciality_matches)]
     
+        if location != "All":
+            filtered_df = filtered_df[filtered_df['Country'] == location]
+    
+        if program_level != "All":
+            filtered_df = filtered_df[filtered_df['Level'] == program_level]
+    
+        if field_of_study != "All":
+            filtered_df = filtered_df[filtered_df['Field'] == field_of_study]
+    
+        filtered_df = filtered_df[(filtered_df['Tuition Price'] >= tuition_min) & (filtered_df['Tuition Price'] <= tuition_max)]
+    
+        # Display results
+        st.subheader(f"Showing {len(filtered_df)} results")
+    
+        # Pagination
+        items_per_page = 16  # Changed to 16 for a 4x4 grid
+        total_pages = math.ceil(len(filtered_df) / items_per_page)
+    
+        if 'current_page' not in st.session_state:
+            st.session_state.current_page = 1
+    
+        start_idx = (st.session_state.current_page - 1) * items_per_page
+        end_idx = start_idx + items_per_page
+    
+        # Display university cards with a consistent layout
+        for i in range(0, min(items_per_page, len(filtered_df) - start_idx), 4):
+            cols = st.columns(4)  # Create a grid layout with four columns
+            for j in range(4):
+                if i + j < len(filtered_df[start_idx:end_idx]):
+                    row = filtered_df.iloc[start_idx + i + j]
+                    with cols[j]:
+                        prime_tags = [row[f'prime {k}'] for k in range(2, 6) if pd.notna(row[f'prime {k}'])]
+                        prime_tags_html = ''.join([f'<span class="prime-tag">{tag}</span>' for tag in prime_tags])
+    
+                        st.markdown(f'''
+                        <div class="university-card">
+                            <div class="university-header">
+                                <img src="{row['Picture']}" class="university-logo" alt="{row['University Name']} logo">
+                                <div class="university-name">{row['University Name']}</div>
+                            </div>
+                            <div class="speciality-name">{row['Speciality']}</div>
+                            <div class="prime-tags">{prime_tags_html}</div>
+                            <div class="info-container">
+                                <div>
+                                    <div class="info-row">
+                                        <span>Location:</span>
+                                        <span>{row['City']}, {row['Country']}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span>Tuition:</span>
+                                        <span>${row['Tuition Price']:,.0f} {row['Tuition Currency']}/Year</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span>Application fee:</span>
+                                        <span>${row['Application Fee Price']:,.0f} {row['Application Fee Currency']}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span>Duration:</span>
+                                        <span>{row['Duration']}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span>Level:</span>
+                                        <span>{row['Level']}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span>Field:</span>
+                                        <span>{row['Field']}</span>
+                                    </div>
+                                </div>
+                                <a href="{row['Link']}" class="create-application-btn" target="_blank">Apply Now</a>
+                            </div>
+                        </div>
+                        ''', unsafe_allow_html=True)
+    
+        # Pagination controls
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col1:
+            if st.session_state.current_page > 1:
+                if st.button("◀ Previous", key="prev_button"):
+                    st.session_state.current_page -= 1
+                    st.rerun()
+        with col2:
+            st.markdown(f'<div class="page-info">Page {st.session_state.current_page} of {total_pages}</div>', unsafe_allow_html=True)
+        with col3:
+            if st.session_state.current_page < total_pages:
+                if st.button("Next ▶", key="next_button"):
+                    st.session_state.current_page += 1
+                    st.rerun()
+
+
 if __name__ == "__main__":
     main()

@@ -185,7 +185,7 @@ def main():
                     prime_tags = [row[f'prime {k}'] for k in range(2, 6) if pd.notna(row[f'prime {k}'])]
                     prime_tags_html = ''.join([f'<span class="prime-tag">{tag}</span>' for tag in prime_tags])
                     
-                    st.markdown(f"""
+                    st.markdown(f'''
                     <div class="university-card">
                         <div class="university-header">
                             <img src="{row['Picture']}" class="university-logo" alt="{row['University Name']} logo">

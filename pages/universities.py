@@ -322,23 +322,24 @@ def main():
                     ''', unsafe_allow_html=True)
 
         # Pagination controls
-        col1, col2, col3 = st.columns([1,2,1])
-        
-        with col1:
-            if st.session_state.current_page > 1:
-                if st.button("◀ Previous"):
-                    st.session_state.current_page -= 1
-                    st.rerun()
-        
-        with col2:
-            st.markdown(f'<div class="page-info">Page {st.session_state.current_page} of {total_pages}</div>', unsafe_allow_html=True)
-        
-        with col3:
-            if st.session_state.current_page < total_pages:
-                if st.button("Next ▶"):
-                    st.session_state.current_page += 1
-                    st.rerun()
+    col1, col2, col3 = st.columns([1,2,1])
+    
+    with col1:
+        if st.session_state.current_page > 1:
+            if st.button("◀ Previous", key=f"prev_button_{st.session_state.current_page}"):
+                st.session_state.current_page -= 1
+                st.rerun()
+    
+    with col2:
+        st.markdown(f'<div class="page-info">Page {st.session_state.current_page} of {total_pages}</div>', unsafe_allow_html=True)
+    
+    with col3:
+        if st.session_state.current_page < total_pages:
+            if st.button("Next ▶", key=f"next_button_{st.session_state.current_page}"):
+                st.session_state.current_page += 1
+                st.rerun()
 
 if __name__ == "__main__":
     main()
+
 

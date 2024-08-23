@@ -163,12 +163,13 @@ if uploaded_file:
                     df.at[i, 'Major'] = major
 
                     # Update progress bar and status text
-                    progress_percentage = (len(unclassified_df[unclassified_df['Field'] != "Unclassified"]) + 1) / num_unclassified
+                    num_reclassified = len(df[df['Field'] != "Unclassified"])
+                    progress_percentage = num_reclassified / num_unclassified
                     progress_bar.progress(progress_percentage)
                     status_text.text(f"Reclassifying row {i + 1}/{num_unclassified}")  # Show the current row number being processed
 
                     # Save checkpoint every 10% or at the last row
-                    if (len(unclassified_df[unclassified_df['Field'] != "Unclassified"]) + 1) % checkpoint_interval == 0 or i == num_unclassified - 1:
+                    if num_reclassified % checkpoint_interval == 0 or i == num_unclassified - 1:
                         df.to_csv(checkpoint_file, index=False)
 
             st.write("Reclassification Results:")
@@ -186,3 +187,10 @@ if uploaded_file:
             # Clear the checkpoint after successful completion
             if os.path.exists(checkpoint_file):
                 os.remove(checkpoint_file)
+
+# Display count of fields and majors
+st.write("### Count of Classified and Unclassified Entries")
+total_classified = df[df['Field'] != "Unclassified"].shape[0]
+total_unclassified = df[df['Field'] == "Unclassified"].shape[0]
+total_fields = df['Field'].nunique() - 1  # Exclude 'Unclassified'
+total_majors = df['Major'].nunique() - 1  # Exclude 'Unclassified'

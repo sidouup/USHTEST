@@ -37,119 +37,149 @@ def fuzzy_search(term, options):
     return matches
 
 def main():
-    st.set_page_config(layout="wide")
+    st.set_page_config(layout="wide", page_title="Modern University Search Tool")
     
-    # Custom CSS for modern styling
+    # Custom CSS for styling
     st.markdown("""
     <style>
-    .stSelectbox, .stMultiSelect {
+    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap');
+    
+    body {
+        font-family: 'Roboto', sans-serif;
+        background-color: #ffffff;
+        color: #333333;
+    }
+    
+    .stApp {
+        background-color: #ffffff;
+    }
+    
+    .sidebar .sidebar-content {
+        background-color: #f8f9fa;
+    }
+    
+    .stSelectbox, .stMultiSelect, .stSlider {
+        background-color: #ffffff;
+        border: 1px solid #e0e0e0;
+        border-radius: 5px;
+        padding: 5px;
         margin-bottom: 10px;
     }
+    
     .university-card {
+        background: #ffffff;
         border: 1px solid #e0e0e0;
         border-radius: 10px;
-        padding: 20px;
-        margin-bottom: 15px;
-        height: 350px;  /* Set a fixed height */
+        padding: 15px;
+        margin-bottom: 20px;
+        height: 300px;
         display: flex;
         flex-direction: column;
-        background: linear-gradient(145deg, #f0f0f0, #d0d0d0);
-        box-shadow: 4px 4px 10px #aaaaaa, -4px -4px 10px #ffffff;
-        transition: transform 0.2s ease-in-out;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     }
+    
     .university-card:hover {
-        transform: translateY(-5px) scale(1.02);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
     }
+    
     .university-header {
         display: flex;
         align-items: center;
         margin-bottom: 10px;
     }
+    
     .university-logo {
-        width: 60px;
-        height: 60px;
-        margin-right: 15px;
+        width: 50px;
+        height: 50px;
+        margin-right: 10px;
         object-fit: contain;
-        border-radius: 50%;
-        box-shadow: 2px 2px 5px #999999;
     }
+    
     .university-name {
-        font-size: 18px;
+        font-size: 16px;
         font-weight: bold;
-        flex-grow: 1;
         color: #333333;
     }
+    
     .speciality-name {
         font-size: 14px;
-        margin-bottom: 10px;
-        height: 40px;  /* Set a fixed height */
+        margin-bottom: 5px;
+        height: 40px;
         overflow: hidden;
         color: #555555;
-        font-style: italic;
     }
+    
     .info-container {
         flex-grow: 1;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
     }
+    
     .info-row {
         display: flex;
         justify-content: space-between;
-        margin-bottom: 5px;
-        font-size: 13px;
+        margin-bottom: 3px;
+        font-size: 12px;
         color: #666666;
     }
+    
     .create-application-btn {
-        background-color: #0073e6;
+        background-color: #007bff;
         color: white;
-        padding: 10px 15px;
+        padding: 8px 12px;
         border-radius: 5px;
         text-align: center;
         text-decoration: none;
         display: block;
         font-size: 14px;
-        font-weight: bold;
-        margin-top: 15px;
+        margin-top: 10px;
         transition: background-color 0.3s ease;
     }
+    
     .create-application-btn:hover {
-        background-color: #005bb5;
+        background-color: #0056b3;
     }
+    
     .prime-tags {
-        margin-bottom: 10px;
+        margin-bottom: 5px;
     }
+    
     .prime-tag {
-        background-color: #FFD700;
-        color: black;
-        padding: 3px 6px;
-        border-radius: 15px;
-        font-size: 12px;
-        margin-right: 5px;
+        background-color: #ffd700;
+        color: #333333;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 10px;
+        margin-right: 3px;
         display: inline-block;
-        box-shadow: 1px 1px 3px #888888;
     }
+    
     .pagination {
         display: flex;
         justify-content: center;
         margin-top: 20px;
     }
+    
     .pagination-btn {
         margin: 0 10px;
-        background-color: #f0f0f0;
+        padding: 5px 10px;
+        background-color: #007bff;
+        color: white;
         border: none;
-        padding: 8px 15px;
         border-radius: 5px;
-        box-shadow: 2px 2px 5px #aaaaaa;
         cursor: pointer;
         transition: background-color 0.3s ease;
     }
+    
     .pagination-btn:hover {
-        background-color: #e0e0e0;
+        background-color: #0056b3;
     }
+    
     </style>
     """, unsafe_allow_html=True)
-    
+
     # Replace with your Google Sheet ID and sheet name
     SPREADSHEET_ID = "1gCxnCOhQRHtVdVMSiLaReBRJbCUz1Wn6-KJRZshneuM"
     SHEET_NAME = "cleaned_universities_data"
@@ -159,26 +189,26 @@ def main():
 
     # Sidebar for filters
     with st.sidebar:
-        st.title("Filters")
+        st.title("🎓 Filters")
         
-        location = st.selectbox("Location", ["All"] + sorted(df['Country'].unique().tolist()))
-        program_level = st.selectbox("Program level", ["All"] + sorted(df['Level'].unique().tolist()))
-        field_of_study = st.selectbox("Field of study", ["All"] + sorted(df['Field'].unique().tolist()))
+        location = st.selectbox("🌎 Location", ["All"] + sorted(df['Country'].unique().tolist()))
+        program_level = st.selectbox("📚 Program level", ["All"] + sorted(df['Level'].unique().tolist()))
+        field_of_study = st.selectbox("🔬 Field of study", ["All"] + sorted(df['Field'].unique().tolist()))
         
         tuition_min, tuition_max = st.slider(
-            "Tuition fee range",
+            "💰 Tuition fee range",
             min_value=int(df['Tuition Price'].min()),
             max_value=int(df['Tuition Price'].max()),
             value=(int(df['Tuition Price'].min()), int(df['Tuition Price'].max()))
         )
         
-        apply_filters = st.button("Apply filters")
+        apply_filters = st.button("🔍 Apply filters")
 
     # Main content area
-    st.title("University Search Tool")
+    st.title("🏫 Modern University Search Tool")
 
     # Search bar
-    search_term = st.text_input("Search for Universities or Specialities")
+    search_term = st.text_input("🔎 Search for Universities or Specialities")
 
     # Apply filters
     if apply_filters or search_term:
@@ -253,7 +283,7 @@ def main():
                                     <span>{row['Duration']}</span>
                                 </div>
                             </div>
-                            <a href="{row['Link']}" class="create-application-btn" target="_blank">Create application</a>
+                            <a href="{row['Link']}" class="create-application-btn" target="_blank">Apply Now</a>
                         </div>
                     </div>
                     ''', unsafe_allow_html=True)
@@ -261,14 +291,14 @@ def main():
     # Pagination controls
     st.markdown('<div class="pagination">', unsafe_allow_html=True)
     if st.session_state.current_page > 1:
-        if st.button("Previous", key="prev_button"):
+        if st.button("◀ Previous", key="prev_button", className="pagination-btn"):
             st.session_state.current_page -= 1
             st.rerun()
     
     st.markdown(f'<span>Page {st.session_state.current_page} of {total_pages}</span>', unsafe_allow_html=True)
     
     if st.session_state.current_page < total_pages:
-        if st.button("Next", key="next_button"):
+        if st.button("Next ▶", key="next_button", className="pagination-btn"):
             st.session_state.current_page += 1
             st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)

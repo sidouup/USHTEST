@@ -252,30 +252,30 @@ def main():
 
     # Apply search and filters to the dataset
     if apply_filters or search_term:
-        if search_term:
-            university_matches = fuzzy_search(search_term, filtered_df['University Name'].str.lower())
-            speciality_matches = fuzzy_search(search_term, filtered_df['Adjusted Speciality'].str.lower())
-            filtered_df = filtered_df[filtered_df['University Name'].str.lower().isin(university_matches) |
-                                                              filtered_df = filtered_df[filtered_df['Adjusted Speciality'].str.lower().isin(speciality_matches)]
+    if search_term:
+        university_matches = fuzzy_search(search_term, filtered_df['University Name'].str.lower())
+        speciality_matches = fuzzy_search(search_term, filtered_df['Adjusted Speciality'].str.lower())
+        filtered_df = filtered_df[filtered_df['University Name'].str.lower().isin(university_matches) |
+                                  filtered_df['Adjusted Speciality'].str.lower().isin(speciality_matches)]
 
-        if location != "All":
-            filtered_df = filtered_df[filtered_df['Country'] == location]
-        
-        if program_level != "All":
-            filtered_df = filtered_df[filtered_df['Level'] == program_level]
-        
-        if field_of_study != "All":
-            filtered_df = filtered_df[filtered_df['Field'] == field_of_study]
-        
-        filtered_df = filtered_df[(filtered_df['Tuition Price'] >= tuition_min) & (filtered_df['Tuition Price'] <= tuition_max)]
+    if location != "All":
+        filtered_df = filtered_df[filtered_df['Country'] == location]
+
+    if program_level != "All":
+        filtered_df = filtered_df[filtered_df['Level'] == program_level]
+
+    if field_of_study != "All":
+        filtered_df = filtered_df[filtered_df['Field'] == field_of_study]
+
+    filtered_df = filtered_df[(filtered_df['Tuition Price'] >= tuition_min) & (filtered_df['Tuition Price'] <= tuition_max)]
 
     # Display results
     st.subheader(f"Showing {len(filtered_df)} results")
-    
+
     # Pagination
     items_per_page = 16  # Changed to 16 for a 4x4 grid
     total_pages = math.ceil(len(filtered_df) / items_per_page)
-    
+
     if 'current_page' not in st.session_state:
         st.session_state.current_page = 1
 
@@ -291,7 +291,7 @@ def main():
                 with cols[j]:
                     prime_tags = [row[f'prime {k}'] for k in range(2, 6) if pd.notna(row[f'prime {k}'])]
                     prime_tags_html = ''.join([f'<span class="prime-tag">{tag}</span>' for tag in prime_tags])
-                    
+
                     st.markdown(f'''
                     <div class="university-card">
                         <div class="university-header">

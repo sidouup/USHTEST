@@ -109,6 +109,11 @@ def main():
         color: #333333;
         flex-grow: 1;
         text-align: center;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2; /* Limit to two lines */
+        -webkit-box-orient: vertical;
     }
     
     .speciality-name {
@@ -164,10 +169,11 @@ def main():
     .prime-tags {
         margin-bottom: 10px;
         display: flex;
-        flex-wrap: wrap;
+        flex-wrap: nowrap; /* Prevent wrapping */
         justify-content: center;
-        height: 30px; /* Fixed height for consistency */
+        height: 25px; /* Adjust height for consistency */
         align-items: center; /* Vertically align tags */
+        overflow: hidden; /* Hide overflow if too many tags */
     }
     
     .prime-tag {
@@ -175,9 +181,8 @@ def main():
         color: #333333;
         padding: 2px 6px;
         border-radius: 3px;
-        font-size: 0.75rem;
-        margin-right: 3px;
-        margin-bottom: 3px;
+        font-size: 0.65rem; /* Smaller size for fitting more tags */
+        margin-right: 2px;
         display: inline-block;
     }
     

@@ -87,12 +87,12 @@ if uploaded_file:
                 df.at[i, 'Classified Major'] = result
 
                 # Update progress bar and status text
-                if (i + 1) % checkpoint_interval == 0 or i == num_rows - 1:
-                    progress_percentage = (i + 1) / num_rows
-                    progress_bar.progress(progress_percentage)
-                    status_text.text(f"Processing row {i + 1}/{num_rows}")
+                progress_percentage = (i + 1) / num_rows
+                progress_bar.progress(progress_percentage)
+                status_text.text(f"Processing row {i + 1}/{num_rows}")  # Show the current row number being processed
 
-                    # Save checkpoint every 10%
+                # Save checkpoint every 10% or at the last row
+                if (i + 1) % checkpoint_interval == 0 or i == num_rows - 1:
                     df.iloc[:i + 1].to_csv(checkpoint_file, index=False)
 
         st.write("Classification Results:")

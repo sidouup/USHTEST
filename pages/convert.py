@@ -95,13 +95,23 @@ if uploaded_file:
                 if (i + 1) % checkpoint_interval == 0 or i == num_rows - 1:
                     df.iloc[:i + 1].to_csv(checkpoint_file, index=False)
 
+                # Allow download every 1000 rows
+                if (i + 1) % 1000 == 0 or i == num_rows - 1:
+                    partial_csv = df.iloc[:i + 1].to_csv(index=False)
+                    st.download_button(
+                        label=f"Download CSV after {i + 1} rows",
+                        data=partial_csv,
+                        file_name=f'partial_classified_specialities_{i + 1}.csv',
+                        mime='text/csv'
+                    )
+
         st.write("Classification Results:")
         st.dataframe(df)
 
-        # Option to download the results
+        # Final download button for the full dataset
         csv = df.to_csv(index=False)
         st.download_button(
-            label="Download Results as CSV",
+            label="Download Final Results as CSV",
             data=csv,
             file_name='classified_specialities.csv',
             mime='text/csv'

@@ -33,24 +33,34 @@ big_majors = [
     "Data Science", "Linguistics", "Theater Arts", "Biochemistry", "Urban Planning", "Artificial Intelligence"
 ]
 
-def classify_specialty(specialty):
+def classify_specialty(specialty, max_retries=3):
     # Construct the full prompt text including the list of majors
     majors_list = ", ".join(big_majors)  # Convert the list of majors into a comma-separated string
     prompt_text = (
         f"Classify the following specialty into one of the predefined majors. "
         f"Answer only with the major name; don't give any explanation or anything else. "
-        f"If it does not fit into any of the majors, give back 'Other'. "
+        f"If it does not fit into any of the majors, give back the full specialty name. "
         f"\nMajors: {majors_list}\nSpecialty: {specialty}"
     )
     
     prompt = [HumanMessage(content=prompt_text)]
     
-    try:
-        response = llm.invoke(prompt)
-        return response.content.strip()
-    except Exception as e:
-        st.error(f"Failed to classify specialty '{specialty}': {e}")
-        return "Error"
+    retries = 0
+    while retries < max_retries:
+        try:
+            response = llm.invoke(prompt)
+            result = response.content.strip()
+            
+            # If the result is not in the list of majors, return the full specialty name
+            if result not in big_majors:
+                return specialty
+            return result
+        except Exception as e:
+            st.error(f"Failed to classify specialty '{specialty}': {e}. Retrying...")
+            retries += 1
+    
+    st.error(f"Could not classify specialty '{specialty}' after {max_retries} attempts.")
+    return specialty  # Return the specialty name if all retries fail
 
 # Streamlit App
 st.title("Specialty Classification App")

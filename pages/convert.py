@@ -162,8 +162,8 @@ if uploaded_file:
                     df.at[i, 'Field'] = field
                     df.at[i, 'Major'] = major
 
-                    # Calculate the progress percentage
-                    num_processed = num_unclassified - df[df['Field'] == "Unclassified"].shape[0]
+                    # Update progress bar and status text
+                    num_processed = len(unclassified_df) - df[df['Field'] == "Unclassified"].shape[0]
                     progress_percentage = num_processed / num_unclassified if num_unclassified > 0 else 1
                     progress_bar.progress(progress_percentage)
                     status_text.text(f"Reclassifying row {i + 1}/{num_unclassified}")  # Show the current row number being processed

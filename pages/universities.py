@@ -100,8 +100,6 @@ def main():
             value=(int(df['Tuition Price'].min()), int(df['Tuition Price'].max()))
         )
         
-        intakes = st.multiselect("Intakes", df['Intake'].unique())
-        
         apply_filters = st.button("Apply filters")
 
     # Main content area
@@ -130,9 +128,6 @@ def main():
             filtered_df = filtered_df[filtered_df['Field'] == field_of_study]
         
         filtered_df = filtered_df[(filtered_df['Tuition Price'] >= tuition_min) & (filtered_df['Tuition Price'] <= tuition_max)]
-        
-        if intakes:
-            filtered_df = filtered_df[filtered_df['Intake'].isin(intakes)]
     else:
         filtered_df = df
 

@@ -249,6 +249,7 @@ def main():
             )
         with col5:
             apply_filters = st.button("Apply filters")
+    search_term = st.text_input("Search for Universities or Specialities")
 
     if apply_filters or search_term:
         if search_term:

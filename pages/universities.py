@@ -39,187 +39,7 @@ def fuzzy_search(term, options):
 def main():
     st.set_page_config(layout="wide", page_title="University Search Tool")
     
-    # Updated Custom CSS for styling
-    st.markdown("""
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap');
-    
-    body {
-        font-family: 'Roboto', sans-serif;
-        background-color: #ffffff;
-        color: #333333;
-    }
-    
-    .stApp {
-        background-color: #ffffff;
-    }
-    
-    .sidebar .sidebar-content {
-        background-color: #f8f9fa;
-        padding: 10px;
-    }
-    
-    [data-testid="stSidebar"] {
-        min-width: 200px !important;
-        max-width: 200px !important;
-    }
-    
-    .stSelectbox, .stMultiSelect, .stSlider {
-        background-color: #ffffff;
-        border: 1px solid #e0e0e0;
-        border-radius: 5px;
-        padding: 5px;
-        margin-bottom: 10px;
-    }
-    
-    .university-card {
-        background: #ffffff;
-        border: 1px solid #e0e0e0;
-        border-radius: 10px;
-        padding: 15px;
-        margin-bottom: 20px;
-        min-height: 500px;  /* Fixed height for consistent card size */
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        transition: all 0.3s ease;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    }
-    
-    .university-card:hover {
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    }
-    
-    .university-header {
-        display: flex;
-        align-items: center;
-        margin-bottom: 15px;
-    }
-    
-    .university-logo {
-        width: 50px;
-        height: 50px;
-        margin-right: 10px;
-        object-fit: contain;
-    }
-    
-    .university-name {
-        font-size: 1.2rem;
-        font-weight: bold;
-        color: #333333;
-        flex-grow: 1;
-        text-align: center;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        display: -webkit-box;
-        -webkit-line-clamp: 2; /* Limit to two lines */
-        -webkit-box-orient: vertical;
-    }
-    
-    .speciality-name {
-        font-size: 1rem;
-        margin-bottom: 15px;
-        color: #555555;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        display: -webkit-box;
-        -webkit-line-clamp: 2; /* Limit to two lines */
-        -webkit-box-orient: vertical;
-        text-align: center;
-        text-decoration: underline;  /* Underline specialty names */
-    }
-    
-    .info-container {
-        flex-grow: 1;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        font-size: 0.9rem;
-    }
-    
-    .info-row {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 5px;
-        font-size: 0.85rem;
-        color: #666666;
-    }
-    
-    .info-row span:first-child {
-        font-weight: bold; /* Make labels bold */
-    }
-    
-    .create-application-btn {
-        background-color: #1e88e5;
-        color: white !important;  /* Force text color to white */
-        font-weight: bold !important;  /* Force text to bold */
-        padding: 10px 15px;
-        border-radius: 5px;
-        text-align: center;
-        text-decoration: none;
-        display: block;
-        font-size: 1rem;
-        margin-top: 10px;
-        transition: background-color 0.3s ease;
-    }
-    
-    .create-application-btn:hover {
-        background-color: #1565c0;
-    }
-    
-    .prime-tags {
-        margin-bottom: 10px;
-        display: flex;
-        flex-wrap: nowrap; /* Prevent wrapping */
-        justify-content: center;
-        height: 25px; /* Adjust height for consistency */
-        align-items: center; /* Vertically align tags */
-        overflow: hidden; /* Hide overflow if too many tags */
-    }
-    
-    .prime-tag {
-        background-color: #ffd700;
-        color: #333333;
-        padding: 2px 6px;
-        border-radius: 3px;
-        font-size: 0.65rem; /* Smaller size for fitting more tags */
-        margin-right: 2px;
-        display: inline-block;
-    }
-    
-    .stButton > button {
-        background-color: #1e88e5;
-        color: white;
-        border: none;
-        border-radius: 5px;
-        padding: 5px 10px;
-        font-size: 1rem;
-        transition: background-color 0.3s ease;
-    }
-    
-    .stButton > button:hover {
-        background-color: #1565c0;
-    }
-    
-    .pagination {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        margin-top: 20px;
-    }
-    
-    .page-info {
-        margin: 0 10px;
-        font-size: 1rem;
-    }
-    
-    h1, h2, h3 {
-        text-align: center;
-        font-weight: bold;
-        text-decoration: underline;
-    }
-    </style>
-    """, unsafe_allow_html=True)
+    # ... (keep the existing CSS styles)
 
     # Replace with your Google Sheet ID and sheet name
     SPREADSHEET_ID = "1gCxnCOhQRHtVdVMSiLaReBRJbCUz1Wn6-KJRZshneuM"
@@ -228,7 +48,7 @@ def main():
     # Load the data
     df = load_data(SPREADSHEET_ID, SHEET_NAME)
 
-    # Initialize session state for filters if not already present
+    # Initialize session state for filters and filtered dataframe if not already present
     if 'filters' not in st.session_state:
         st.session_state.filters = {
             'country': 'All',
@@ -240,6 +60,8 @@ def main():
             'tuition_min': int(df['Tuition Price'].min()),
             'tuition_max': int(df['Tuition Price'].max())
         }
+    if 'filtered_df' not in st.session_state:
+        st.session_state.filtered_df = df
 
     # Main container for filters
     with st.container():
@@ -318,15 +140,16 @@ def main():
             (filtered_df['Tuition Price'] >= st.session_state.filters['tuition_min']) & 
             (filtered_df['Tuition Price'] <= st.session_state.filters['tuition_max'])
         ]
-    else:
-        filtered_df = df
+        
+        st.session_state.filtered_df = filtered_df
+        st.session_state.current_page = 1  # Reset to first page when new filter is applied
 
     # Display results
-    st.subheader(f"Showing {len(filtered_df)} results")
+    st.subheader(f"Showing {len(st.session_state.filtered_df)} results")
     
     # Pagination
     items_per_page = 16  # Changed to 16 for a 4x4 grid
-    total_pages = math.ceil(len(filtered_df) / items_per_page)
+    total_pages = math.ceil(len(st.session_state.filtered_df) / items_per_page)
     
     if 'current_page' not in st.session_state:
         st.session_state.current_page = 1
@@ -335,11 +158,11 @@ def main():
     end_idx = start_idx + items_per_page
     
     # Display university cards with a consistent layout
-    for i in range(0, min(items_per_page, len(filtered_df) - start_idx), 4):
+    for i in range(0, min(items_per_page, len(st.session_state.filtered_df) - start_idx), 4):
         cols = st.columns(4)  # Create a grid layout with four columns
         for j in range(4):
-            if i + j < len(filtered_df[start_idx:end_idx]):
-                row = filtered_df.iloc[start_idx + i + j]
+            if i + j < len(st.session_state.filtered_df[start_idx:end_idx]):
+                row = st.session_state.filtered_df.iloc[start_idx + i + j]
                 with cols[j]:
                     prime_tags = [row[f'prime {k}'] for k in range(2, 6) if pd.notna(row[f'prime {k}'])]
                     prime_tags_html = ''.join([f'<span class="prime-tag">{tag}</span>' for tag in prime_tags])
@@ -379,7 +202,6 @@ def main():
                                     <span>{row['Field']}</span>
                                 </div>
                             </div>
-                            <a href="{row['Link']}" class="create-application-btn" target="_blank">Apply Filter</a>
                         </div>
                     </div>
                     ''', unsafe_allow_html=True)

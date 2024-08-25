@@ -242,7 +242,7 @@ def main():
         with col5:
             institution_type = st.selectbox("Institution Type", options=["All"] + sorted(df['Institution Type'].unique().tolist()))
 
-    col6, col7 = st.columns(2)
+    col6 = st.columns(1)
     with col6:
         tuition_min, tuition_max = st.slider(
             "Tuition fee range (CAD)",
@@ -250,8 +250,6 @@ def main():
             max_value=int(df['Tuition Price'].max()),
             value=(int(df['Tuition Price'].min()), int(df['Tuition Price'].max()))
         )
-    with col7:
-        duration = st.selectbox("Duration", options=["All"] + sorted(df['Duration'].unique().tolist()))
 
     apply_filters = st.button("Apply filters")
     search_term = st.text_input("Search for Universities, Specialties, or Majors")

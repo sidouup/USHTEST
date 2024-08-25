@@ -254,7 +254,7 @@ def main():
         duration = st.selectbox("Duration", options=["All"] + sorted(df['Duration'].unique().tolist()))
 
     apply_filters = st.button("Apply filters")
-    search_term = st.text_input("Search for Universities or Specialties")
+    search_term = st.text_input("Search for Universities, Specialties, or Majors")
 
     # Filter the dataframe based on user selections
     if apply_filters or search_term:
@@ -263,8 +263,10 @@ def main():
         if search_term:
             university_matches = fuzzy_search(search_term, filtered_df['University Name'].str.lower())
             speciality_matches = fuzzy_search(search_term, filtered_df['Adjusted Speciality'].str.lower())
+            major_matches = fuzzy_search(search_term, filtered_df['Major'].str.lower())
             filtered_df = filtered_df[filtered_df['University Name'].str.lower().isin(university_matches) |
-                                      filtered_df['Adjusted Speciality'].str.lower().isin(speciality_matches)]
+                                      filtered_df['Adjusted Speciality'].str.lower().isin(speciality_matches) |
+                                      filtered_df['Major'].str.lower().isin(major_matches)]
         
         if country != "All":
             filtered_df = filtered_df[filtered_df['Country'] == country]

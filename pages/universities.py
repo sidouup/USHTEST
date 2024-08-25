@@ -228,64 +228,99 @@ def main():
     # Load the data
     df = load_data(SPREADSHEET_ID, SHEET_NAME)
 
+    # Initialize session state for filters if not already present
+    if 'filters' not in st.session_state:
+        st.session_state.filters = {
+            'country': 'All',
+            'program_level': 'All',
+            'field': 'All',
+            'specialty': 'All',
+            'institution_type': 'All',
+            'major': 'All',
+            'tuition_min': int(df['Tuition Price'].min()),
+            'tuition_max': int(df['Tuition Price'].max())
+        }
+
     # Main container for filters
     with st.container():
-        col1, col2, col3, col4, col5 = st.columns(5)
+        col1, col2, col3 = st.columns(3)
         with col1:
-            country = st.selectbox("Country", options=["All"] + sorted(df['Country'].unique().tolist()))
+            st.session_state.filters['country'] = st.selectbox(
+                "Country", 
+                options=["All"] + sorted(df['Country'].unique().tolist()),
+                key='country_filter'
+            )
         with col2:
-            program_level = st.selectbox("Program level", options=["All"] + sorted(df['Level'].unique().tolist()))
+            st.session_state.filters['program_level'] = st.selectbox(
+                "Program level", 
+                options=["All"] + sorted(df['Level'].unique().tolist()),
+                key='program_level_filter'
+            )
         with col3:
-            field = st.selectbox("Field", options=["All"] + sorted(df['Field'].unique().tolist()))
+            st.session_state.filters['field'] = st.selectbox(
+                "Field", 
+                options=["All"] + sorted(df['Field'].unique().tolist()),
+                key='field_filter'
+            )
+
+        col4, col5, col6 = st.columns(3)
         with col4:
-            specialty = st.selectbox("Specialty", options=["All"] + sorted(df['Adjusted Speciality'].unique().tolist()))
+            st.session_state.filters['specialty'] = st.selectbox(
+                "Specialty", 
+                options=["All"] + sorted(df['Adjusted Speciality'].unique().tolist()),
+                key='specialty_filter'
+            )
         with col5:
-            institution_type = st.selectbox("Institution Type", options=["All"] + sorted(df['Institution Type'].unique().tolist()))
+            st.session_state.filters['institution_type'] = st.selectbox(
+                "Institution Type", 
+                options=["All"] + sorted(df['Institution Type'].unique().tolist()),
+                key='institution_type_filter'
+            )
+        with col6:
+            st.session_state.filters['major'] = st.selectbox(
+                "Search by Major", 
+                options=["All"] + sorted(df['Major'].unique().tolist()),
+                key='major_filter'
+            )
 
-
-
-    tuition_min, tuition_max = st.slider(
+    st.session_state.filters['tuition_min'], st.session_state.filters['tuition_max'] = st.slider(
         "Tuition fee range (CAD)",
         min_value=int(df['Tuition Price'].min()),
         max_value=int(df['Tuition Price'].max()),
-        value=(int(df['Tuition Price'].min()), int(df['Tuition Price'].max()))
+        value=(st.session_state.filters['tuition_min'], st.session_state.filters['tuition_max']),
+        key='tuition_filter'
     )
 
-    apply_filters = st.button("Apply filters")
-    search_term = st.text_input("Search for Universities, Specialties, or Majors")
+    apply_filters = st.button("Apply Filter")
 
-    # Filter the dataframe based on user selections
-    if apply_filters or search_term:
+    if apply_filters:
         filtered_df = df.copy()
         
-        if search_term:
-            university_matches = fuzzy_search(search_term, filtered_df['University Name'].str.lower())
-            speciality_matches = fuzzy_search(search_term, filtered_df['Adjusted Speciality'].str.lower())
-            major_matches = fuzzy_search(search_term, filtered_df['Major'].str.lower())
-            filtered_df = filtered_df[filtered_df['University Name'].str.lower().isin(university_matches) |
-                                      filtered_df['Adjusted Speciality'].str.lower().isin(speciality_matches) |
-                                      filtered_df['Major'].str.lower().isin(major_matches)]
+        if st.session_state.filters['country'] != "All":
+            filtered_df = filtered_df[filtered_df['Country'] == st.session_state.filters['country']]
         
-        if country != "All":
-            filtered_df = filtered_df[filtered_df['Country'] == country]
+        if st.session_state.filters['program_level'] != "All":
+            filtered_df = filtered_df[filtered_df['Level'] == st.session_state.filters['program_level']]
         
-        if program_level != "All":
-            filtered_df = filtered_df[filtered_df['Level'] == program_level]
+        if st.session_state.filters['field'] != "All":
+            filtered_df = filtered_df[filtered_df['Field'] == st.session_state.filters['field']]
         
-        if field != "All":
-            filtered_df = filtered_df[filtered_df['Field'] == field]
+        if st.session_state.filters['specialty'] != "All":
+            filtered_df = filtered_df[filtered_df['Adjusted Speciality'] == st.session_state.filters['specialty']]
         
-        if specialty != "All":
-            filtered_df = filtered_df[filtered_df['Adjusted Speciality'] == specialty]
+        if st.session_state.filters['institution_type'] != "All":
+            filtered_df = filtered_df[filtered_df['Institution Type'] == st.session_state.filters['institution_type']]
         
-        if institution_type != "All":
-            filtered_df = filtered_df[filtered_df['Institution Type'] == institution_type]
+        if st.session_state.filters['major'] != "All":
+            filtered_df = filtered_df[filtered_df['Major'] == st.session_state.filters['major']]
         
-        filtered_df = filtered_df[(filtered_df['Tuition Price'] >= tuition_min) & (filtered_df['Tuition Price'] <= tuition_max)]
-        
+        filtered_df = filtered_df[
+            (filtered_df['Tuition Price'] >= st.session_state.filters['tuition_min']) & 
+            (filtered_df['Tuition Price'] <= st.session_state.filters['tuition_max'])
+        ]
     else:
         filtered_df = df
-    
+
     # Display results
     st.subheader(f"Showing {len(filtered_df)} results")
     
@@ -344,7 +379,7 @@ def main():
                                     <span>{row['Field']}</span>
                                 </div>
                             </div>
-                            <a href="{row['Link']}" class="create-application-btn" target="_blank">Apply Now</a>
+                            <a href="{row['Link']}" class="create-application-btn" target="_blank">Apply Filter</a>
                         </div>
                     </div>
                     ''', unsafe_allow_html=True)

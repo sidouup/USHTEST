@@ -228,6 +228,7 @@ def main():
 
 
     # Load the data
+    # Load the data
     df = load_data(SPREADSHEET_ID, SHEET_NAME)
 
     # Initialize session state for filters and reset flag
@@ -244,6 +245,8 @@ def main():
         }
     if 'reset_filters' not in st.session_state:
         st.session_state.reset_filters = False
+    if 'apply_after_reset' not in st.session_state:
+        st.session_state.apply_after_reset = False
 
     # Check if reset was triggered
     if st.session_state.reset_filters:
@@ -258,6 +261,7 @@ def main():
             'tuition_max': int(df['Tuition Price'].max())
         }
         st.session_state.reset_filters = False
+        st.session_state.apply_after_reset = True
 
     # Helper function to get index safely
     def get_index(options, value):
@@ -335,10 +339,9 @@ def main():
     with col2:
         if st.button("Reset Filters"):
             st.session_state.reset_filters = True
-            filtered_df = df.copy()
-            st.rerun()
+            st.experimental_rerun()
 
-    if apply_filters or 'filtered_df' not in st.session_state:
+    if apply_filters or st.session_state.apply_after_reset or 'filtered_df' not in st.session_state:
         filtered_df = df.copy()
         
         if st.session_state.filters['major'] != "All":
@@ -366,6 +369,7 @@ def main():
         
         st.session_state.filtered_df = filtered_df
         st.session_state.current_page = 1  # Reset to first page when new filter is applied
+        st.session_state.apply_after_reset = False  # Reset the flag
     else:
         filtered_df = st.session_state.filtered_df
 

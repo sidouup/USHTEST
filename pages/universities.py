@@ -442,7 +442,7 @@ def main():
         if st.session_state.current_page > 1:
             if st.button("◀ Previous", key="prev_button"):
                 st.session_state.current_page -= 1
-                st.experimental_rerun()
+                st.rerun()
     with col2:
         st.markdown(f'<div class="page-info">Page {st.session_state.current_page} of {total_pages}</div>', unsafe_allow_html=True)
     with col3:

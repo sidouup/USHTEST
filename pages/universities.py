@@ -48,7 +48,7 @@ def main():
     # Load the data
     df = load_data(SPREADSHEET_ID, SHEET_NAME)
 
-    # Initialize session state for filters and filtered dataframe if not already present
+    # Initialize session state for filters if not already present
     if 'filters' not in st.session_state:
         st.session_state.filters = {
             'country': 'All',
@@ -60,8 +60,6 @@ def main():
             'tuition_min': int(df['Tuition Price'].min()),
             'tuition_max': int(df['Tuition Price'].max())
         }
-    if 'filtered_df' not in st.session_state:
-        st.session_state.filtered_df = df
 
     # Main container for filters
     with st.container():
@@ -115,7 +113,7 @@ def main():
 
     apply_filters = st.button("Apply Filter")
 
-    if apply_filters:
+    if apply_filters or 'filtered_df' not in st.session_state:
         filtered_df = df.copy()
         
         if st.session_state.filters['country'] != "All":
@@ -143,13 +141,15 @@ def main():
         
         st.session_state.filtered_df = filtered_df
         st.session_state.current_page = 1  # Reset to first page when new filter is applied
+    else:
+        filtered_df = st.session_state.filtered_df
 
     # Display results
-    st.subheader(f"Showing {len(st.session_state.filtered_df)} results")
+    st.subheader(f"Showing {len(filtered_df)} results")
     
     # Pagination
     items_per_page = 16  # Changed to 16 for a 4x4 grid
-    total_pages = math.ceil(len(st.session_state.filtered_df) / items_per_page)
+    total_pages = math.ceil(len(filtered_df) / items_per_page)
     
     if 'current_page' not in st.session_state:
         st.session_state.current_page = 1
@@ -158,11 +158,11 @@ def main():
     end_idx = start_idx + items_per_page
     
     # Display university cards with a consistent layout
-    for i in range(0, min(items_per_page, len(st.session_state.filtered_df) - start_idx), 4):
+    for i in range(0, min(items_per_page, len(filtered_df) - start_idx), 4):
         cols = st.columns(4)  # Create a grid layout with four columns
         for j in range(4):
-            if i + j < len(st.session_state.filtered_df[start_idx:end_idx]):
-                row = st.session_state.filtered_df.iloc[start_idx + i + j]
+            if i + j < len(filtered_df[start_idx:end_idx]):
+                row = filtered_df.iloc[start_idx + i + j]
                 with cols[j]:
                     prime_tags = [row[f'prime {k}'] for k in range(2, 6) if pd.notna(row[f'prime {k}'])]
                     prime_tags_html = ''.join([f'<span class="prime-tag">{tag}</span>' for tag in prime_tags])
@@ -202,6 +202,7 @@ def main():
                                     <span>{row['Field']}</span>
                                 </div>
                             </div>
+                            <a href="{row['Link']}" class="create-application-btn" target="_blank">Apply Now</a>
                         </div>
                     </div>
                     ''', unsafe_allow_html=True)

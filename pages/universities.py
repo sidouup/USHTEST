@@ -335,6 +335,7 @@ def main():
     with col2:
         if st.button("Reset Filters"):
             st.session_state.reset_filters = True
+            filtered_df = df.copy()
             st.rerun()
 
     if apply_filters or 'filtered_df' not in st.session_state:

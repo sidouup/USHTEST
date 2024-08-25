@@ -227,22 +227,34 @@ def main():
     SHEET_NAME = "cleaned_universities_data"
 
     # Load the data
+    # Replace with your Google Sheet ID and sheet name
+    SPREADSHEET_ID = "1gCxnCOhQRHtVdVMSiLaReBRJbCUz1Wn6-KJRZshneuM"
+    SHEET_NAME = "cleaned_universities_data"
+
+    # Load the data
     df = load_data(SPREADSHEET_ID, SHEET_NAME)
 
     # Initialize session state for filters if not already present
     if 'filters' not in st.session_state:
         st.session_state.filters = {
+            'major': 'All',
             'country': 'All',
             'program_level': 'All',
             'field': 'All',
             'specialty': 'All',
             'institution_type': 'All',
-            'major': 'All',
             'tuition_min': int(df['Tuition Price'].min()),
             'tuition_max': int(df['Tuition Price'].max())
         }
 
-    # Main container for filters
+    # Major filter (search tool)
+    st.session_state.filters['major'] = st.selectbox(
+        "Search by Major", 
+        options=["All"] + sorted(df['Major'].unique().tolist()),
+        key='major_filter'
+    )
+
+    # Main container for other filters
     with st.container():
         col1, col2, col3 = st.columns(3)
         with col1:
@@ -264,7 +276,7 @@ def main():
                 key='field_filter'
             )
 
-        col4, col5, col6 = st.columns(3)
+        col4, col5 = st.columns(2)
         with col4:
             st.session_state.filters['specialty'] = st.selectbox(
                 "Specialty", 
@@ -277,12 +289,6 @@ def main():
                 options=["All"] + sorted(df['Institution Type'].unique().tolist()),
                 key='institution_type_filter'
             )
-        with col6:
-            st.session_state.filters['major'] = st.selectbox(
-                "Search by Major", 
-                options=["All"] + sorted(df['Major'].unique().tolist()),
-                key='major_filter'
-            )
 
     st.session_state.filters['tuition_min'], st.session_state.filters['tuition_max'] = st.slider(
         "Tuition fee range (CAD)",
@@ -292,11 +298,26 @@ def main():
         key='tuition_filter'
     )
 
-    apply_filters = st.button("Apply Filter")
+    col1, col2 = st.columns(2)
+    with col1:
+        apply_filters = st.button("Apply Filter")
+    with col2:
+        reset_filters = st.button("Reset Filters")
+
+    if reset_filters:
+        for key in st.session_state.filters:
+            if key in ['tuition_min', 'tuition_max']:
+                st.session_state.filters[key] = int(df['Tuition Price'].min() if key == 'tuition_min' else df['Tuition Price'].max())
+            else:
+                st.session_state.filters[key] = 'All'
+        st.experimental_rerun()
 
     if apply_filters or 'filtered_df' not in st.session_state:
         filtered_df = df.copy()
         
+        if st.session_state.filters['major'] != "All":
+            filtered_df = filtered_df[filtered_df['Major'] == st.session_state.filters['major']]
+
         if st.session_state.filters['country'] != "All":
             filtered_df = filtered_df[filtered_df['Country'] == st.session_state.filters['country']]
         
@@ -311,9 +332,6 @@ def main():
         
         if st.session_state.filters['institution_type'] != "All":
             filtered_df = filtered_df[filtered_df['Institution Type'] == st.session_state.filters['institution_type']]
-        
-        if st.session_state.filters['major'] != "All":
-            filtered_df = filtered_df[filtered_df['Major'] == st.session_state.filters['major']]
         
         filtered_df = filtered_df[
             (filtered_df['Tuition Price'] >= st.session_state.filters['tuition_min']) & 

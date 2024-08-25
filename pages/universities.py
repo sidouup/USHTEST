@@ -310,7 +310,7 @@ def main():
                 st.session_state.filters[key] = int(df['Tuition Price'].min() if key == 'tuition_min' else df['Tuition Price'].max())
             else:
                 st.session_state.filters[key] = 'All'
-        st.experimental_rerun()
+        st.rerun()
 
     if apply_filters or 'filtered_df' not in st.session_state:
         filtered_df = df.copy()

@@ -449,7 +449,7 @@ def main():
         if st.session_state.current_page < total_pages:
             if st.button("Next ▶", key="next_button"):
                 st.session_state.current_page += 1
-                st.experimental_rerun()
+                st.rerun()
 
 if __name__ == "__main__":
     main()

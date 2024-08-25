@@ -339,7 +339,7 @@ def main():
     with col2:
         if st.button("Reset Filters"):
             st.session_state.reset_filters = True
-            st.experimental_rerun()
+            st.rerun()
 
     if apply_filters or st.session_state.apply_after_reset or 'filtered_df' not in st.session_state:
         filtered_df = df.copy()

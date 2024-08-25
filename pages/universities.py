@@ -259,59 +259,66 @@ def main():
         }
         st.session_state.reset_filters = False
 
+    # Helper function to get index safely
+    def get_index(options, value):
+        try:
+            return options.index(value)
+        except ValueError:
+            return 0
+
     # Major filter (search tool)
+    major_options = ["All"] + sorted(df['Major'].unique().tolist())
     st.session_state.filters['major'] = st.selectbox(
         "Search by Major", 
-        options=["All"] + sorted(df['Major'].unique().tolist()),
+        options=major_options,
         key='major_filter',
-        index=0 if st.session_state.filters['major'] == 'All' else 
-              ["All"] + sorted(df['Major'].unique().tolist()).index(st.session_state.filters['major'])
+        index=get_index(major_options, st.session_state.filters['major'])
     )
 
     # Main container for other filters
     with st.container():
         col1, col2, col3 = st.columns(3)
         with col1:
+            country_options = ["All"] + sorted(df['Country'].unique().tolist())
             st.session_state.filters['country'] = st.selectbox(
                 "Country", 
-                options=["All"] + sorted(df['Country'].unique().tolist()),
+                options=country_options,
                 key='country_filter',
-                index=0 if st.session_state.filters['country'] == 'All' else 
-                      ["All"] + sorted(df['Country'].unique().tolist()).index(st.session_state.filters['country'])
+                index=get_index(country_options, st.session_state.filters['country'])
             )
         with col2:
+            level_options = ["All"] + sorted(df['Level'].unique().tolist())
             st.session_state.filters['program_level'] = st.selectbox(
                 "Program level", 
-                options=["All"] + sorted(df['Level'].unique().tolist()),
+                options=level_options,
                 key='program_level_filter',
-                index=0 if st.session_state.filters['program_level'] == 'All' else 
-                      ["All"] + sorted(df['Level'].unique().tolist()).index(st.session_state.filters['program_level'])
+                index=get_index(level_options, st.session_state.filters['program_level'])
             )
         with col3:
+            field_options = ["All"] + sorted(df['Field'].unique().tolist())
             st.session_state.filters['field'] = st.selectbox(
                 "Field", 
-                options=["All"] + sorted(df['Field'].unique().tolist()),
+                options=field_options,
                 key='field_filter',
-                index=0 if st.session_state.filters['field'] == 'All' else 
-                      ["All"] + sorted(df['Field'].unique().tolist()).index(st.session_state.filters['field'])
+                index=get_index(field_options, st.session_state.filters['field'])
             )
 
         col4, col5 = st.columns(2)
         with col4:
+            specialty_options = ["All"] + sorted(df['Adjusted Speciality'].unique().tolist())
             st.session_state.filters['specialty'] = st.selectbox(
                 "Specialty", 
-                options=["All"] + sorted(df['Adjusted Speciality'].unique().tolist()),
+                options=specialty_options,
                 key='specialty_filter',
-                index=0 if st.session_state.filters['specialty'] == 'All' else 
-                      ["All"] + sorted(df['Adjusted Speciality'].unique().tolist()).index(st.session_state.filters['specialty'])
+                index=get_index(specialty_options, st.session_state.filters['specialty'])
             )
         with col5:
+            institution_options = ["All"] + sorted(df['Institution Type'].unique().tolist())
             st.session_state.filters['institution_type'] = st.selectbox(
                 "Institution Type", 
-                options=["All"] + sorted(df['Institution Type'].unique().tolist()),
+                options=institution_options,
                 key='institution_type_filter',
-                index=0 if st.session_state.filters['institution_type'] == 'All' else 
-                      ["All"] + sorted(df['Institution Type'].unique().tolist()).index(st.session_state.filters['institution_type'])
+                index=get_index(institution_options, st.session_state.filters['institution_type'])
             )
 
     st.session_state.filters['tuition_min'], st.session_state.filters['tuition_max'] = st.slider(
@@ -363,7 +370,7 @@ def main():
 
     # Display results
     st.subheader(f"Showing {len(filtered_df)} results")
-        
+    
     # Pagination
     items_per_page = 16  # Changed to 16 for a 4x4 grid
     total_pages = math.ceil(len(filtered_df) / items_per_page)
@@ -419,7 +426,7 @@ def main():
                                     <span>{row['Field']}</span>
                                 </div>
                             </div>
-                            <a href="0" class="create-application-btn" target="_blank">Apply Now</a>
+                            <a href="{row['Link']}" class="create-application-btn" target="_blank">Apply Now</a>
                         </div>
                     </div>
                     ''', unsafe_allow_html=True)
@@ -430,15 +437,14 @@ def main():
         if st.session_state.current_page > 1:
             if st.button("◀ Previous", key="prev_button"):
                 st.session_state.current_page -= 1
-                st.rerun()
+                st.experimental_rerun()
     with col2:
         st.markdown(f'<div class="page-info">Page {st.session_state.current_page} of {total_pages}</div>', unsafe_allow_html=True)
     with col3:
         if st.session_state.current_page < total_pages:
             if st.button("Next ▶", key="next_button"):
                 st.session_state.current_page += 1
-                st.rerun()
-
+                st.experimental_rerun()
 
 if __name__ == "__main__":
     main()

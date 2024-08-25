@@ -228,46 +228,65 @@ def main():
     # Load the data
     df = load_data(SPREADSHEET_ID, SHEET_NAME)
 
-    # Initialize filtered_df with the full dataset to avoid UnboundLocalError
-    filtered_df = df.copy()
-
     # Main container for filters
     with st.container():
         col1, col2, col3, col4, col5 = st.columns(5)
         with col1:
-            location = st.selectbox("Location", options=["All"] + sorted(df['Country'].unique().tolist()))
+            country = st.selectbox("Country", options=["All"] + sorted(df['Country'].unique().tolist()))
         with col2:
             program_level = st.selectbox("Program level", options=["All"] + sorted(df['Level'].unique().tolist()))
         with col3:
-            field_of_study = st.selectbox("Field of study", options=["All"] + sorted(df['Field'].unique().tolist()))
+            field = st.selectbox("Field", options=["All"] + sorted(df['Field'].unique().tolist()))
         with col4:
-            tuition_min, tuition_max = st.slider(
-                "Tuition fee range",
-                min_value=int(df['Tuition Price'].min()),
-                max_value=int(df['Tuition Price'].max()),
-                value=(int(df['Tuition Price'].min()), int(df['Tuition Price'].max()))
-            )
+            specialty = st.selectbox("Specialty", options=["All"] + sorted(df['Adjusted Speciality'].unique().tolist()))
         with col5:
-            apply_filters = st.button("Apply filters")
-    search_term = st.text_input("Search for Universities or Specialities")
+            institution_type = st.selectbox("Institution Type", options=["All"] + sorted(df['Institution Type'].unique().tolist()))
 
+    col6, col7 = st.columns(2)
+    with col6:
+        tuition_min, tuition_max = st.slider(
+            "Tuition fee range (CAD)",
+            min_value=int(df['Tuition Price'].min()),
+            max_value=int(df['Tuition Price'].max()),
+            value=(int(df['Tuition Price'].min()), int(df['Tuition Price'].max()))
+        )
+    with col7:
+        duration = st.selectbox("Duration", options=["All"] + sorted(df['Duration'].unique().tolist()))
+
+    apply_filters = st.button("Apply filters")
+    search_term = st.text_input("Search for Universities or Specialties")
+
+    # Filter the dataframe based on user selections
     if apply_filters or search_term:
+        filtered_df = df.copy()
+        
         if search_term:
             university_matches = fuzzy_search(search_term, filtered_df['University Name'].str.lower())
             speciality_matches = fuzzy_search(search_term, filtered_df['Adjusted Speciality'].str.lower())
             filtered_df = filtered_df[filtered_df['University Name'].str.lower().isin(university_matches) |
                                       filtered_df['Adjusted Speciality'].str.lower().isin(speciality_matches)]
-    
-        if location != "All":
-            filtered_df = filtered_df[filtered_df['Country'] == location]
-    
+        
+        if country != "All":
+            filtered_df = filtered_df[filtered_df['Country'] == country]
+        
         if program_level != "All":
             filtered_df = filtered_df[filtered_df['Level'] == program_level]
-    
-        if field_of_study != "All":
-            filtered_df = filtered_df[filtered_df['Field'] == field_of_study]
-    
+        
+        if field != "All":
+            filtered_df = filtered_df[filtered_df['Field'] == field]
+        
+        if specialty != "All":
+            filtered_df = filtered_df[filtered_df['Adjusted Speciality'] == specialty]
+        
+        if institution_type != "All":
+            filtered_df = filtered_df[filtered_df['Institution Type'] == institution_type]
+        
         filtered_df = filtered_df[(filtered_df['Tuition Price'] >= tuition_min) & (filtered_df['Tuition Price'] <= tuition_max)]
+        
+        if duration != "All":
+            filtered_df = filtered_df[filtered_df['Duration'] == duration]
+    else:
+        filtered_df = df
     
     # Display results
     st.subheader(f"Showing {len(filtered_df)} results")

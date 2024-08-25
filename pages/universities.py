@@ -431,7 +431,7 @@ def main():
                                     <span>{row['Field']}</span>
                                 </div>
                             </div>
-                            <a href="{row['Link']}" class="create-application-btn" target="_blank">Apply Now</a>
+                            <!-- Removed Apply Now button -->
                         </div>
                     </div>
                     ''', unsafe_allow_html=True)

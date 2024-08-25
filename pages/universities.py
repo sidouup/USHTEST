@@ -226,15 +226,11 @@ def main():
     SPREADSHEET_ID = "1gCxnCOhQRHtVdVMSiLaReBRJbCUz1Wn6-KJRZshneuM"
     SHEET_NAME = "cleaned_universities_data"
 
-    # Load the data
-    # Replace with your Google Sheet ID and sheet name
-    SPREADSHEET_ID = "1gCxnCOhQRHtVdVMSiLaReBRJbCUz1Wn6-KJRZshneuM"
-    SHEET_NAME = "cleaned_universities_data"
 
     # Load the data
     df = load_data(SPREADSHEET_ID, SHEET_NAME)
 
-    # Initialize session state for filters if not already present
+    # Initialize session state for filters and reset flag
     if 'filters' not in st.session_state:
         st.session_state.filters = {
             'major': 'All',
@@ -246,12 +242,30 @@ def main():
             'tuition_min': int(df['Tuition Price'].min()),
             'tuition_max': int(df['Tuition Price'].max())
         }
+    if 'reset_filters' not in st.session_state:
+        st.session_state.reset_filters = False
+
+    # Check if reset was triggered
+    if st.session_state.reset_filters:
+        st.session_state.filters = {
+            'major': 'All',
+            'country': 'All',
+            'program_level': 'All',
+            'field': 'All',
+            'specialty': 'All',
+            'institution_type': 'All',
+            'tuition_min': int(df['Tuition Price'].min()),
+            'tuition_max': int(df['Tuition Price'].max())
+        }
+        st.session_state.reset_filters = False
 
     # Major filter (search tool)
     st.session_state.filters['major'] = st.selectbox(
         "Search by Major", 
         options=["All"] + sorted(df['Major'].unique().tolist()),
-        key='major_filter'
+        key='major_filter',
+        index=0 if st.session_state.filters['major'] == 'All' else 
+              ["All"] + sorted(df['Major'].unique().tolist()).index(st.session_state.filters['major'])
     )
 
     # Main container for other filters
@@ -261,19 +275,25 @@ def main():
             st.session_state.filters['country'] = st.selectbox(
                 "Country", 
                 options=["All"] + sorted(df['Country'].unique().tolist()),
-                key='country_filter'
+                key='country_filter',
+                index=0 if st.session_state.filters['country'] == 'All' else 
+                      ["All"] + sorted(df['Country'].unique().tolist()).index(st.session_state.filters['country'])
             )
         with col2:
             st.session_state.filters['program_level'] = st.selectbox(
                 "Program level", 
                 options=["All"] + sorted(df['Level'].unique().tolist()),
-                key='program_level_filter'
+                key='program_level_filter',
+                index=0 if st.session_state.filters['program_level'] == 'All' else 
+                      ["All"] + sorted(df['Level'].unique().tolist()).index(st.session_state.filters['program_level'])
             )
         with col3:
             st.session_state.filters['field'] = st.selectbox(
                 "Field", 
                 options=["All"] + sorted(df['Field'].unique().tolist()),
-                key='field_filter'
+                key='field_filter',
+                index=0 if st.session_state.filters['field'] == 'All' else 
+                      ["All"] + sorted(df['Field'].unique().tolist()).index(st.session_state.filters['field'])
             )
 
         col4, col5 = st.columns(2)
@@ -281,13 +301,17 @@ def main():
             st.session_state.filters['specialty'] = st.selectbox(
                 "Specialty", 
                 options=["All"] + sorted(df['Adjusted Speciality'].unique().tolist()),
-                key='specialty_filter'
+                key='specialty_filter',
+                index=0 if st.session_state.filters['specialty'] == 'All' else 
+                      ["All"] + sorted(df['Adjusted Speciality'].unique().tolist()).index(st.session_state.filters['specialty'])
             )
         with col5:
             st.session_state.filters['institution_type'] = st.selectbox(
                 "Institution Type", 
                 options=["All"] + sorted(df['Institution Type'].unique().tolist()),
-                key='institution_type_filter'
+                key='institution_type_filter',
+                index=0 if st.session_state.filters['institution_type'] == 'All' else 
+                      ["All"] + sorted(df['Institution Type'].unique().tolist()).index(st.session_state.filters['institution_type'])
             )
 
     st.session_state.filters['tuition_min'], st.session_state.filters['tuition_max'] = st.slider(
@@ -302,15 +326,9 @@ def main():
     with col1:
         apply_filters = st.button("Apply Filter")
     with col2:
-        reset_filters = st.button("Reset Filters")
-
-    if reset_filters:
-        for key in st.session_state.filters:
-            if key in ['tuition_min', 'tuition_max']:
-                st.session_state.filters[key] = int(df['Tuition Price'].min() if key == 'tuition_min' else df['Tuition Price'].max())
-            else:
-                st.session_state.filters[key] = 'All'
-        st.rerun()
+        if st.button("Reset Filters"):
+            st.session_state.reset_filters = True
+            st.experimental_rerun()
 
     if apply_filters or 'filtered_df' not in st.session_state:
         filtered_df = df.copy()
@@ -345,7 +363,7 @@ def main():
 
     # Display results
     st.subheader(f"Showing {len(filtered_df)} results")
-    
+        
     # Pagination
     items_per_page = 16  # Changed to 16 for a 4x4 grid
     total_pages = math.ceil(len(filtered_df) / items_per_page)

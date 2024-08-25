@@ -285,8 +285,6 @@ def main():
         
         filtered_df = filtered_df[(filtered_df['Tuition Price'] >= tuition_min) & (filtered_df['Tuition Price'] <= tuition_max)]
         
-        if duration != "All":
-            filtered_df = filtered_df[filtered_df['Duration'] == duration]
     else:
         filtered_df = df
     

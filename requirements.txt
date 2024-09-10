@@ -25,6 +25,7 @@ protobuf
 streamlit
 httpx
 langchain
+yt-dlp
 openai
 pandas
 AssemblyAI

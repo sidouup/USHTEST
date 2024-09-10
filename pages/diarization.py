@@ -7,6 +7,7 @@ import streamlit as st
 import assemblyai as aai
 import time
 from pytube import YouTube
+from urllib.parse import urlparse
 
 # Set page configuration
 st.set_page_config(page_title="YouTube Audio Transcription App", layout="wide")
@@ -99,6 +100,14 @@ if 'speaker_names' not in st.session_state:
 # Set AssemblyAI API key
 aai.settings.api_key = st.secrets["aai"]  # Replace with your actual AssemblyAI API key
 
+# Function to validate YouTube URL
+def is_valid_youtube_url(url):
+    try:
+        result = urlparse(url)
+        return all([result.scheme, result.netloc]) and 'youtube' in result.netloc
+    except:
+        return False
+
 # Function to extract audio chunk
 def extract_audio_chunk(file_path, start_time, end_time):
     with wave.open(file_path, 'rb') as wav_file:
@@ -120,9 +129,16 @@ def extract_audio_chunk(file_path, start_time, end_time):
 
 # Function to download YouTube audio
 def download_youtube_audio(youtube_url):
+    if not is_valid_youtube_url(youtube_url):
+        st.error("Invalid YouTube URL. Please enter a valid YouTube link.")
+        return None
+    
     try:
         yt = YouTube(youtube_url)
         audio_stream = yt.streams.filter(only_audio=True, file_extension='mp4').first()
+        if not audio_stream:
+            st.error("No audio stream available for this YouTube video.")
+            return None
         audio_file_path = audio_stream.download(filename='youtube_audio.mp4')
         return audio_file_path
     except Exception as e:

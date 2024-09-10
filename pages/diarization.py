@@ -1,5 +1,4 @@
 import pandas as pd
-from httpx import RemoteProtocolError
 import wave
 import io
 from langchain_openai import ChatOpenAI
@@ -7,8 +6,10 @@ from langchain_core.prompts import ChatPromptTemplate
 import streamlit as st
 import assemblyai as aai
 import time
+from pytube import YouTube
+
 # Set page configuration
-st.set_page_config(page_title="Audio Transcription App", layout="wide")
+st.set_page_config(page_title="YouTube Audio Transcription App", layout="wide")
 
 # Custom CSS for modern look
 st.markdown("""
@@ -81,12 +82,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Streamlit app title
-st.markdown("<h1 class='main-title'>Audio Transcription with Speaker Identification</h1>", unsafe_allow_html=True)
-
-# Embed YouTube video
-st.markdown("<div class='video-container'>", unsafe_allow_html=True)
-st.video("https://www.youtube.com/watch?v=SAL-mNE10TA&t=43s")
-st.markdown("</div>", unsafe_allow_html=True)
+st.markdown("<h1 class='main-title'>YouTube Audio Transcription with Speaker Identification</h1>", unsafe_allow_html=True)
 
 # Initialize session state
 if 'transcript_generated' not in st.session_state:
@@ -101,7 +97,7 @@ if 'speaker_names' not in st.session_state:
     st.session_state.speaker_names = {}
 
 # Set AssemblyAI API key
-aai.settings.api_key = st.secrets["aai"] # Replace with your actual AssemblyAI API key
+aai.settings.api_key = st.secrets["aai"]  # Replace with your actual AssemblyAI API key
 
 # Function to extract audio chunk
 def extract_audio_chunk(file_path, start_time, end_time):
@@ -111,7 +107,7 @@ def extract_audio_chunk(file_path, start_time, end_time):
         end_frame = int(end_time * framerate)
         wav_file.setpos(start_frame)
         chunk_frames = wav_file.readframes(end_frame - start_frame)
-        
+    
     chunk_io = io.BytesIO()
     with wave.open(chunk_io, 'wb') as chunk_wav:
         chunk_wav.setnchannels(wav_file.getnchannels())
@@ -121,6 +117,17 @@ def extract_audio_chunk(file_path, start_time, end_time):
     
     chunk_io.seek(0)
     return chunk_io
+
+# Function to download YouTube audio
+def download_youtube_audio(youtube_url):
+    try:
+        yt = YouTube(youtube_url)
+        audio_stream = yt.streams.filter(only_audio=True, file_extension='mp4').first()
+        audio_file_path = audio_stream.download(filename='youtube_audio.mp4')
+        return audio_file_path
+    except Exception as e:
+        st.error(f"Error downloading YouTube video: {e}")
+        return None
 
 # Function to transcribe audio
 def transcribe_audio(file_path, num_speakers=None):
@@ -140,8 +147,6 @@ def transcribe_audio(file_path, num_speakers=None):
             time.sleep(2)
         except Exception as e:
             st.error(f"An error occurred: {str(e)}")
-            if hasattr(e, 'response'):
-                st.error(f"Response content: {e.response.text}")
             break
     return None
 
@@ -166,11 +171,11 @@ def get_ai_suggestions(transcript):
 col1, col2 = st.columns([1, 2])
 
 with col1:
-    st.markdown("<h2 class='section-title'>Upload Audio</h2>", unsafe_allow_html=True)
-    uploaded_file = st.file_uploader("Choose a WAV file", type=["wav"])
+    st.markdown("<h2 class='section-title'>YouTube Link Input</h2>", unsafe_allow_html=True)
+    youtube_url = st.text_input("Enter the YouTube video link:")
     
-    if uploaded_file is not None:
-        st.audio(uploaded_file, format="audio/wav")
+    if youtube_url:
+        st.markdown("<h2 class='section-title'>Specify Number of Speakers</h2>", unsafe_allow_html=True)
         
         set_speakers = st.checkbox("Specify the number of speakers")
         if set_speakers:
@@ -179,28 +184,28 @@ with col1:
             num_speakers = None
         
         if st.button("Generate Transcript", key="generate_transcript"):
-            with st.spinner("Transcribing audio..."):
-                # Save the uploaded file temporarily
-                st.session_state.file_path = "temp_audio_file.wav"
-                with open(st.session_state.file_path, "wb") as f:
-                    f.write(uploaded_file.getbuffer())
+            with st.spinner("Downloading audio and transcribing..."):
+                # Download audio from YouTube
+                audio_file_path = download_youtube_audio(youtube_url)
+                if audio_file_path:
+                    st.session_state.file_path = audio_file_path
                 
-                # Transcribe the uploaded file
-                transcript = transcribe_audio(st.session_state.file_path, num_speakers=num_speakers)
-                
-                if transcript and transcript.status == aai.TranscriptStatus.completed:
-                    st.success("Transcription Successful!")
+                    # Transcribe the downloaded file
+                    transcript = transcribe_audio(st.session_state.file_path, num_speakers=num_speakers)
                     
-                    # Process transcript data
-                    data = [(u.speaker, u.text, u.start / 1000, u.end / 1000, u.confidence) for u in transcript.utterances]
-                    st.session_state.df = pd.DataFrame(data, columns=["Speaker", "Text", "Start", "End", "Confidence"])
-                    
-                    # Get AI suggestions
-                    st.session_state.ai_suggestions = get_ai_suggestions(st.session_state.df)
-                    
-                    st.session_state.transcript_generated = True
-                else:
-                    st.error("Transcription failed. Please try again.")
+                    if transcript and transcript.status == aai.TranscriptStatus.completed:
+                        st.success("Transcription Successful!")
+                        
+                        # Process transcript data
+                        data = [(u.speaker, u.text, u.start / 1000, u.end / 1000, u.confidence) for u in transcript.utterances]
+                        st.session_state.df = pd.DataFrame(data, columns=["Speaker", "Text", "Start", "End", "Confidence"])
+                        
+                        # Get AI suggestions
+                        st.session_state.ai_suggestions = get_ai_suggestions(st.session_state.df)
+                        
+                        st.session_state.transcript_generated = True
+                    else:
+                        st.error("Transcription failed. Please try again.")
 
 with col2:
     if st.session_state.transcript_generated:
@@ -257,6 +262,3 @@ with col2:
             
             st.markdown("<h2 class='section-title'>Final Transcript with Identified Speakers</h2>", unsafe_allow_html=True)
             st.dataframe(st.session_state.df)
-
-# Instructions
-

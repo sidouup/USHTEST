@@ -29,3 +29,9 @@ openai
 pandas
 AssemblyAI
 langchain_openai
+pytube
+assemblyai
+langchain_openai
+pandas
+streamlit
+wave

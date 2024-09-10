@@ -6,7 +6,7 @@ from langchain_core.prompts import ChatPromptTemplate
 import streamlit as st
 import assemblyai as aai
 import time
-from pytube import YouTube
+import yt_dlp
 from urllib.parse import urlparse
 
 # Set page configuration
@@ -33,44 +33,44 @@ st.markdown("""
         font-size: 2.5rem;
         font-weight: bold;
         margin-bottom: 1rem;
-        text-align: center;
+        text-align: center.
     }
     .video-container {
-        margin-bottom: 2rem;
+        margin-bottom: 2rem.
     }
     .section-title {
         color: #2C3E50;
         font-size: 1.8rem;
-        font-weight: bold;
+        font-weight: bold.
         margin-top: 2rem;
-        margin-bottom: 1rem;
+        margin-bottom: 1rem.
     }
     .speaker-box {
         background-color: #F0F3F9;
         border-radius: 10px;
         padding: 1rem;
-        margin-bottom: 1rem;
+        margin-bottom: 1rem.
     }
     .speaker-title {
         color: #34495E;
         font-size: 1.2rem;
-        font-weight: bold;
+        font-weight: bold.
     }
     .ai-suggestion {
         color: #16A085;
-        font-style: italic;
-        margin-bottom: 0.5rem;
+        font-style: italic.
+        margin-bottom: 0.5rem.
     }
     .transcript-line {
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.5rem.
     }
     .timestamp {
         color: #7F8C8D;
-        font-size: 0.9rem;
+        font-size: 0.9rem.
     }
     .confidence {
         color: #95A5A6;
-        font-size: 0.8rem;
+        font-size: 0.8rem.
     }
 </style>
 """, unsafe_allow_html=True)
@@ -127,20 +127,25 @@ def extract_audio_chunk(file_path, start_time, end_time):
     chunk_io.seek(0)
     return chunk_io
 
-# Function to download YouTube audio
+# Function to download YouTube audio using yt-dlp
 def download_youtube_audio(youtube_url):
     if not is_valid_youtube_url(youtube_url):
         st.error("Invalid YouTube URL. Please enter a valid YouTube link.")
         return None
     
     try:
-        yt = YouTube(youtube_url)
-        audio_stream = yt.streams.filter(only_audio=True, file_extension='mp4').first()
-        if not audio_stream:
-            st.error("No audio stream available for this YouTube video.")
-            return None
-        audio_file_path = audio_stream.download(filename='youtube_audio.mp4')
-        return audio_file_path
+        ydl_opts = {
+            'format': 'bestaudio/best',
+            'outtmpl': 'youtube_audio.%(ext)s',
+            'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'wav',
+                'preferredquality': '192',
+            }],
+        }
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([youtube_url])
+        return 'youtube_audio.wav'
     except Exception as e:
         st.error(f"Error downloading YouTube video: {e}")
         return None

@@ -22,4 +22,10 @@ frontend
 pillow
 streamlit_nested_layout
 protobuf
+streamlit
+httpx
+langchain
+openai
+pandas
+AssemblyAI
 

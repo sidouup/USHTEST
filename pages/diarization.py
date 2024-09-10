@@ -5,7 +5,8 @@ import io
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 import streamlit as st
-
+import assemblyai as aai
+import time
 # Set page configuration
 st.set_page_config(page_title="Audio Transcription App", layout="wide")
 

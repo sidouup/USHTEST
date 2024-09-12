@@ -1,6 +1,3 @@
-
-
-
 import streamlit as st
 import assemblyai as aai
 import time
@@ -109,7 +106,7 @@ if 'speaker_names' not in st.session_state:
     st.session_state.speaker_names = {}
 
 # Set AssemblyAI API key
-aai.settings.api_key = st.secrets["aai"]  # Replace with your actual AssemblyAI API key
+aai.settings.api_key = "your_assemblyai_api_key"  # Replace with your actual AssemblyAI API key
 
 # Function to extract audio chunk
 def extract_audio_chunk(file_path, start_time, end_time):
@@ -138,12 +135,17 @@ def compress_audio(file_path):
     return compressed_path
 
 # Function to transcribe audio
-def transcribe_audio(file_path, num_speakers=None):
+def transcribe_audio(file_path, num_speakers=None, word_boost=None, boost_param="default"):
     transcriber = aai.Transcriber()
+    
+    # Configuring custom vocabulary for ASR
     config = aai.TranscriptionConfig(
         speaker_labels=True,
-        speakers_expected=num_speakers if num_speakers else None
+        speakers_expected=num_speakers if num_speakers else None,
+        word_boost=word_boost,  # List of custom vocabulary words
+        boost_param=boost_param  # Control the weight of the word boost
     )
+    
     attempts = 3
 
     for attempt in range(attempts):
@@ -162,7 +164,7 @@ def transcribe_audio(file_path, num_speakers=None):
 
 # Function to get AI suggestions for speaker names using LangChain
 def get_ai_suggestions(transcript):
-    llm = ChatOpenAI(model="gpt-4o", temperature=0, api_key=st.secrets["gpt40"])  # Replace with your OpenAI API key
+    llm = ChatOpenAI(model="gpt-4o", temperature=0, api_key="your_openai_api_key")  # Replace with your OpenAI API key
     
     prompt = ChatPromptTemplate.from_messages([
         ("system", "You are an AI assistant that can identify speakers based on the context of a conversation."),
@@ -187,8 +189,23 @@ with col1:
     if uploaded_file is not None:
         st.audio(uploaded_file, format="audio/wav")
         
+        # Custom vocabulary input
+        st.markdown("<h2 class='section-title'>Custom Vocabulary</h2>", unsafe_allow_html=True)
+        word_boost_input = st.text_area("Enter custom vocabulary words or phrases (comma-separated)")
+        if word_boost_input:
+            word_boost_list = [word.strip() for word in word_boost_input.split(',')]
+        else:
+            word_boost_list = None
+        
+        # Boost parameter selection
+        boost_param = st.selectbox(
+            "Set boost parameter (how much emphasis is placed on the custom vocabulary)",
+            options=["low", "default", "high"],
+            index=1
+        )
+        
         # Check if the file size exceeds 200MB
-        if uploaded_file.size > 100 * 1024 * 1024:
+        if uploaded_file.size > 200 * 1024 * 1024:
             st.warning("The file size exceeds 200MB. Compressing...")
             # Save the file and compress it
             with open("temp_audio.wav", "wb") as f:
@@ -220,8 +237,13 @@ with col1:
         
         if st.button("Generate Transcript", key="generate_transcript"):
             with st.spinner("Transcribing audio..."):
-                # Transcribe the uploaded file
-                transcript = transcribe_audio(st.session_state.file_path, num_speakers=num_speakers)
+                # Transcribe the uploaded file with custom vocabulary and boost settings
+                transcript = transcribe_audio(
+                    st.session_state.file_path,
+                    num_speakers=num_speakers,
+                    word_boost=word_boost_list,
+                    boost_param=boost_param
+                )
                 
                 if transcript and transcript.status == aai.TranscriptStatus.completed:
                     st.success("Transcription Successful!")

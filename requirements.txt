@@ -35,4 +35,10 @@ assemblyai
 langchain_openai
 pandas
 streamlit
+assemblyai
+pandas
+httpx
+langchain
+openai
+pydub
 wave

@@ -157,12 +157,16 @@ def transcribe_audio(file_path, num_speakers=None, word_boost=None, boost_param=
 # Function to get AI suggestions for speaker names using LangChain
 def get_ai_suggestions(transcript_df):
     try:
-        llm = ChatOpenAI(model_name="gpt-4o-2024-08-06", temperature=0, openai_api_key=st.secrets["gpt40"])  # Replace with your OpenAI API key
+        llm = ChatOpenAI(model_name="gpt-4", temperature=0, openai_api_key=st.secrets["gpt40"])
 
         prompt_template = """
             You are an AI assistant that identifies speakers based on the context of a conversation.
             Based on the following transcript, identify and name the speakers.
-            Provide the response in the format 'Speaker X: [Suggested Name]'.
+            Provide the response in the format:
+
+            Speaker X: [Suggested Name]
+            Speaker Y: [Suggested Name]
+            ...
 
             Transcript:
             {transcript}
@@ -174,6 +178,11 @@ def get_ai_suggestions(transcript_df):
         full_transcript = "\n".join([f"Speaker {row['Speaker']}: {row['Text']}" for _, row in transcript_df.iterrows()])
 
         result = chain.run(transcript=full_transcript)
+
+        # Display the AI's response for debugging
+        st.write("AI's Response:")
+        st.write(result)
+
         return result
     except Exception as e:
         st.error(f"An error occurred while fetching AI suggestions: {str(e)}")

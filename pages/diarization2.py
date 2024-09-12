@@ -195,11 +195,13 @@ Transcript:
 # Function to parse AI suggestions
 def parse_ai_suggestions(ai_response):
     ai_suggestions_dict = {}
-    pattern = r"Speaker (\d+):\s*(.+)"
+    # Adjust the pattern to match speaker labels that are either numbers or letters
+    pattern = r"Speaker (\w+):\s*(.+)"
     matches = re.findall(pattern, ai_response)
-    for match in matches:
-        speaker, name = match
-        ai_suggestions_dict[int(speaker)] = name.strip()
+    if not matches:
+        st.warning("No matches found in AI response. Please check the AI's output.")
+    for speaker_label, name in matches:
+        ai_suggestions_dict[speaker_label.strip()] = name.strip()
     return ai_suggestions_dict
 
 # Function to sanitize custom vocabulary input

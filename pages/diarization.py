@@ -183,7 +183,7 @@ with col1:
         st.audio(uploaded_file, format="audio/wav")
         
         # Check if the file size exceeds 200MB
-        if uploaded_file.size > 200 * 1024 * 1024:
+        if uploaded_file.size > 100 * 1024 * 1024:
             st.warning("The file size exceeds 200MB. Compressing...")
             # Save the file and compress it
             with open("temp_audio.wav", "wb") as f:

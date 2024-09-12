@@ -157,7 +157,7 @@ def transcribe_audio(file_path, num_speakers=None, word_boost=None, boost_param=
 # Function to get AI suggestions for speaker names using LangChain
 def get_ai_suggestions(transcript_df):
     try:
-        llm = ChatOpenAI(model_name="gpt-4", temperature=0, openai_api_key=st.secrets["gpt40"])
+        llm = ChatOpenAI(model_name="gpt-4o-2024-08-06", temperature=0, openai_api_key=st.secrets["gpt40"])
 
         prompt_template = """
             You are an AI assistant that identifies speakers based on the context of a conversation.

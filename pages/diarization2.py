@@ -160,17 +160,21 @@ def get_ai_suggestions(transcript_df):
         llm = ChatOpenAI(model_name="gpt-4o-2024-08-06", temperature=0, openai_api_key=st.secrets["gpt40"])
 
         prompt_template = """
-            You are an AI assistant that identifies speakers based on the context of a conversation.
-            Based on the following transcript, identify and name the speakers.
-            Provide the response in the format:
+You are an AI assistant that identifies speakers based on the context of a conversation.
+Based on the following transcript, identify and name the speakers.
+**Use the same speaker numbers as in the transcript when providing your suggestions.**
 
-            Speaker X: [Suggested Name]
-            Speaker Y: [Suggested Name]
-            ...
+Provide the response in the exact format:
 
-            Transcript:
-            {transcript}
-        """
+Speaker 1: [Suggested Name]
+Speaker 2: [Suggested Name]
+...
+
+**Do not include any extra text or explanations.**
+
+Transcript:
+{transcript}
+"""
         prompt = ChatPromptTemplate.from_template(prompt_template)
 
         chain = LLMChain(llm=llm, prompt=prompt)

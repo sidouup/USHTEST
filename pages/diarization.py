@@ -1,16 +1,17 @@
-import pandas as pd
-import wave
-import io
-from langchain_openai import ChatOpenAI
-from langchain_core.prompts import ChatPromptTemplate
 import streamlit as st
 import assemblyai as aai
 import time
-import yt_dlp
-from urllib.parse import urlparse
+import pandas as pd
+from httpx import RemoteProtocolError
+import wave
+import io
+import os
+import zipfile
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate
 
 # Set page configuration
-st.set_page_config(page_title="YouTube Audio Transcription App", layout="wide")
+st.set_page_config(page_title="Audio Transcription App", layout="wide")
 
 # Custom CSS for modern look
 st.markdown("""
@@ -33,44 +34,44 @@ st.markdown("""
         font-size: 2.5rem;
         font-weight: bold;
         margin-bottom: 1rem;
-        text-align: center.
+        text-align: center;
     }
     .video-container {
-        margin-bottom: 2rem.
+        margin-bottom: 2rem;
     }
     .section-title {
         color: #2C3E50;
         font-size: 1.8rem;
-        font-weight: bold.
+        font-weight: bold;
         margin-top: 2rem;
-        margin-bottom: 1rem.
+        margin-bottom: 1rem;
     }
     .speaker-box {
         background-color: #F0F3F9;
         border-radius: 10px;
         padding: 1rem;
-        margin-bottom: 1rem.
+        margin-bottom: 1rem;
     }
     .speaker-title {
         color: #34495E;
         font-size: 1.2rem;
-        font-weight: bold.
+        font-weight: bold;
     }
     .ai-suggestion {
         color: #16A085;
-        font-style: italic.
-        margin-bottom: 0.5rem.
+        font-style: italic;
+        margin-bottom: 0.5rem;
     }
     .transcript-line {
-        margin-bottom: 0.5rem.
+        margin-bottom: 0.5rem;
     }
     .timestamp {
         color: #7F8C8D;
-        font-size: 0.9rem.
+        font-size: 0.9rem;
     }
     .confidence {
         color: #95A5A6;
-        font-size: 0.8rem.
+        font-size: 0.8rem;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -83,7 +84,12 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Streamlit app title
-st.markdown("<h1 class='main-title'>YouTube Audio Transcription with Speaker Identification</h1>", unsafe_allow_html=True)
+st.markdown("<h1 class='main-title'>Audio Transcription with Speaker Identification</h1>", unsafe_allow_html=True)
+
+# Embed YouTube video
+st.markdown("<div class='video-container'>", unsafe_allow_html=True)
+st.video("https://www.youtube.com/watch?v=SAL-mNE10TA&t=43s")
+st.markdown("</div>", unsafe_allow_html=True)
 
 # Initialize session state
 if 'transcript_generated' not in st.session_state:
@@ -98,15 +104,7 @@ if 'speaker_names' not in st.session_state:
     st.session_state.speaker_names = {}
 
 # Set AssemblyAI API key
-aai.settings.api_key = st.secrets["aai"]  # Replace with your actual AssemblyAI API key
-
-# Function to validate YouTube URL
-def is_valid_youtube_url(url):
-    try:
-        result = urlparse(url)
-        return all([result.scheme, result.netloc]) and 'youtube' in result.netloc
-    except:
-        return False
+aai.settings.api_key = "your_assemblyai_api_key"  # Replace with your actual AssemblyAI API key
 
 # Function to extract audio chunk
 def extract_audio_chunk(file_path, start_time, end_time):
@@ -116,7 +114,7 @@ def extract_audio_chunk(file_path, start_time, end_time):
         end_frame = int(end_time * framerate)
         wav_file.setpos(start_frame)
         chunk_frames = wav_file.readframes(end_frame - start_frame)
-    
+        
     chunk_io = io.BytesIO()
     with wave.open(chunk_io, 'wb') as chunk_wav:
         chunk_wav.setnchannels(wav_file.getnchannels())
@@ -127,28 +125,12 @@ def extract_audio_chunk(file_path, start_time, end_time):
     chunk_io.seek(0)
     return chunk_io
 
-# Function to download YouTube audio using yt-dlp
-def download_youtube_audio(youtube_url):
-    if not is_valid_youtube_url(youtube_url):
-        st.error("Invalid YouTube URL. Please enter a valid YouTube link.")
-        return None
-    
-    try:
-        ydl_opts = {
-            'format': 'bestaudio/best',
-            'outtmpl': 'youtube_audio.%(ext)s',
-            'postprocessors': [{
-                'key': 'FFmpegExtractAudio',
-                'preferredcodec': 'wav',
-                'preferredquality': '192',
-            }],
-        }
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([youtube_url])
-        return 'youtube_audio.wav'
-    except Exception as e:
-        st.error(f"Error downloading YouTube video: {e}")
-        return None
+# Function to compress audio file if it exceeds 200MB
+def compress_audio(file_path):
+    compressed_path = "compressed_audio.zip"
+    with zipfile.ZipFile(compressed_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+        zipf.write(file_path, os.path.basename(file_path))
+    return compressed_path
 
 # Function to transcribe audio
 def transcribe_audio(file_path, num_speakers=None):
@@ -168,12 +150,14 @@ def transcribe_audio(file_path, num_speakers=None):
             time.sleep(2)
         except Exception as e:
             st.error(f"An error occurred: {str(e)}")
+            if hasattr(e, 'response'):
+                st.error(f"Response content: {e.response.text}")
             break
     return None
 
 # Function to get AI suggestions for speaker names using LangChain
 def get_ai_suggestions(transcript):
-    llm = ChatOpenAI(model="gpt-4", temperature=0, api_key=st.secrets["gpt4o"])
+    llm = ChatOpenAI(model="gpt-4o", temperature=0, api_key="your_openai_api_key")  # Replace with your OpenAI API key
     
     prompt = ChatPromptTemplate.from_messages([
         ("system", "You are an AI assistant that can identify speakers based on the context of a conversation."),
@@ -192,11 +176,24 @@ def get_ai_suggestions(transcript):
 col1, col2 = st.columns([1, 2])
 
 with col1:
-    st.markdown("<h2 class='section-title'>YouTube Link Input</h2>", unsafe_allow_html=True)
-    youtube_url = st.text_input("Enter the YouTube video link:")
+    st.markdown("<h2 class='section-title'>Upload Audio</h2>", unsafe_allow_html=True)
+    uploaded_file = st.file_uploader("Choose a WAV file", type=["wav"])
     
-    if youtube_url:
-        st.markdown("<h2 class='section-title'>Specify Number of Speakers</h2>", unsafe_allow_html=True)
+    if uploaded_file is not None:
+        st.audio(uploaded_file, format="audio/wav")
+        
+        # Check if the file size exceeds 200MB
+        if uploaded_file.size > 200 * 1024 * 1024:
+            st.warning("The file size exceeds 200MB. Compressing...")
+            # Save the file and compress it
+            with open("temp_audio.wav", "wb") as f:
+                f.write(uploaded_file.getbuffer())
+            compressed_file_path = compress_audio("temp_audio.wav")
+            st.success(f"File compressed to {compressed_file_path}")
+        else:
+            st.session_state.file_path = "temp_audio.wav"
+            with open(st.session_state.file_path, "wb") as f:
+                f.write(uploaded_file.getbuffer())
         
         set_speakers = st.checkbox("Specify the number of speakers")
         if set_speakers:
@@ -205,28 +202,23 @@ with col1:
             num_speakers = None
         
         if st.button("Generate Transcript", key="generate_transcript"):
-            with st.spinner("Downloading audio and transcribing..."):
-                # Download audio from YouTube
-                audio_file_path = download_youtube_audio(youtube_url)
-                if audio_file_path:
-                    st.session_state.file_path = audio_file_path
+            with st.spinner("Transcribing audio..."):
+                # Transcribe the uploaded file
+                transcript = transcribe_audio(st.session_state.file_path, num_speakers=num_speakers)
                 
-                    # Transcribe the downloaded file
-                    transcript = transcribe_audio(st.session_state.file_path, num_speakers=num_speakers)
+                if transcript and transcript.status == aai.TranscriptStatus.completed:
+                    st.success("Transcription Successful!")
                     
-                    if transcript and transcript.status == aai.TranscriptStatus.completed:
-                        st.success("Transcription Successful!")
-                        
-                        # Process transcript data
-                        data = [(u.speaker, u.text, u.start / 1000, u.end / 1000, u.confidence) for u in transcript.utterances]
-                        st.session_state.df = pd.DataFrame(data, columns=["Speaker", "Text", "Start", "End", "Confidence"])
-                        
-                        # Get AI suggestions
-                        st.session_state.ai_suggestions = get_ai_suggestions(st.session_state.df)
-                        
-                        st.session_state.transcript_generated = True
-                    else:
-                        st.error("Transcription failed. Please try again.")
+                    # Process transcript data
+                    data = [(u.speaker, u.text, u.start / 1000, u.end / 1000, u.confidence) for u in transcript.utterances]
+                    st.session_state.df = pd.DataFrame(data, columns=["Speaker", "Text", "Start", "End", "Confidence"])
+                    
+                    # Get AI suggestions
+                    st.session_state.ai_suggestions = get_ai_suggestions(st.session_state.df)
+                    
+                    st.session_state.transcript_generated = True
+                else:
+                    st.error("Transcription failed. Please try again.")
 
 with col2:
     if st.session_state.transcript_generated:

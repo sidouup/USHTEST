@@ -1,3 +1,6 @@
+
+
+
 import streamlit as st
 import assemblyai as aai
 import time
@@ -98,13 +101,15 @@ if 'df' not in st.session_state:
     st.session_state.df = None
 if 'file_path' not in st.session_state:
     st.session_state.file_path = None
+if 'compressed_file_path' not in st.session_state:
+    st.session_state.compressed_file_path = None
 if 'ai_suggestions' not in st.session_state:
     st.session_state.ai_suggestions = None
 if 'speaker_names' not in st.session_state:
     st.session_state.speaker_names = {}
 
 # Set AssemblyAI API key
-aai.settings.api_key =st.secrets["aai"] # Replace with your actual AssemblyAI API key
+aai.settings.api_key = st.secrets["aai"]  # Replace with your actual AssemblyAI API key
 
 # Function to extract audio chunk
 def extract_audio_chunk(file_path, start_time, end_time):
@@ -183,13 +188,25 @@ with col1:
         st.audio(uploaded_file, format="audio/wav")
         
         # Check if the file size exceeds 200MB
-        if uploaded_file.size > 100 * 1024 * 1024:
+        if uploaded_file.size > 200 * 1024 * 1024:
             st.warning("The file size exceeds 200MB. Compressing...")
             # Save the file and compress it
             with open("temp_audio.wav", "wb") as f:
                 f.write(uploaded_file.getbuffer())
             compressed_file_path = compress_audio("temp_audio.wav")
-            st.success(f"File compressed to {compressed_file_path}")
+            
+            # Save compressed path in session state
+            st.session_state.compressed_file_path = compressed_file_path
+            
+            # Show the compressed file size
+            compressed_file_size = os.path.getsize(compressed_file_path) / (1024 * 1024)  # Convert to MB
+            st.success(f"File compressed to {compressed_file_size:.2f} MB")
+            
+            # Unzip and play the compressed audio file
+            with zipfile.ZipFile(compressed_file_path, 'r') as zip_ref:
+                zip_ref.extractall(".")
+                extracted_file_path = zip_ref.namelist()[0]
+                st.audio(extracted_file_path, format="audio/wav")
         else:
             st.session_state.file_path = "temp_audio.wav"
             with open(st.session_state.file_path, "wb") as f:

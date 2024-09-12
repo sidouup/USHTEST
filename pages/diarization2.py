@@ -104,6 +104,8 @@ if 'ai_suggestions' not in st.session_state:
     st.session_state.ai_suggestions = None
 if 'speaker_names' not in st.session_state:
     st.session_state.speaker_names = {}
+if 'ai_suggestions_generated' not in st.session_state:
+    st.session_state.ai_suggestions_generated = False
 
 # Set AssemblyAI API key
 aai.settings.api_key = st.secrets["aai"]  # Replace with your actual AssemblyAI API key
@@ -262,10 +264,6 @@ with col1:
                     data = [(u.speaker, u.text, u.start / 1000, u.end / 1000, u.confidence) for u in transcript.utterances]
                     st.session_state.df = pd.DataFrame(data, columns=["Speaker", "Text", "Start", "End", "Confidence"])
 
-                    # Get AI suggestions
-                    ai_suggestions_response = get_ai_suggestions(st.session_state.df)
-                    st.session_state.ai_suggestions = ai_suggestions_response
-
                     st.session_state.transcript_generated = True
                 else:
                     st.error("Transcription failed. Please try again.")
@@ -281,6 +279,16 @@ with col2:
             st.session_state.df.to_csv("transcript_data.csv", index=False)
             st.success("Transcript saved as 'transcript_data.csv'")
 
+        # Add a button to get AI suggestions
+        if st.button("Get AI Suggestions", key="get_ai_suggestions"):
+            with st.spinner("Fetching AI suggestions..."):
+                # Get AI suggestions
+                ai_suggestions_response = get_ai_suggestions(st.session_state.df)
+                st.session_state.ai_suggestions = ai_suggestions_response
+                st.session_state.ai_suggestions_generated = True
+                st.success("AI suggestions fetched successfully!")
+
+    if st.session_state.ai_suggestions_generated:
         st.markdown("<h2 class='section-title'>Speaker Identification</h2>", unsafe_allow_html=True)
 
         # Parse AI suggestions

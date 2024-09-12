@@ -42,3 +42,12 @@ langchain
 openai
 pydub
 wave
+streamlit
+assemblyai
+pandas
+httpx
+langchain
+openai
+pydub
+langchain_community
+

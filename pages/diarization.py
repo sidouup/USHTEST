@@ -104,7 +104,7 @@ if 'speaker_names' not in st.session_state:
     st.session_state.speaker_names = {}
 
 # Set AssemblyAI API key
-aai.settings.api_key = "your_assemblyai_api_key"  # Replace with your actual AssemblyAI API key
+aai.settings.api_key =st.secrets["aai"] # Replace with your actual AssemblyAI API key
 
 # Function to extract audio chunk
 def extract_audio_chunk(file_path, start_time, end_time):
@@ -157,7 +157,7 @@ def transcribe_audio(file_path, num_speakers=None):
 
 # Function to get AI suggestions for speaker names using LangChain
 def get_ai_suggestions(transcript):
-    llm = ChatOpenAI(model="gpt-4o", temperature=0, api_key="your_openai_api_key")  # Replace with your OpenAI API key
+    llm = ChatOpenAI(model="gpt-4o", temperature=0, api_key=st.secrets["gpt40"])  # Replace with your OpenAI API key
     
     prompt = ChatPromptTemplate.from_messages([
         ("system", "You are an AI assistant that can identify speakers based on the context of a conversation."),

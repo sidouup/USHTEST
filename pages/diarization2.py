@@ -158,7 +158,7 @@ def transcribe_audio(file_path, num_speakers=None, word_boost=None, boost_param=
 def get_ai_suggestions(transcript_df):
     try:
         llm = ChatOpenAI(
-            model_name="gpt-4",
+            model_name="gpt-4o-2024-08-06",
             temperature=0,
             openai_api_key=st.secrets["gpt40"]
         )

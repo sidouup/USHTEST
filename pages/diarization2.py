@@ -158,7 +158,7 @@ def transcribe_audio(file_path, num_speakers=None, word_boost=None, boost_param=
 def get_ai_suggestions(transcript_df):
     try:
         llm = ChatOpenAI(
-            model_name="gpt-4o-2024-08-06",
+            model_name="gpt-4",
             temperature=0,
             openai_api_key=st.secrets["gpt40"]
         )
@@ -202,13 +202,13 @@ Transcript:
 # Function to parse AI suggestions
 def parse_ai_suggestions(ai_response):
     ai_suggestions_dict = {}
-    # Adjust the pattern to match speaker labels that are numbers
-    pattern = r"Speaker (\d+):\s*(.+)"
+    # Adjust the pattern to match speaker labels that are either numbers or letters
+    pattern = r"Speaker (\d+):\s*(.+)"  # Match speaker numbers only
     matches = re.findall(pattern, ai_response)
     if not matches:
         st.warning("No matches found in AI response. Please check the AI's output.")
     for speaker_label, name in matches:
-        ai_suggestions_dict[int(speaker_label.strip())] = name.strip()
+        ai_suggestions_dict[speaker_label.strip()] = name.strip()
     return ai_suggestions_dict
 
 # Function to sanitize custom vocabulary input
@@ -236,7 +236,6 @@ with col1:
         st.markdown("<h2 class='section-title'>Custom Vocabulary</h2>", unsafe_allow_html=True)
         word_boost_input = st.text_area("Enter custom vocabulary words or phrases (comma-separated)")
         word_boost_list = sanitize_custom_vocabulary(word_boost_input)
-
         # Boost parameter selection
         boost_param = st.selectbox(
             "Set boost parameter (how much emphasis is placed on the custom vocabulary)",
@@ -286,9 +285,6 @@ with col1:
                     data = [(u.speaker, u.text, u.start / 1000, u.end / 1000, u.confidence) for u in transcript.utterances]
                     st.session_state.df = pd.DataFrame(data, columns=["Speaker", "Text", "Start", "End", "Confidence"])
 
-                    # Convert 'Speaker' column to int
-                    st.session_state.df['Speaker'] = st.session_state.df['Speaker'].astype(int)
-
                     st.session_state.transcript_generated = True
                 else:
                     st.error("Transcription failed. Please try again.")
@@ -319,9 +315,6 @@ with col2:
         # Parse AI suggestions
         ai_suggestions_dict = parse_ai_suggestions(st.session_state.ai_suggestions)
 
-        # Ensure 'Speaker' column is int
-        st.session_state.df['Speaker'] = st.session_state.df['Speaker'].astype(int)
-
         # Group utterances by speaker
         speaker_utterances = st.session_state.df.groupby("Speaker")
 
@@ -331,7 +324,7 @@ with col2:
                 st.markdown(f"<h3 class='speaker-title'>Speaker {speaker}</h3>", unsafe_allow_html=True)
 
                 # Display AI suggestion
-                ai_suggestion = ai_suggestions_dict.get(speaker, "No suggestion")
+                ai_suggestion = ai_suggestions_dict.get(str(speaker), "No suggestion")
                 st.markdown(f"<p class='ai-suggestion'>AI Suggestion: {ai_suggestion}</p>", unsafe_allow_html=True)
 
                 # Display audio samples and text

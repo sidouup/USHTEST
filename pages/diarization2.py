@@ -202,8 +202,8 @@ Transcript:
 # Function to parse AI suggestions
 def parse_ai_suggestions(ai_response):
     ai_suggestions_dict = {}
-    # Adjust the pattern to match speaker labels that are either numbers or letters
-    pattern = r"Speaker (\d+):\s*(.+)"  # Match speaker numbers only
+    # Adjust the pattern to match speaker labels that are names
+    pattern = r"Speaker ([\w\s]+):\s*(.+)"
     matches = re.findall(pattern, ai_response)
     if not matches:
         st.warning("No matches found in AI response. Please check the AI's output.")

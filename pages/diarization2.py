@@ -157,7 +157,11 @@ def transcribe_audio(file_path, num_speakers=None, word_boost=None, boost_param=
 # Function to get AI suggestions for speaker names using LangChain
 def get_ai_suggestions(transcript_df):
     try:
-        llm = ChatOpenAI(model_name="gpt-4o-2024-08-06", temperature=0, openai_api_key=st.secrets["gpt40"])
+        llm = ChatOpenAI(
+            model_name="gpt-4o-2024-08-06",
+            temperature=0,
+            openai_api_key=st.secrets["gpt40"]
+        )
 
         prompt_template = """
 You are an AI assistant that identifies speakers based on the context of a conversation.
@@ -179,13 +183,16 @@ Transcript:
 
         chain = LLMChain(llm=llm, prompt=prompt)
 
-        full_transcript = "\n".join([f"Speaker {row['Speaker']}: {row['Text']}" for _, row in transcript_df.iterrows()])
+        full_transcript = "\n".join([
+            f"Speaker {row['Speaker']}: {row['Text']}"
+            for _, row in transcript_df.iterrows()
+        ])
 
         result = chain.run(transcript=full_transcript)
 
         # Display the AI's response for debugging
         st.write("AI's Response:")
-        st.write(result)
+        st.code(result, language='markdown')
 
         return result
     except Exception as e:
@@ -195,13 +202,13 @@ Transcript:
 # Function to parse AI suggestions
 def parse_ai_suggestions(ai_response):
     ai_suggestions_dict = {}
-    # Adjust the pattern to match speaker labels that are either numbers or letters
-    pattern = r"Speaker (\w+):\s*(.+)"
+    # Adjust the pattern to match speaker labels that are numbers
+    pattern = r"Speaker (\d+):\s*(.+)"
     matches = re.findall(pattern, ai_response)
     if not matches:
         st.warning("No matches found in AI response. Please check the AI's output.")
     for speaker_label, name in matches:
-        ai_suggestions_dict[speaker_label.strip()] = name.strip()
+        ai_suggestions_dict[int(speaker_label.strip())] = name.strip()
     return ai_suggestions_dict
 
 # Function to sanitize custom vocabulary input
@@ -279,6 +286,9 @@ with col1:
                     data = [(u.speaker, u.text, u.start / 1000, u.end / 1000, u.confidence) for u in transcript.utterances]
                     st.session_state.df = pd.DataFrame(data, columns=["Speaker", "Text", "Start", "End", "Confidence"])
 
+                    # Convert 'Speaker' column to int
+                    st.session_state.df['Speaker'] = st.session_state.df['Speaker'].astype(int)
+
                     st.session_state.transcript_generated = True
                 else:
                     st.error("Transcription failed. Please try again.")
@@ -309,6 +319,9 @@ with col2:
         # Parse AI suggestions
         ai_suggestions_dict = parse_ai_suggestions(st.session_state.ai_suggestions)
 
+        # Ensure 'Speaker' column is int
+        st.session_state.df['Speaker'] = st.session_state.df['Speaker'].astype(int)
+
         # Group utterances by speaker
         speaker_utterances = st.session_state.df.groupby("Speaker")
 
@@ -329,7 +342,11 @@ with col2:
 
                 # Input for speaker name
                 speaker_name_key = f"name_input_{speaker}"
-                st.session_state.speaker_names[speaker] = st.text_input(f"Enter name for Speaker {speaker}", key=speaker_name_key, value=ai_suggestion)
+                st.session_state.speaker_names[speaker] = st.text_input(
+                    f"Enter name for Speaker {speaker}",
+                    key=speaker_name_key,
+                    value=ai_suggestion
+                )
 
                 st.markdown("</div>", unsafe_allow_html=True)
 

@@ -168,13 +168,13 @@ You are an AI assistant that identifies speakers based on the context of a conve
 Based on the following transcript, identify and name the speakers.
 **Use the same speaker numbers as in the transcript when providing your suggestions.**
 
-Provide the response in the exact format:
+Provide the response in this exact format:
 
 Speaker 1: [Suggested Name]
 Speaker 2: [Suggested Name]
 ...
 
-**Do not include any extra text or explanations.**
+**Do not include any extra text or explanations.just the number of the speaker and the suggested name **
 
 Transcript:
 {transcript}
